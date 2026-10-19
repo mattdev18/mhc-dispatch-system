@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports &amp; Logs - May Harvest Corporation</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-area">
+            <div class="logo-container">
+                <img src="/images/mhc-logo.png" alt="May Harvest Corporation Logo" class="mhc-logo">
+            </div>
+            <div class="brand-text">
+                <h1>MAY HARVEST CORPORATION</h1>
+                <h2>DISPATCH QUEUING SYSTEM</h2>
+                <small>Logistics Performance, Turnaround Times &amp; History</small>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="conn-status">
+                <span class="conn-dot online"></span>
+                <span>Reports Center</span>
+            </div>
+            <div id="clock">--:--:--</div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="nav-link">🚛 Gate Registration</a>
+        <a href="/dispatch" class="nav-link">📋 Dispatcher Station</a>
+        <a href="/display" class="nav-link" target="_blank">📺 Live TV Queue Board ↗</a>
+        <a href="/reports" class="nav-link active">📊 Reports &amp; Logs</a>
+    </nav>
+
+    <div class="container">
+
+        <!-- Filter Card -->
+        <div class="card">
+            <div class="card-title">
+                <span>📅 Filter Dispatch Logs</span>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn btn-success" onclick="exportCSV()">
+                        📥 EXPORT TO CSV (EXCEL)
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.print()">
+                        🖨️ PRINT DAILY REPORT
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div>
+                    <label>Select Date:</label>
+                    <input type="date" id="filterDate" style="max-width: 200px;">
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary" onclick="loadReportData()">
+                        Apply Filter
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="setTodayAndLoad()">
+                        Today
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics Summary Cards -->
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <h3>TOTAL COMPLETED</h3>
+                <div class="stat-number" id="repCompleted">0</div>
+            </div>
+            <div class="stat-card blue">
+                <h3>TOTAL REGISTERED</h3>
+                <div class="stat-number" id="repTotal">0</div>
+            </div>
+            <div class="stat-card orange">
+                <h3>AVG. WAIT TIME</h3>
+                <div class="stat-number" id="repAvgWait" style="font-size: 26px;">-- mins</div>
+            </div>
+            <div class="stat-card yellow">
+                <h3>AVG. LOADING TIME</h3>
+                <div class="stat-number" id="repAvgLoad" style="font-size: 26px;">-- mins</div>
+            </div>
+            <div class="stat-card gray">
+                <h3>AVG. TURNAROUND</h3>
+                <div class="stat-number" id="repAvgTurnaround" style="font-size: 26px;">-- mins</div>
+            </div>
+        </div>
+
+        <!-- Detailed Truck Log Table -->
+        <div class="card">
+            <div class="card-title">
+                <span>📄 Detailed Truck Movement Log</span>
+                <span id="recordCount" style="font-size: 13px; color: #64748b;">0 Records</span>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Queue</th>
+                            <th>Plate</th>
+                            <th>Driver</th>
+                            <th>Hauler</th>
+                            <th>Load</th>
+                            <th>Destination</th>
+                            <th>Priority</th>
+                            <th>Door</th>
+                            <th>Arrival</th>
+                            <th>Called</th>
+                            <th>Loading</th>
+                            <th>Completed</th>
+                            <th>Departed</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <tr>
+                            <td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">
+                                Select a date to view records.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/js/reports.js"></script>
+</body>
+</html>
