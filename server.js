@@ -3,7 +3,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
-const { run, get, all, initDB } = require('./database');
+const crypto = require('crypto');
+const { run, get, all, initDB, hashPassword } = require('./database');
 
 const app = express();
 const server = http.createServer(app);
@@ -15,11 +16,125 @@ const PORT = process.env.PORT || 3000;
 const LOADING_DOCK_CAPACITY = 8;
 const LOADING_DOORS = [1, 2, 3, 4, 5, 6, 7, 8];
 
+// In-memory active user sessions (token -> user)
+const sessions = new Map();
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Helper: Current Date in YYYY-MM-DD
+// Authentication Middleware for Protected Actions
+function requireAuth(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader ? authHeader.replace('Bearer ', '').trim() : req.headers['x-auth-token'];
+
+    if (!token || !sessions.has(token)) {
+        return res.status(401).json({
+            success: false,
+            error: 'Access Denied: Please log in with an authorized staff account.'
+        });
+    }
+
+    req.user = sessions.get(token);
+    next();
+}
+
+// -------------------------------------------------------------
+// AUTHENTICATION APIS
+// -------------------------------------------------------------
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) {
+            return res.status(400).json({ success: false, error: 'Please enter both username and password.' });
+        }
+
+        const hashed = hashPassword(password);
+        const user = await get(
+            `SELECT id, username, name, role FROM users WHERE LOWER(username) = LOWER(?) AND password = ?`,
+            [username.trim(), hashed]
+        );
+
+        if (!user) {
+            return res.status(401).json({ success: false, error: 'Incorrect username or password.' });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        sessions.set(token, user);
+
+        res.json({
+            success: true,
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                name: user.name,
+                role: user.role
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Verify Current Session
+app.get('/api/auth/me', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader ? authHeader.replace('Bearer ', '').trim() : req.headers['x-auth-token'];
+
+    if (token && sessions.has(token)) {
+        return res.json({ success: true, user: sessions.get(token) });
+    }
+    res.status(401).json({ success: false, error: 'Not logged in' });
+});
+
+// Logout
+app.post('/api/auth/logout', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader ? authHeader.replace('Bearer ', '').trim() : req.headers['x-auth-token'];
+    if (token) sessions.delete(token);
+    res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// List Users (Admin only)
+app.get('/api/users', requireAuth, async (req, res) => {
+    try {
+        const users = await all(`SELECT id, username, name, role, created_at FROM users ORDER BY id ASC`);
+        res.json({ success: true, users });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Change Password
+app.post('/api/auth/change-password', requireAuth, async (req, res) => {
+    try {
+        const { target_username, new_password } = req.body;
+        const currentUser = req.user;
+
+        const usernameToUpdate = (currentUser.role === 'admin' && target_username)
+            ? target_username.trim()
+            : currentUser.username;
+
+        if (!new_password || new_password.length < 4) {
+            return res.status(400).json({ success: false, error: 'Password must be at least 4 characters long.' });
+        }
+
+        const hashed = hashPassword(new_password);
+        await run(`UPDATE users SET password = ? WHERE LOWER(username) = LOWER(?)`, [hashed, usernameToUpdate]);
+
+        res.json({ success: true, message: `Password for ${usernameToUpdate} updated successfully.` });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// -------------------------------------------------------------
+// HELPERS
+// -------------------------------------------------------------
+
 function getTodayString() {
     const now = new Date();
     const y = now.getFullYear();
@@ -28,12 +143,24 @@ function getTodayString() {
     return `${y}-${m}-${d}`;
 }
 
-// Helper: Format Time string
 function getTimeString() {
     return new Date().toLocaleTimeString('en-US', { hour12: true });
 }
 
-// API: Get today's trucks
+async function getAvailableDoor(today) {
+    const occupiedRows = await all(
+        `SELECT loading_door FROM trucks WHERE date = ? AND status IN ('Called', 'Loading') AND loading_door IS NOT NULL`,
+        [today]
+    );
+    const occupiedDoors = occupiedRows.map(r => Number(r.loading_door));
+    return LOADING_DOORS.find(d => !occupiedDoors.includes(d)) || null;
+}
+
+// -------------------------------------------------------------
+// TRUCK QUEUE APIS
+// -------------------------------------------------------------
+
+// API: Get today's trucks (Public read for display & dashboard)
 app.get('/api/trucks/today', async (req, res) => {
     try {
         const today = getTodayString();
@@ -69,7 +196,6 @@ app.get('/api/stats/today', async (req, res) => {
             stats.Total += r.count;
         });
 
-        // Occupied doors
         const activeTrucks = await all(
             `SELECT loading_door, status, queue, truck_number, driver_name, load_type FROM trucks 
              WHERE date = ? AND status IN ('Called', 'Loading') AND loading_door IS NOT NULL`,
@@ -82,7 +208,7 @@ app.get('/api/stats/today', async (req, res) => {
     }
 });
 
-// API: Register Truck
+// API: Register Truck (Gate Guard / Staff)
 app.post('/api/trucks/register', async (req, res) => {
     try {
         const {
@@ -116,7 +242,7 @@ app.post('/api/trucks/register', async (req, res) => {
             });
         }
 
-        // Generate Queue Number (Count today's trucks + 1)
+        // Generate Queue Number
         const countRow = await get(`SELECT count(*) as total FROM trucks WHERE date = ?`, [today]);
         const nextNum = (countRow ? countRow.total : 0) + 1;
         const queueCode = 'Q' + String(nextNum).padStart(3, '0');
@@ -149,7 +275,6 @@ app.post('/api/trucks/register', async (req, res) => {
 
         const newTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [insertResult.lastID]);
 
-        // Realtime broadcast to Dispatcher and Display
         io.emit('truck_registered', newTruck);
         io.emit('queue_updated');
 
@@ -159,18 +284,8 @@ app.post('/api/trucks/register', async (req, res) => {
     }
 });
 
-// Helper: Get available door
-async function getAvailableDoor(today) {
-    const occupiedRows = await all(
-        `SELECT loading_door FROM trucks WHERE date = ? AND status IN ('Called', 'Loading') AND loading_door IS NOT NULL`,
-        [today]
-    );
-    const occupiedDoors = occupiedRows.map(r => Number(r.loading_door));
-    return LOADING_DOORS.find(d => !occupiedDoors.includes(d)) || null;
-}
-
-// API: Call Next Truck (Auto assign first available door)
-app.post('/api/trucks/call-next', async (req, res) => {
+// API: Call Next Truck (PROTECTED: Requires Staff Login)
+app.post('/api/trucks/call-next', requireAuth, async (req, res) => {
     try {
         const today = getTodayString();
         const availableDoor = await getAvailableDoor(today);
@@ -182,7 +297,6 @@ app.post('/api/trucks/call-next', async (req, res) => {
             });
         }
 
-        // Get earliest waiting truck
         const nextTruck = await get(
             `SELECT * FROM trucks WHERE date = ? AND status = 'Waiting' ORDER BY arrival_timestamp ASC LIMIT 1`,
             [today]
@@ -203,7 +317,6 @@ app.post('/api/trucks/call-next', async (req, res) => {
 
         const updatedTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [nextTruck.id]);
 
-        // Real-time broadcast with chime & voice trigger
         io.emit('truck_called', updatedTruck);
         io.emit('queue_updated');
 
@@ -213,8 +326,8 @@ app.post('/api/trucks/call-next', async (req, res) => {
     }
 });
 
-// API: Call Specific Truck & Select Door
-app.post('/api/trucks/:id/call', async (req, res) => {
+// API: Call Specific Truck & Select Door (PROTECTED)
+app.post('/api/trucks/:id/call', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const { door } = req.body;
@@ -233,7 +346,6 @@ app.post('/api/trucks/:id/call', async (req, res) => {
                 return res.status(400).json({ success: false, error: 'No loading doors are currently available.' });
             }
         } else {
-            // Check if selected door is occupied
             const occupied = await get(
                 `SELECT * FROM trucks WHERE date = ? AND status IN ('Called', 'Loading') AND loading_door = ? AND id != ?`,
                 [today, assignedDoor, id]
@@ -266,8 +378,8 @@ app.post('/api/trucks/:id/call', async (req, res) => {
     }
 });
 
-// API: Start Loading
-app.post('/api/trucks/:id/start-loading', async (req, res) => {
+// API: Start Loading (PROTECTED)
+app.post('/api/trucks/:id/start-loading', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -292,8 +404,8 @@ app.post('/api/trucks/:id/start-loading', async (req, res) => {
     }
 });
 
-// API: Complete Loading
-app.post('/api/trucks/:id/complete', async (req, res) => {
+// API: Complete Loading (PROTECTED)
+app.post('/api/trucks/:id/complete', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -318,8 +430,8 @@ app.post('/api/trucks/:id/complete', async (req, res) => {
     }
 });
 
-// API: Depart Truck (Frees the dock door)
-app.post('/api/trucks/:id/depart', async (req, res) => {
+// API: Depart Truck (PROTECTED)
+app.post('/api/trucks/:id/depart', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -344,8 +456,8 @@ app.post('/api/trucks/:id/depart', async (req, res) => {
     }
 });
 
-// API: Cancel Truck
-app.post('/api/trucks/:id/cancel', async (req, res) => {
+// API: Cancel Truck (PROTECTED)
+app.post('/api/trucks/:id/cancel', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -370,8 +482,8 @@ app.post('/api/trucks/:id/cancel', async (req, res) => {
     }
 });
 
-// API: Reports query
-app.get('/api/reports', async (req, res) => {
+// API: Reports query (PROTECTED)
+app.get('/api/reports', requireAuth, async (req, res) => {
     try {
         const { date, start_date, end_date } = req.query;
         let query = `SELECT * FROM trucks`;
@@ -397,13 +509,17 @@ app.get('/api/reports', async (req, res) => {
     }
 });
 
-// Serve friendly route URLs
+// -------------------------------------------------------------
+// ROUTES
+// -------------------------------------------------------------
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 app.get('/', (req, res) => res.sendFile('index.html', { root: PUBLIC_DIR }));
+app.get('/login', (req, res) => res.sendFile('login.html', { root: PUBLIC_DIR }));
 app.get('/register', (req, res) => res.sendFile('index.html', { root: PUBLIC_DIR }));
 app.get('/dispatch', (req, res) => res.sendFile('dispatch.html', { root: PUBLIC_DIR }));
-app.get('/display', (req, res) => res.sendFile('display.html', { root: PUBLIC_DIR }));
+app.get('/display', (req, res) => res.sendFile('display.html', { root: PUBLIC_DIR })); // PUBLIC (Trucker view)
+app.get('/driver', (req, res) => res.sendFile('display.html', { root: PUBLIC_DIR }));  // PUBLIC (Trucker shortcut)
 app.get('/reports', (req, res) => res.sendFile('reports.html', { root: PUBLIC_DIR }));
 
 // WebSockets connection
@@ -424,9 +540,10 @@ initDB().then(() => {
         console.log(`Network (LAN) Access: http://192.168.100.81:${PORT}`);
         console.log(`----------------------------------------------------`);
         console.log(`1. Gate Registration: http://192.168.100.81:${PORT}/`);
-        console.log(`2. Dispatcher Screen: http://192.168.100.81:${PORT}/dispatch`);
-        console.log(`3. TV Display Screen: http://192.168.100.81:${PORT}/display`);
-        console.log(`4. Reports Screen:    http://192.168.100.81:${PORT}/reports`);
+        console.log(`2. Dispatcher Screen: http://192.168.100.81:${PORT}/dispatch (Protected)`);
+        console.log(`3. TV Display Screen: http://192.168.100.81:${PORT}/display  (Public for Truckers)`);
+        console.log(`4. Reports Screen:    http://192.168.100.81:${PORT}/reports  (Protected)`);
+        console.log(`5. Staff Login:       http://192.168.100.81:${PORT}/login`);
         console.log(`====================================================`);
     });
 });

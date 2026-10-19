@@ -1,3 +1,6 @@
+// Protect page: require staff login
+verifyAuth(true);
+
 let reportTrucks = [];
 
 // Clock

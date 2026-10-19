@@ -1,3 +1,6 @@
+// Protect page: require staff login
+verifyAuth(true);
+
 const socket = io();
 
 let todayTrucks = [];

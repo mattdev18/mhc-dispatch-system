@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login - May Harvest Corporation</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .login-wrap {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 440px;
+            padding: 32px;
+            text-align: center;
+            border-top: 5px solid #16a34a;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 16px auto;
+            border-radius: 12px;
+            padding: 5px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .login-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .login-sub {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        .login-field {
+            text-align: left;
+            margin-bottom: 16px;
+        }
+
+        .login-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .login-alert {
+            display: none;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .driver-box {
+            margin-top: 24px;
+            padding: 14px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .driver-box a {
+            color: #15803d;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .driver-box a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-area">
+            <div class="logo-container">
+                <img src="/images/mhc-logo.png" alt="May Harvest Corporation Logo" class="mhc-logo">
+            </div>
+            <div class="brand-text">
+                <h1>MAY HARVEST CORPORATION</h1>
+                <h2>DISPATCH QUEUING SYSTEM</h2>
+                <small>Secure Staff &amp; Dispatcher Portal</small>
+            </div>
+        </div>
+        <div id="clock">--:--:--</div>
+    </header>
+
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="login-logo">
+                <img src="/images/mhc-logo.png" alt="Logo">
+            </div>
+
+            <h2 class="login-title">Staff &amp; Dispatcher Login</h2>
+            <p class="login-sub">Please enter your authorized plant credentials to access the dispatch backend.</p>
+
+            <div id="loginAlert" class="login-alert"></div>
+
+            <form id="loginForm">
+                <div class="login-field">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="e.g. admin, dispatcher1, guard" required autocomplete="username" autofocus>
+                </div>
+
+                <div class="login-field">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required autocomplete="current-password">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 13px;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0; font-weight: normal; color: #475569;">
+                        <input type="checkbox" id="rememberMe" checked style="width: auto;">
+                        Remember me on this device
+                    </label>
+                </div>
+
+                <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;">
+                    🔒 SIGN IN TO BACKEND
+                </button>
+            </form>
+
+            <div class="driver-box">
+                🚛 <strong>Are you a Truck Driver?</strong><br>
+                You don't need a password! Click below to view the live queue:<br>
+                <a href="/display">👉 Open Public Live Queue Board (View Only)</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        // Clock
+        function updateClock() {
+            const el = document.getElementById('clock');
+            if (el) el.textContent = new Date().toLocaleTimeString('en-US');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Redirect if already logged in
+        if (getAuthToken()) {
+            const params = new URLSearchParams(window.location.search);
+            const returnUrl = params.get('returnUrl') || '/dispatch';
+            window.location.href = returnUrl;
+        }
+
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginAlert = document.getElementById('loginAlert');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginAlert.style.display = 'none';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Verifying credentials...';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    loginAlert.style.display = 'block';
+                    loginAlert.textContent = data.error || 'Login failed. Please check your credentials.';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '🔒 SIGN IN TO BACKEND';
+                    return;
+                }
+
+                // Save session
+                setAuthSession(data.token, data.user, rememberMe);
+
+                // Redirect to requested page or dispatch
+                const params = new URLSearchParams(window.location.search);
+                const returnUrl = params.get('returnUrl') || '/dispatch';
+                window.location.href = returnUrl;
+            } catch (err) {
+                loginAlert.style.display = 'block';
+                loginAlert.textContent = 'Network error: ' + err.message;
+                loginBtn.disabled = false;
+                loginBtn.textContent = '🔒 SIGN IN TO BACKEND';
+            }
+        });
+    </script>
+</body>
+</html>

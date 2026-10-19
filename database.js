@@ -1,9 +1,14 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const initSqlJs = require('sql.js');
 
 const DB_PATH = path.join(__dirname, 'mhc_dispatch.db');
 let db = null;
+
+function hashPassword(pwd) {
+    return crypto.createHash('sha256').update(String(pwd)).digest('hex');
+}
 
 function saveToDisk() {
     if (!db) return;
@@ -67,6 +72,7 @@ async function initDB() {
         db = new SQL.Database();
     }
 
+    // Trucks Table
     db.run(`
         CREATE TABLE IF NOT EXISTS trucks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,6 +104,7 @@ async function initDB() {
         )
     `);
 
+    // Settings Table
     db.run(`
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -105,15 +112,77 @@ async function initDB() {
         )
     `);
 
-    const stmt = db.prepare("SELECT value FROM settings WHERE key = 'plant_name'");
+    // Users Table for Staff Authentication
+    db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Seed Plant Name
+    const plantStmt = db.prepare("SELECT value FROM settings WHERE key = 'plant_name'");
     let hasPlant = false;
-    if (stmt.step()) {
-        hasPlant = true;
-    }
-    stmt.free();
+    if (plantStmt.step()) hasPlant = true;
+    plantStmt.free();
 
     if (!hasPlant) {
         db.run("INSERT INTO settings (key, value) VALUES ('plant_name', 'MAY HARVEST CORPORATION')");
+    }
+
+    // Seed 5 Authorized Backend Users
+    const countUsersStmt = db.prepare("SELECT count(*) as count FROM users");
+    let userCount = 0;
+    if (countUsersStmt.step()) {
+        userCount = countUsersStmt.getAsObject().count;
+    }
+    countUsersStmt.free();
+
+    if (userCount === 0) {
+        const defaultUsers = [
+            {
+                username: 'admin',
+                password: hashPassword('admin@mhc2026'),
+                name: 'Plant Administrator',
+                role: 'admin'
+            },
+            {
+                username: 'dispatcher1',
+                password: hashPassword('dispatch@123'),
+                name: 'Lead Dispatcher',
+                role: 'dispatcher'
+            },
+            {
+                username: 'dispatcher2',
+                password: hashPassword('dispatch@456'),
+                name: 'Shift Dispatcher',
+                role: 'dispatcher'
+            },
+            {
+                username: 'guard',
+                password: hashPassword('guard@mhc123'),
+                name: 'Gate Security Guard',
+                role: 'guard'
+            },
+            {
+                username: 'warehouse',
+                password: hashPassword('warehouse@123'),
+                name: 'Dock Supervisor',
+                role: 'warehouse'
+            }
+        ];
+
+        for (const u of defaultUsers) {
+            db.run(
+                "INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)",
+                [u.username, u.password, u.name, u.role]
+            );
+        }
+        console.log('Seeded 5 default authorized backend users successfully.');
     }
 
     saveToDisk();
@@ -125,5 +194,6 @@ module.exports = {
     run,
     get,
     all,
-    initDB
+    initDB,
+    hashPassword
 };
