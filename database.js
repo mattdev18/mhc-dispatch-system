@@ -1,39 +1,73 @@
+const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const initSqlJs = require('sql.js');
 
 const DB_PATH = path.join(__dirname, 'mhc_dispatch.db');
-const db = new sqlite3.Database(DB_PATH);
+let db = null;
 
-// Helper to wrap db queries in Promises
-function run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.run(sql, params, function (err) {
-            if (err) reject(err);
-            else resolve({ lastID: this.lastID, changes: this.changes });
-        });
-    });
+function saveToDisk() {
+    if (!db) return;
+    try {
+        const data = db.export();
+        fs.writeFileSync(DB_PATH, Buffer.from(data));
+    } catch (e) {
+        console.error('Error saving database to disk:', e);
+    }
 }
 
-function get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.get(sql, params, (err, row) => {
-            if (err) reject(err);
-            else resolve(row);
-        });
-    });
+async function run(sql, params = []) {
+    if (!db) await initDB();
+    db.run(sql, params);
+    const lastIDRes = db.exec("SELECT last_insert_rowid()");
+    const lastID = (lastIDRes && lastIDRes[0] && lastIDRes[0].values && lastIDRes[0].values[0]) 
+        ? lastIDRes[0].values[0][0] 
+        : 0;
+    const changes = db.getRowsModified();
+    saveToDisk();
+    return { lastID, changes };
 }
 
-function all(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.all(sql, params, (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-        });
-    });
+async function get(sql, params = []) {
+    if (!db) await initDB();
+    const stmt = db.prepare(sql);
+    stmt.bind(params);
+    let row = null;
+    if (stmt.step()) {
+        row = stmt.getAsObject();
+    }
+    stmt.free();
+    return row;
+}
+
+async function all(sql, params = []) {
+    if (!db) await initDB();
+    const stmt = db.prepare(sql);
+    stmt.bind(params);
+    const rows = [];
+    while (stmt.step()) {
+        rows.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return rows;
 }
 
 async function initDB() {
-    await run(`
+    if (db) return db;
+
+    const SQL = await initSqlJs();
+    if (fs.existsSync(DB_PATH)) {
+        try {
+            const filebuffer = fs.readFileSync(DB_PATH);
+            db = new SQL.Database(filebuffer);
+        } catch (e) {
+            console.warn('Could not read existing DB file, creating fresh:', e.message);
+            db = new SQL.Database();
+        }
+    } else {
+        db = new SQL.Database();
+    }
+
+    db.run(`
         CREATE TABLE IF NOT EXISTS trucks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             queue TEXT NOT NULL,
@@ -64,24 +98,30 @@ async function initDB() {
         )
     `);
 
-    await run(`
+    db.run(`
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT
         )
     `);
 
-    // Insert default plant name if not exists
-    const plantName = await get(`SELECT value FROM settings WHERE key = 'plant_name'`);
-    if (!plantName) {
-        await run(`INSERT INTO settings (key, value) VALUES ('plant_name', 'MAY HARVEST CORPORATION')`);
+    const stmt = db.prepare("SELECT value FROM settings WHERE key = 'plant_name'");
+    let hasPlant = false;
+    if (stmt.step()) {
+        hasPlant = true;
+    }
+    stmt.free();
+
+    if (!hasPlant) {
+        db.run("INSERT INTO settings (key, value) VALUES ('plant_name', 'MAY HARVEST CORPORATION')");
     }
 
-    console.log('SQLite Database initialized successfully at:', DB_PATH);
+    saveToDisk();
+    console.log('Database (WebAssembly SQLite) initialized successfully at:', DB_PATH);
+    return db;
 }
 
 module.exports = {
-    db,
     run,
     get,
     all,
