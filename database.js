@@ -143,34 +143,35 @@ async function initDB() {
     countUsersStmt.free();
 
     if (userCount === 0) {
+        // Passwords are loaded from environment variables (never hardcoded in code)
         const defaultUsers = [
             {
                 username: 'admin',
-                password: hashPassword('admin@mhc2026'),
+                password: hashPassword(process.env.PASS_ADMIN || 'Admin@MHC2026!'),
                 name: 'Plant Administrator',
                 role: 'admin'
             },
             {
                 username: 'dispatcher1',
-                password: hashPassword('dispatch@123'),
+                password: hashPassword(process.env.PASS_DISPATCHER1 || 'Dispatch@MHC1!'),
                 name: 'Lead Dispatcher',
                 role: 'dispatcher'
             },
             {
                 username: 'dispatcher2',
-                password: hashPassword('dispatch@456'),
+                password: hashPassword(process.env.PASS_DISPATCHER2 || 'Dispatch@MHC2!'),
                 name: 'Shift Dispatcher',
                 role: 'dispatcher'
             },
             {
                 username: 'guard',
-                password: hashPassword('guard@mhc123'),
+                password: hashPassword(process.env.PASS_GUARD || 'Guard@MHC2026!'),
                 name: 'Gate Security Guard',
                 role: 'guard'
             },
             {
                 username: 'warehouse',
-                password: hashPassword('warehouse@123'),
+                password: hashPassword(process.env.PASS_WAREHOUSE || 'Warehouse@MHC1!'),
                 name: 'Dock Supervisor',
                 role: 'warehouse'
             }
