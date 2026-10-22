@@ -134,56 +134,37 @@ async function initDB() {
         db.run("INSERT INTO settings (key, value) VALUES ('plant_name', 'MAY HARVEST CORPORATION')");
     }
 
-    // Seed 5 Authorized Backend Users
-    const countUsersStmt = db.prepare("SELECT count(*) as count FROM users");
-    let userCount = 0;
-    if (countUsersStmt.step()) {
-        userCount = countUsersStmt.getAsObject().count;
-    }
-    countUsersStmt.free();
+    // Sync 5 staff users from environment variables on every startup.
+    // Passwords come ONLY from Render environment variables (no defaults in code).
+    const staffUsers = [
+        { username: 'admin',       env: 'MHC_ADMIN',       name: 'Plant Administrator', role: 'admin' },
+        { username: 'dispatcher1', env: 'MHC_DISPATCHER1', name: 'Lead Dispatcher',     role: 'dispatcher' },
+        { username: 'dispatcher2', env: 'MHC_DISPATCHER2', name: 'Shift Dispatcher',    role: 'dispatcher' },
+        { username: 'guard',       env: 'MHC_GUARD',       name: 'Gate Security Guard', role: 'guard' },
+        { username: 'warehouse',   env: 'MHC_WAREHOUSE',   name: 'Dock Supervisor',     role: 'warehouse' }
+    ];
 
-    if (userCount === 0) {
-        // Passwords are loaded from environment variables (never hardcoded in code)
-        const defaultUsers = [
-            {
-                username: 'admin',
-                password: hashPassword(process.env.PASS_ADMIN || 'Admin@MHC2026!'),
-                name: 'Plant Administrator',
-                role: 'admin'
-            },
-            {
-                username: 'dispatcher1',
-                password: hashPassword(process.env.PASS_DISPATCHER1 || 'Dispatch@MHC1!'),
-                name: 'Lead Dispatcher',
-                role: 'dispatcher'
-            },
-            {
-                username: 'dispatcher2',
-                password: hashPassword(process.env.PASS_DISPATCHER2 || 'Dispatch@MHC2!'),
-                name: 'Shift Dispatcher',
-                role: 'dispatcher'
-            },
-            {
-                username: 'guard',
-                password: hashPassword(process.env.PASS_GUARD || 'Guard@MHC2026!'),
-                name: 'Gate Security Guard',
-                role: 'guard'
-            },
-            {
-                username: 'warehouse',
-                password: hashPassword(process.env.PASS_WAREHOUSE || 'Warehouse@MHC1!'),
-                name: 'Dock Supervisor',
-                role: 'warehouse'
-            }
-        ];
+    for (const u of staffUsers) {
+        const pwd = process.env[u.env];
+        if (!pwd || pwd.length < 10) {
+            console.warn(`Skipping ${u.username}: ${u.env} is missing or shorter than 10 characters.`);
+            continue;
+        }
+        const hashed = hashPassword(pwd);
 
-        for (const u of defaultUsers) {
+        const chk = db.prepare("SELECT id FROM users WHERE username = ?");
+        chk.bind([u.username]);
+        const exists = chk.step();
+        chk.free();
+
+        if (exists) {
+            db.run("UPDATE users SET password = ? WHERE username = ?", [hashed, u.username]);
+        } else {
             db.run(
                 "INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)",
-                [u.username, u.password, u.name, u.role]
+                [u.username, hashed, u.name, u.role]
             );
         }
-        console.log('Seeded 5 default authorized backend users successfully.');
     }
 
     saveToDisk();
