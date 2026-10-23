@@ -40,6 +40,57 @@ function requireAuth(req, res, next) {
 }
 
 // -------------------------------------------------------------
+// ROLE-BASED ACCESS CONTROL (RBAC)
+// Dito lang binabago kung sino ang puwede sa ano.
+// Roles (galing sa database.js): admin, dispatcher, guard, warehouse
+// -------------------------------------------------------------
+const PERMISSIONS = {
+    'trucks:register': ['admin', 'guard'],                          // Gate Registration + Ticket Printing
+    'trucks:call':     ['admin', 'dispatcher'],                     // Dispatcher Command Center (call truck / door)
+    'trucks:loading':  ['admin', 'dispatcher', 'warehouse'],        // Loading Doors + Cargo Completion
+    'trucks:depart':   ['admin', 'dispatcher'],
+    'trucks:cancel':   ['admin', 'dispatcher'],
+    'reports:view':    ['admin'],
+    'users:manage':    ['admin']
+};
+
+// Aling page/screen ang puwedeng buksan ng bawat role
+const SCREEN_ACCESS = {
+    register: ['admin', 'guard'],                       // index.html
+    dispatch: ['admin', 'dispatcher', 'warehouse'],     // dispatch.html
+    reports:  ['admin']                                 // reports.html
+};
+
+// Saan dadalhin ang user pagkatapos mag-login
+const HOME_PAGE = {
+    admin: '/dispatch',
+    dispatcher: '/dispatch',
+    warehouse: '/dispatch',
+    guard: '/'
+};
+
+function screensFor(role) {
+    return Object.keys(SCREEN_ACCESS).filter(name => SCREEN_ACCESS[name].includes(role));
+}
+
+// Gamitin sa route: app.post('/api/...', requirePermission('trucks:call'), handler)
+function requirePermission(permission) {
+    return [
+        requireAuth,
+        (req, res, next) => {
+            const allowedRoles = PERMISSIONS[permission] || [];
+            if (!allowedRoles.includes(req.user.role)) {
+                return res.status(403).json({
+                    success: false,
+                    error: `Access Denied: ang role mong "${req.user.role}" ay walang pahintulot sa action na ito.`
+                });
+            }
+            next();
+        }
+    ];
+}
+
+// -------------------------------------------------------------
 // AUTHENTICATION APIS
 // -------------------------------------------------------------
 
@@ -67,6 +118,8 @@ app.post('/api/auth/login', async (req, res) => {
         res.json({
             success: true,
             token,
+            screens: screensFor(user.role),
+            home: HOME_PAGE[user.role] || '/login',
             user: {
                 id: user.id,
                 username: user.username,
@@ -85,7 +138,8 @@ app.get('/api/auth/me', (req, res) => {
     const token = authHeader ? authHeader.replace('Bearer ', '').trim() : req.headers['x-auth-token'];
 
     if (token && sessions.has(token)) {
-        return res.json({ success: true, user: sessions.get(token) });
+        const u = sessions.get(token);
+        return res.json({ success: true, user: u, screens: screensFor(u.role), home: HOME_PAGE[u.role] || '/login' });
     }
     res.status(401).json({ success: false, error: 'Not logged in' });
 });
@@ -99,7 +153,7 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // List Users (Admin only)
-app.get('/api/users', requireAuth, async (req, res) => {
+app.get('/api/users', requirePermission('users:manage'), async (req, res) => {
     try {
         const users = await all(`SELECT id, username, name, role, created_at FROM users ORDER BY id ASC`);
         res.json({ success: true, users });
@@ -209,7 +263,7 @@ app.get('/api/stats/today', async (req, res) => {
 });
 
 // API: Register Truck (Gate Guard / Staff)
-app.post('/api/trucks/register', async (req, res) => {
+app.post('/api/trucks/register', requirePermission('trucks:register'), async (req, res) => {
     try {
         const {
             truck_number,
@@ -285,7 +339,7 @@ app.post('/api/trucks/register', async (req, res) => {
 });
 
 // API: Call Next Truck (PROTECTED: Requires Staff Login)
-app.post('/api/trucks/call-next', requireAuth, async (req, res) => {
+app.post('/api/trucks/call-next', requirePermission('trucks:call'), async (req, res) => {
     try {
         const today = getTodayString();
         const availableDoor = await getAvailableDoor(today);
@@ -327,7 +381,7 @@ app.post('/api/trucks/call-next', requireAuth, async (req, res) => {
 });
 
 // API: Call Specific Truck & Select Door (PROTECTED)
-app.post('/api/trucks/:id/call', requireAuth, async (req, res) => {
+app.post('/api/trucks/:id/call', requirePermission('trucks:call'), async (req, res) => {
     try {
         const { id } = req.params;
         const { door } = req.body;
@@ -379,7 +433,7 @@ app.post('/api/trucks/:id/call', requireAuth, async (req, res) => {
 });
 
 // API: Start Loading (PROTECTED)
-app.post('/api/trucks/:id/start-loading', requireAuth, async (req, res) => {
+app.post('/api/trucks/:id/start-loading', requirePermission('trucks:loading'), async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -405,7 +459,7 @@ app.post('/api/trucks/:id/start-loading', requireAuth, async (req, res) => {
 });
 
 // API: Complete Loading (PROTECTED)
-app.post('/api/trucks/:id/complete', requireAuth, async (req, res) => {
+app.post('/api/trucks/:id/complete', requirePermission('trucks:loading'), async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -431,7 +485,7 @@ app.post('/api/trucks/:id/complete', requireAuth, async (req, res) => {
 });
 
 // API: Depart Truck (PROTECTED)
-app.post('/api/trucks/:id/depart', requireAuth, async (req, res) => {
+app.post('/api/trucks/:id/depart', requirePermission('trucks:depart'), async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -457,7 +511,7 @@ app.post('/api/trucks/:id/depart', requireAuth, async (req, res) => {
 });
 
 // API: Cancel Truck (PROTECTED)
-app.post('/api/trucks/:id/cancel', requireAuth, async (req, res) => {
+app.post('/api/trucks/:id/cancel', requirePermission('trucks:cancel'), async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -483,7 +537,7 @@ app.post('/api/trucks/:id/cancel', requireAuth, async (req, res) => {
 });
 
 // API: Reports query (PROTECTED)
-app.get('/api/reports', requireAuth, async (req, res) => {
+app.get('/api/reports', requirePermission('reports:view'), async (req, res) => {
     try {
         const { date, start_date, end_date } = req.query;
         let query = `SELECT * FROM trucks`;
