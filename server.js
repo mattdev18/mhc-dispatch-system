@@ -1,3 +1,6 @@
+// Force Philippine Standard Time (PHT, UTC+8) for all server operations
+process.env.TZ = 'Asia/Manila';
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -190,15 +193,22 @@ app.post('/api/auth/change-password', requireAuth, async (req, res) => {
 // -------------------------------------------------------------
 
 function getTodayString() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(new Date());
 }
 
 function getTimeString() {
-    return new Date().toLocaleTimeString('en-US', { hour12: true });
+    return new Date().toLocaleTimeString('en-US', {
+        timeZone: 'Asia/Manila',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
 }
 
 async function getAvailableDoor(today) {

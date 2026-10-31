@@ -7,7 +7,7 @@ let currentRegisteredTruck = null;
 // Clock
 function updateClock() {
     const el = document.getElementById('clock');
-    if (el) el.textContent = new Date().toLocaleTimeString('en-US');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
 }
 setInterval(updateClock, 1000);
 updateClock();

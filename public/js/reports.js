@@ -6,17 +6,18 @@ let reportTrucks = [];
 // Clock
 function updateClock() {
     const el = document.getElementById('clock');
-    if (el) el.textContent = new Date().toLocaleTimeString('en-US');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
 }
 setInterval(updateClock, 1000);
 updateClock();
 
 function getTodayString() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(new Date());
 }
 
 function setTodayAndLoad() {

@@ -1,3 +1,4 @@
+process.env.TZ = 'Asia/Manila';
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');

@@ -10,10 +10,10 @@ function updateClock() {
     const dateEl = document.getElementById('tvDate');
 
     if (clockEl) {
-        clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: true });
+        clockEl.textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
     }
     if (dateEl) {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const options = { timeZone: 'Asia/Manila', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         dateEl.textContent = now.toLocaleDateString('en-US', options).toUpperCase();
     }
 }
