@@ -1,80 +1,78 @@
 process.env.TZ = 'Asia/Manila';
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
-const initSqlJs = require('sql.js');
+const { createClient } = require('@libsql/client');
 
-const DB_PATH = path.join(__dirname, 'mhc_dispatch.db');
-let db = null;
+let dbClient = null;
 
 function hashPassword(pwd) {
     return crypto.createHash('sha256').update(String(pwd)).digest('hex');
 }
 
-function saveToDisk() {
-    if (!db) return;
-    try {
-        const data = db.export();
-        fs.writeFileSync(DB_PATH, Buffer.from(data));
-    } catch (e) {
-        console.error('Error saving database to disk:', e);
-    }
-}
+function getClient() {
+    if (dbClient) return dbClient;
 
-async function run(sql, params = []) {
-    if (!db) await initDB();
-    db.run(sql, params);
-    const lastIDRes = db.exec("SELECT last_insert_rowid()");
-    const lastID = (lastIDRes && lastIDRes[0] && lastIDRes[0].values && lastIDRes[0].values[0]) 
-        ? lastIDRes[0].values[0][0] 
-        : 0;
-    const changes = db.getRowsModified();
-    saveToDisk();
-    return { lastID, changes };
-}
+    const url = process.env.TURSO_DB_URL;
+    const authToken = process.env.TURSO_DB_TOKEN;
 
-async function get(sql, params = []) {
-    if (!db) await initDB();
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    let row = null;
-    if (stmt.step()) {
-        row = stmt.getAsObject();
-    }
-    stmt.free();
-    return row;
-}
-
-async function all(sql, params = []) {
-    if (!db) await initDB();
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    const rows = [];
-    while (stmt.step()) {
-        rows.push(stmt.getAsObject());
-    }
-    stmt.free();
-    return rows;
-}
-
-async function initDB() {
-    if (db) return db;
-
-    const SQL = await initSqlJs();
-    if (fs.existsSync(DB_PATH)) {
-        try {
-            const filebuffer = fs.readFileSync(DB_PATH);
-            db = new SQL.Database(filebuffer);
-        } catch (e) {
-            console.warn('Could not read existing DB file, creating fresh:', e.message);
-            db = new SQL.Database();
-        }
+    if (url && authToken) {
+        // --- CLOUD MODE: Turso Cloud SQLite ---
+        dbClient = createClient({ url, authToken });
+        console.log('[DB] Connected to Turso Cloud Database:', url);
     } else {
-        db = new SQL.Database();
+        // --- LOCAL FALLBACK: Local SQLite file (for development only) ---
+        const localPath = 'file:mhc_dispatch_local.db';
+        dbClient = createClient({ url: localPath });
+        console.log('[DB] TURSO_DB_URL or TURSO_DB_TOKEN not set. Using local SQLite fallback.');
     }
+
+    return dbClient;
+}
+
+// Execute a write query (INSERT, UPDATE, DELETE, CREATE)
+async function run(sql, params = []) {
+    const client = getClient();
+    const result = await client.execute({ sql, args: params });
+    return {
+        lastID: Number(result.lastInsertRowid ?? 0),
+        changes: result.rowsAffected ?? 0
+    };
+}
+
+// Execute and return ONE row
+async function get(sql, params = []) {
+    const client = getClient();
+    const result = await client.execute({ sql, args: params });
+    if (result.rows && result.rows.length > 0) {
+        return rowToObject(result.rows[0], result.columns);
+    }
+    return null;
+}
+
+// Execute and return ALL rows
+async function all(sql, params = []) {
+    const client = getClient();
+    const result = await client.execute({ sql, args: params });
+    if (!result.rows) return [];
+    return result.rows.map(row => rowToObject(row, result.columns));
+}
+
+// Convert libsql row array to a plain JS object with column names as keys
+function rowToObject(row, columns) {
+    const obj = {};
+    columns.forEach((col, i) => {
+        const val = row[i];
+        // Convert BigInt to Number for JSON serialization
+        obj[col] = typeof val === 'bigint' ? Number(val) : val;
+    });
+    return obj;
+}
+
+// Initialize schema and seed staff users
+async function initDB() {
+    const client = getClient();
 
     // Trucks Table
-    db.run(`
+    await client.execute(`
         CREATE TABLE IF NOT EXISTS trucks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             queue TEXT NOT NULL,
@@ -106,15 +104,15 @@ async function initDB() {
     `);
 
     // Settings Table
-    db.run(`
+    await client.execute(`
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT
         )
     `);
 
-    // Users Table for Staff Authentication
-    db.run(`
+    // Users Table
+    await client.execute(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
@@ -126,16 +124,11 @@ async function initDB() {
     `);
 
     // Seed Plant Name
-    const plantStmt = db.prepare("SELECT value FROM settings WHERE key = 'plant_name'");
-    let hasPlant = false;
-    if (plantStmt.step()) hasPlant = true;
-    plantStmt.free();
+    await client.execute(`
+        INSERT OR IGNORE INTO settings (key, value) VALUES ('plant_name', 'MAY HARVEST CORPORATION')
+    `);
 
-    if (!hasPlant) {
-        db.run("INSERT INTO settings (key, value) VALUES ('plant_name', 'MAY HARVEST CORPORATION')");
-    }
-
-    // Sync 5 staff users from environment variables on every startup.
+    // Sync 5 staff users from environment variables.
     // Passwords come ONLY from Render environment variables (no defaults in code).
     const staffUsers = [
         { username: 'admin',       env: 'MHC_ADMIN',       name: 'Plant Administrator', role: 'admin' },
@@ -153,30 +146,26 @@ async function initDB() {
         }
         const hashed = hashPassword(pwd);
 
-        const chk = db.prepare("SELECT id FROM users WHERE username = ?");
-        chk.bind([u.username]);
-        const exists = chk.step();
-        chk.free();
-
-        if (exists) {
-            db.run("UPDATE users SET password = ? WHERE username = ?", [hashed, u.username]);
+        const existing = await get('SELECT id FROM users WHERE username = ?', [u.username]);
+        if (existing) {
+            await client.execute({ sql: 'UPDATE users SET password = ? WHERE username = ?', args: [hashed, u.username] });
         } else {
-            db.run(
-                "INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)",
-                [u.username, hashed, u.name, u.role]
-            );
+            await client.execute({
+                sql: 'INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)',
+                args: [u.username, hashed, u.name, u.role]
+            });
         }
+        console.log(`Seeded ${u.role}: ${u.username}`);
     }
 
-    saveToDisk();
-    console.log('Database (WebAssembly SQLite) initialized successfully at:', DB_PATH);
-    return db;
+    const dbMode = (process.env.TURSO_DB_URL && process.env.TURSO_DB_TOKEN)
+        ? `Turso Cloud (${process.env.TURSO_DB_URL})`
+        : 'Local SQLite (fallback)';
+
+    console.log('--------------------------------------------------');
+    console.log('Database initialized successfully.');
+    console.log('Mode:', dbMode);
+    console.log('--------------------------------------------------');
 }
 
-module.exports = {
-    run,
-    get,
-    all,
-    initDB,
-    hashPassword
-};
+module.exports = { run, get, all, initDB, hashPassword };
