@@ -44,29 +44,55 @@
 
         <!-- Filter Card -->
         <div class="card">
-            <div class="card-title">
-                <span>📅 Filter Dispatch Logs</span>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div class="card-title" style="flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span>📅 Filter Dispatch Logs</span>
+                    <span style="font-size: 11px; background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 700;">
+                        🛡️ 7-Day History Active
+                    </span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <button class="btn btn-success" onclick="exportCSV()">
                         📥 EXPORT TO CSV (EXCEL)
                     </button>
+                    <a href="/api/backup/export" class="btn btn-outline" download style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        💾 Backup Data (JSON)
+                    </a>
                     <button class="btn btn-secondary" onclick="window.print()">
-                        🖨️ PRINT DAILY REPORT
+                        🖨️ PRINT REPORT
                     </button>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-top: 8px;">
+                <!-- Quick Preset Buttons -->
                 <div>
-                    <label>Select Date:</label>
-                    <input type="date" id="filterDate" style="max-width: 200px;">
+                    <label style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Quick Presets:</label>
+                    <div style="display: inline-flex; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; gap: 2px;">
+                        <button type="button" id="btnRep7Days" class="btn btn-primary" style="font-size: 12px; padding: 6px 12px;" onclick="loadPreset('7days')">
+                            🗓️ Past 7 Days (1 Week)
+                        </button>
+                        <button type="button" id="btnRepToday" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="loadPreset('today')">
+                            📅 Today
+                        </button>
+                        <button type="button" id="btnRep30Days" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="loadPreset('30days')">
+                            🗓️ Past 30 Days
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <button type="button" class="btn btn-primary" onclick="loadReportData()">
-                        Apply Filter
-                    </button>
-                    <button type="button" class="btn btn-outline" onclick="setTodayAndLoad()">
-                        Today
+
+                <!-- Custom Date Range -->
+                <div style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap;">
+                    <div>
+                        <label style="font-size: 12px; color: #64748b; margin-bottom: 4px;">From:</label>
+                        <input type="date" id="filterStartDate" style="max-width: 155px; padding: 6px 10px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: #64748b; margin-bottom: 4px;">To:</label>
+                        <input type="date" id="filterEndDate" style="max-width: 155px; padding: 6px 10px; font-size: 13px;">
+                    </div>
+                    <button type="button" class="btn btn-dark" style="font-size: 13px; padding: 8px 14px;" onclick="loadCustomRange()">
+                        🔍 Filter Range
                     </button>
                 </div>
             </div>
@@ -108,6 +134,7 @@
                     <thead>
                         <tr>
                             <th>Queue</th>
+                            <th>Date</th>
                             <th>Plate</th>
                             <th>Driver</th>
                             <th>Hauler</th>
@@ -125,8 +152,8 @@
                     </thead>
                     <tbody id="reportTableBody">
                         <tr>
-                            <td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">
-                                Select a date to view records.
+                            <td colspan="15" style="text-align: center; padding: 30px; color: #64748b;">
+                                Loading report data...
                             </td>
                         </tr>
                     </tbody>

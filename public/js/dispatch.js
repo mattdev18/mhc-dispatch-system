@@ -7,6 +7,28 @@ let todayTrucks = [];
 let todayStats = {};
 let activeDoors = {};
 let selectedTruckForModal = null;
+let currentScope = '7days';
+
+function setQueueScope(scope) {
+    currentScope = scope;
+    ['btnScope7Days', 'btnScopeToday', 'btnScopeActive'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.className = 'btn btn-outline';
+    });
+
+    if (scope === '7days') {
+        const b = document.getElementById('btnScope7Days');
+        if (b) b.className = 'btn btn-primary';
+    } else if (scope === 'today_only') {
+        const b = document.getElementById('btnScopeToday');
+        if (b) b.className = 'btn btn-primary';
+    } else if (scope === 'active_only') {
+        const b = document.getElementById('btnScopeActive');
+        if (b) b.className = 'btn btn-primary';
+    }
+
+    loadTodayData();
+}
 
 // Clock
 function updateClock() {
@@ -44,7 +66,7 @@ socket.on('truck_called', (truck) => {
 async function loadTodayData() {
     try {
         const [trucksRes, statsRes] = await Promise.all([
-            fetch('/api/trucks/today'),
+            fetch(`/api/trucks/today?scope=${encodeURIComponent(currentScope)}`),
             fetch('/api/stats/today')
         ]);
 
@@ -53,6 +75,36 @@ async function loadTodayData() {
 
         if (trucksData.success) {
             todayTrucks = trucksData.trucks || [];
+
+            // Auto-recovery / Self-healing cache:
+            // If the server was rebooted/restarted with an empty DB, but our browser has recent truck data,
+            // immediately restore it into the database via /api/backup/sync!
+            const cachedBackup = localStorage.getItem('mhc_trucks_7d');
+            if (todayTrucks.length === 0 && cachedBackup) {
+                try {
+                    const parsed = JSON.parse(cachedBackup);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        console.log('Restoring 7-day trucks from browser cache to server...');
+                        await fetch('/api/backup/sync', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ trucks: parsed })
+                        });
+                        const refetch = await fetch(`/api/trucks/today?scope=${encodeURIComponent(currentScope)}`);
+                        const refetchData = await refetch.json();
+                        if (refetchData.success && refetchData.trucks) {
+                            todayTrucks = refetchData.trucks;
+                        }
+                    }
+                } catch (syncErr) {
+                    console.warn('Backup auto-sync notice:', syncErr);
+                }
+            } else if (todayTrucks.length > 0) {
+                // Keep local cache fresh with latest 7-day snapshot
+                try {
+                    localStorage.setItem('mhc_trucks_7d', JSON.stringify(todayTrucks));
+                } catch (e) {}
+            }
         }
 
         if (statsData.success) {
@@ -165,11 +217,13 @@ function renderTable() {
         return new Date(a.arrival_timestamp) - new Date(b.arrival_timestamp);
     });
 
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
+
     if (list.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="11" style="text-align: center; padding: 35px; color: #64748b;">
-                    No trucks matching query or registered today.
+                <td colspan="12" style="text-align: center; padding: 35px; color: #64748b;">
+                    No trucks matching query or registered in this view.
                 </td>
             </tr>
         `;
@@ -217,10 +271,16 @@ function renderTable() {
             ? `<span class="badge-door">DOOR ${escapeHtml(truck.loading_door)}</span>`
             : `<span style="color: #94a3b8;">—</span>`;
 
+        const isToday = (truck.date === todayStr);
+        const dateBadge = isToday
+            ? `<span style="display: inline-block; font-size: 11px; padding: 2px 7px; background: #dcfce7; color: #166534; font-weight: 700; border-radius: 4px;">Today</span>`
+            : `<span style="display: inline-block; font-size: 11px; padding: 2px 7px; background: #f1f5f9; color: #475569; font-weight: 600; border-radius: 4px;">${escapeHtml(truck.date || '—')}</span>`;
+
         return `
             <tr>
                 <td><strong>${escapeHtml(truck.queue)}</strong></td>
                 <td>${doorText}</td>
+                <td>${dateBadge}</td>
                 <td style="font-weight: 700; color: #0f172a;">${escapeHtml(truck.truck_number)}</td>
                 <td>${escapeHtml(truck.driver_name)}</td>
                 <td>${escapeHtml(truck.company || '—')}</td>

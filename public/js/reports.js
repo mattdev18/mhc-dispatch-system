@@ -2,6 +2,7 @@
 verifyAuth(true);
 
 let reportTrucks = [];
+let currentFilterDesc = 'Past 7 Days';
 
 // Clock
 function updateClock() {
@@ -20,18 +21,60 @@ function getTodayString() {
     }).format(new Date());
 }
 
-function setTodayAndLoad() {
-    document.getElementById('filterDate').value = getTodayString();
-    loadReportData();
+function setActiveButton(activeId) {
+    ['btnRep7Days', 'btnRepToday', 'btnRep30Days'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.className = (id === activeId) ? 'btn btn-primary' : 'btn btn-outline';
+    });
 }
 
-async function loadReportData() {
-    const dateInput = document.getElementById('filterDate').value || getTodayString();
+// Load Preset: 7days, today, 30days
+async function loadPreset(preset) {
+    let url = '/api/reports';
+    if (preset === '7days') {
+        setActiveButton('btnRep7Days');
+        currentFilterDesc = 'Past_7_Days';
+        url = '/api/reports?days=7';
+    } else if (preset === 'today') {
+        setActiveButton('btnRepToday');
+        currentFilterDesc = 'Today_' + getTodayString();
+        url = `/api/reports?date=${encodeURIComponent(getTodayString())}`;
+    } else if (preset === '30days') {
+        setActiveButton('btnRep30Days');
+        currentFilterDesc = 'Past_30_Days';
+        url = '/api/reports?days=30';
+    }
+
+    await fetchAndDisplay(url, currentFilterDesc);
+}
+
+// Load Custom Range
+async function loadCustomRange() {
+    const start = document.getElementById('filterStartDate').value;
+    const end = document.getElementById('filterEndDate').value;
+
+    if (!start || !end) {
+        alert('Please select both From and To dates.');
+        return;
+    }
+
+    if (start > end) {
+        alert('From date cannot be after To date.');
+        return;
+    }
+
+    setActiveButton(null);
+    currentFilterDesc = `${start}_to_${end}`;
+    const url = `/api/reports?start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}`;
+    await fetchAndDisplay(url, `Date Range ${start} to ${end}`);
+}
+
+async function fetchAndDisplay(url, label) {
     const tbody = document.getElementById('reportTableBody');
-    tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 25px; color: #64748b;">Loading report data for ${dateInput}...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="15" style="text-align: center; padding: 25px; color: #64748b;">Loading report data (${escapeHtml(label)})...</td></tr>`;
 
     try {
-        const res = await fetch(`/api/reports?date=${encodeURIComponent(dateInput)}`);
+        const res = await fetch(url);
         const data = await res.json();
 
         if (!data.success) {
@@ -95,36 +138,45 @@ function calculateMetrics(trucks) {
 // Render Report Table
 function renderReportTable(trucks) {
     const tbody = document.getElementById('reportTableBody');
+    const todayStr = getTodayString();
 
     if (trucks.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="14" style="text-align: center; padding: 35px; color: #64748b;">
-                    No records found for the selected date.
+                <td colspan="15" style="text-align: center; padding: 35px; color: #64748b;">
+                    No records found for the selected period.
                 </td>
             </tr>
         `;
         return;
     }
 
-    tbody.innerHTML = trucks.map(t => `
-        <tr>
-            <td><strong>${escapeHtml(t.queue)}</strong></td>
-            <td style="font-weight: 700;">${escapeHtml(t.truck_number)}</td>
-            <td>${escapeHtml(t.driver_name)}</td>
-            <td>${escapeHtml(t.company || '—')}</td>
-            <td>${escapeHtml(t.load_type)}</td>
-            <td>${escapeHtml(t.destination)}</td>
-            <td><span class="badge badge-waiting">${escapeHtml(t.priority)}</span></td>
-            <td>${t.loading_door ? 'Door ' + escapeHtml(t.loading_door) : '—'}</td>
-            <td>${escapeHtml(t.arrival_time || '—')}</td>
-            <td>${escapeHtml(t.called_time || '—')}</td>
-            <td>${escapeHtml(t.loading_time || '—')}</td>
-            <td>${escapeHtml(t.completed_time || '—')}</td>
-            <td>${escapeHtml(t.departed_time || '—')}</td>
-            <td><span class="badge badge-${t.status.toLowerCase()}">${escapeHtml(t.status)}</span></td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = trucks.map(t => {
+        const isToday = (t.date === todayStr);
+        const dateBadge = isToday
+            ? `<span style="font-size: 11px; padding: 2px 6px; background: #dcfce7; color: #166534; font-weight: 700; border-radius: 4px;">Today</span>`
+            : `<span style="font-size: 11px; padding: 2px 6px; background: #f1f5f9; color: #475569; font-weight: 600; border-radius: 4px;">${escapeHtml(t.date || '—')}</span>`;
+
+        return `
+            <tr>
+                <td><strong>${escapeHtml(t.queue)}</strong></td>
+                <td>${dateBadge}</td>
+                <td style="font-weight: 700; color: #0f172a;">${escapeHtml(t.truck_number)}</td>
+                <td>${escapeHtml(t.driver_name)}</td>
+                <td>${escapeHtml(t.company || '—')}</td>
+                <td>${escapeHtml(t.load_type)}</td>
+                <td>${escapeHtml(t.destination)}</td>
+                <td><span class="badge badge-waiting">${escapeHtml(t.priority)}</span></td>
+                <td>${t.loading_door ? 'Door ' + escapeHtml(t.loading_door) : '—'}</td>
+                <td>${escapeHtml(t.arrival_time || '—')}</td>
+                <td>${escapeHtml(t.called_time || '—')}</td>
+                <td>${escapeHtml(t.loading_time || '—')}</td>
+                <td>${escapeHtml(t.completed_time || '—')}</td>
+                <td>${escapeHtml(t.departed_time || '—')}</td>
+                <td><span class="badge badge-${(t.status || '').toLowerCase()}">${escapeHtml(t.status)}</span></td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // Export to CSV
@@ -181,13 +233,12 @@ function exportCSV() {
         ...rows.map(r => r.map(escapeCsv).join(','))
     ].join('\r\n');
 
-    const dateStr = document.getElementById('filterDate').value || getTodayString();
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = `May_Harvest_Dispatch_Report_${dateStr}.csv`;
+    link.download = `May_Harvest_Dispatch_Report_${currentFilterDesc}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -203,5 +254,5 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-// Init
-setTodayAndLoad();
+// Init with 7 days preset by default!
+loadPreset('7days');

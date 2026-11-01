@@ -211,10 +211,19 @@ function getTimeString() {
     });
 }
 
-async function getAvailableDoor(today) {
+function getDateDaysAgo(days = 7) {
+    const d = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(d);
+}
+
+async function getAvailableDoor() {
     const occupiedRows = await all(
-        `SELECT loading_door FROM trucks WHERE date = ? AND status IN ('Called', 'Loading') AND loading_door IS NOT NULL`,
-        [today]
+        `SELECT loading_door FROM trucks WHERE status IN ('Called', 'Loading') AND loading_door IS NOT NULL`
     );
     const occupiedDoors = occupiedRows.map(r => Number(r.loading_door));
     return LOADING_DOORS.find(d => !occupiedDoors.includes(d)) || null;
@@ -224,27 +233,47 @@ async function getAvailableDoor(today) {
 // TRUCK QUEUE APIS
 // -------------------------------------------------------------
 
-// API: Get today's trucks (Public read for display & dashboard)
+// API: Get trucks (Defaults to past 7 days + all currently active trucks)
 app.get('/api/trucks/today', async (req, res) => {
     try {
         const today = getTodayString();
-        const trucks = await all(
-            `SELECT * FROM trucks WHERE date = ? ORDER BY id ASC`,
-            [today]
-        );
-        res.json({ success: true, date: today, trucks });
+        const scope = req.query.scope || '7days';
+        const days = parseInt(req.query.days) || 7;
+        const startDate = getDateDaysAgo(days - 1);
+
+        let query = '';
+        let params = [];
+
+        if (scope === 'today_only' || days === 1) {
+            // Today's trucks PLUS any currently active trucks (Waiting, Called, Loading)
+            query = `SELECT * FROM trucks WHERE date = ? OR status IN ('Waiting', 'Called', 'Loading') ORDER BY id ASC`;
+            params = [today];
+        } else if (scope === 'active_only') {
+            // Strictly active trucks only
+            query = `SELECT * FROM trucks WHERE status IN ('Waiting', 'Called', 'Loading') ORDER BY id ASC`;
+            params = [];
+        } else {
+            // Default 7 days (1 week) PLUS any active trucks regardless of date
+            query = `SELECT * FROM trucks WHERE date >= ? OR status IN ('Waiting', 'Called', 'Loading') ORDER BY id ASC`;
+            params = [startDate];
+        }
+
+        const trucks = await all(query, params);
+        res.json({ success: true, date: today, startDate, scope, days, count: trucks.length, trucks });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// API: Get stats today
+// API: Get stats (Active counts across all active trucks + 7-day stats)
 app.get('/api/stats/today', async (req, res) => {
     try {
         const today = getTodayString();
-        const rows = await all(
-            `SELECT status, count(*) as count FROM trucks WHERE date = ? GROUP BY status`,
-            [today]
+        const weekStartDate = getDateDaysAgo(6);
+
+        // 1. Active trucks currently in plant (regardless of arrival date)
+        const activeRows = await all(
+            `SELECT status, count(*) as count FROM trucks WHERE status IN ('Waiting', 'Called', 'Loading') GROUP BY status`
         );
         const stats = {
             Waiting: 0,
@@ -253,17 +282,43 @@ app.get('/api/stats/today', async (req, res) => {
             Completed: 0,
             Departed: 0,
             Cancelled: 0,
-            Total: 0
+            Total: 0,
+            CompletedWeek: 0,
+            TotalWeek: 0
         };
-        rows.forEach(r => {
+
+        activeRows.forEach(r => {
             if (stats[r.status] !== undefined) stats[r.status] = r.count;
+        });
+
+        // 2. Today's completed and totals
+        const todayRows = await all(
+            `SELECT status, count(*) as count FROM trucks WHERE date = ? GROUP BY status`,
+            [today]
+        );
+        todayRows.forEach(r => {
+            if (r.status === 'Completed') stats.Completed = r.count;
+            if (r.status === 'Departed') stats.Departed = r.count;
+            if (r.status === 'Cancelled') stats.Cancelled = r.count;
             stats.Total += r.count;
         });
 
+        // 3. Past 7 days (1 week) totals
+        const weekRows = await all(
+            `SELECT status, count(*) as count FROM trucks WHERE date >= ? GROUP BY status`,
+            [weekStartDate]
+        );
+        weekRows.forEach(r => {
+            if (r.status === 'Completed' || r.status === 'Departed') {
+                stats.CompletedWeek += r.count;
+            }
+            stats.TotalWeek += r.count;
+        });
+
+        // 4. Doors currently occupied: any truck Called or Loading (never falsely vacant!)
         const activeTrucks = await all(
-            `SELECT loading_door, status, queue, truck_number, driver_name, load_type FROM trucks 
-             WHERE date = ? AND status IN ('Called', 'Loading') AND loading_door IS NOT NULL`,
-            [today]
+            `SELECT loading_door, status, queue, truck_number, driver_name, load_type, date, arrival_time FROM trucks 
+             WHERE status IN ('Called', 'Loading') AND loading_door IS NOT NULL`
         );
 
         res.json({ success: true, stats, activeTrucks, dockCapacity: LOADING_DOCK_CAPACITY });
@@ -293,16 +348,16 @@ app.post('/api/trucks/register', requirePermission('trucks:register'), async (re
         const today = getTodayString();
         const cleanTruckNum = truck_number.trim().toUpperCase();
 
-        // Check duplicate active truck today
+        // Check duplicate active truck currently inside the plant
         const existing = await get(
-            `SELECT * FROM trucks WHERE date = ? AND UPPER(truck_number) = ? AND status NOT IN ('Departed', 'Cancelled')`,
-            [today, cleanTruckNum]
+            `SELECT * FROM trucks WHERE UPPER(truck_number) = ? AND status NOT IN ('Departed', 'Cancelled')`,
+            [cleanTruckNum]
         );
 
         if (existing) {
             return res.status(400).json({
                 success: false,
-                error: `Truck ${cleanTruckNum} is already registered today (Queue: ${existing.queue}, Status: ${existing.status}).`
+                error: `Truck ${cleanTruckNum} is currently active in the queue (Queue: ${existing.queue}, Date: ${existing.date}, Status: ${existing.status}).`
             });
         }
 
@@ -351,8 +406,7 @@ app.post('/api/trucks/register', requirePermission('trucks:register'), async (re
 // API: Call Next Truck (PROTECTED: Requires Staff Login)
 app.post('/api/trucks/call-next', requirePermission('trucks:call'), async (req, res) => {
     try {
-        const today = getTodayString();
-        const availableDoor = await getAvailableDoor(today);
+        const availableDoor = await getAvailableDoor();
 
         if (!availableDoor) {
             return res.status(400).json({
@@ -361,9 +415,9 @@ app.post('/api/trucks/call-next', requirePermission('trucks:call'), async (req, 
             });
         }
 
+        // Call earliest waiting truck across all active trucks (FIFO)
         const nextTruck = await get(
-            `SELECT * FROM trucks WHERE date = ? AND status = 'Waiting' ORDER BY arrival_timestamp ASC LIMIT 1`,
-            [today]
+            `SELECT * FROM trucks WHERE status = 'Waiting' ORDER BY arrival_timestamp ASC LIMIT 1`
         );
 
         if (!nextTruck) {
@@ -395,7 +449,6 @@ app.post('/api/trucks/:id/call', requirePermission('trucks:call'), async (req, r
     try {
         const { id } = req.params;
         const { door } = req.body;
-        const today = getTodayString();
 
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
@@ -405,14 +458,14 @@ app.post('/api/trucks/:id/call', requirePermission('trucks:call'), async (req, r
 
         let assignedDoor = Number(door);
         if (!assignedDoor || assignedDoor < 1 || assignedDoor > LOADING_DOCK_CAPACITY) {
-            assignedDoor = await getAvailableDoor(today);
+            assignedDoor = await getAvailableDoor();
             if (!assignedDoor) {
                 return res.status(400).json({ success: false, error: 'No loading doors are currently available.' });
             }
         } else {
             const occupied = await get(
-                `SELECT * FROM trucks WHERE date = ? AND status IN ('Called', 'Loading') AND loading_door = ? AND id != ?`,
-                [today, assignedDoor, id]
+                `SELECT * FROM trucks WHERE status IN ('Called', 'Loading') AND loading_door = ? AND id != ?`,
+                [assignedDoor, id]
             );
             if (occupied) {
                 return res.status(400).json({
@@ -549,7 +602,7 @@ app.post('/api/trucks/:id/cancel', requirePermission('trucks:cancel'), async (re
 // API: Reports query (PROTECTED)
 app.get('/api/reports', requirePermission('reports:view'), async (req, res) => {
     try {
-        const { date, start_date, end_date } = req.query;
+        const { date, start_date, end_date, days } = req.query;
         let query = `SELECT * FROM trucks`;
         let params = [];
 
@@ -559,15 +612,95 @@ app.get('/api/reports', requirePermission('reports:view'), async (req, res) => {
         } else if (start_date && end_date) {
             query += ` WHERE date BETWEEN ? AND ?`;
             params.push(start_date, end_date);
+        } else if (days) {
+            const startDate = getDateDaysAgo(parseInt(days) - 1);
+            query += ` WHERE date >= ?`;
+            params.push(startDate);
         } else {
-            query += ` WHERE date = ?`;
-            params.push(getTodayString());
+            // Default: past 7 days (1 week)
+            const startDate = getDateDaysAgo(6);
+            query += ` WHERE date >= ?`;
+            params.push(startDate);
         }
 
         query += ` ORDER BY id ASC`;
         const trucks = await all(query, params);
 
         res.json({ success: true, trucks });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// -------------------------------------------------------------
+// BACKUP & AUTO-RESTORE APIS
+// -------------------------------------------------------------
+
+// API: Auto-sync cached trucks from client browser to restore if server restarted
+app.post('/api/backup/sync', requireAuth, async (req, res) => {
+    try {
+        const { trucks } = req.body;
+        if (!Array.isArray(trucks) || trucks.length === 0) {
+            return res.json({ success: true, restored: 0 });
+        }
+
+        let restoredCount = 0;
+        for (const t of trucks) {
+            if (!t.queue || !t.truck_number || !t.date) continue;
+
+            const existing = await get(
+                `SELECT id FROM trucks WHERE queue = ? AND date = ? AND truck_number = ?`,
+                [t.queue, t.date, t.truck_number]
+            );
+
+            if (!existing) {
+                await run(
+                    `INSERT INTO trucks (
+                        queue, date, truck_number, driver_name, company, contact,
+                        load_type, destination, reference, priority, loading_door,
+                        arrival_time, arrival_timestamp, called_time, called_timestamp,
+                        loading_time, loading_timestamp, completed_time, completed_timestamp,
+                        departed_time, departed_timestamp, cancelled_time, cancelled_timestamp,
+                        status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        t.queue, t.date, t.truck_number, t.driver_name || '', t.company || '', t.contact || '',
+                        t.load_type || '', t.destination || '', t.reference || '', t.priority || 'Standard',
+                        t.loading_door || null, t.arrival_time || '', t.arrival_timestamp || '',
+                        t.called_time || null, t.called_timestamp || null,
+                        t.loading_time || null, t.loading_timestamp || null,
+                        t.completed_time || null, t.completed_timestamp || null,
+                        t.departed_time || null, t.departed_timestamp || null,
+                        t.cancelled_time || null, t.cancelled_timestamp || null,
+                        t.status || 'Waiting'
+                    ]
+                );
+                restoredCount++;
+            }
+        }
+
+        if (restoredCount > 0) {
+            io.emit('queue_updated');
+        }
+
+        res.json({ success: true, restored: restoredCount });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// API: Export all database records as JSON
+app.get('/api/backup/export', requireAuth, async (req, res) => {
+    try {
+        const trucks = await all(`SELECT * FROM trucks ORDER BY id ASC`);
+        res.setHeader('Content-Disposition', `attachment; filename=MHC_Backup_${getTodayString()}.json`);
+        res.setHeader('Content-Type', 'application/json');
+        res.json({
+            system: 'May Harvest Corporation - Dispatch Queuing System',
+            exported_at: new Date().toISOString(),
+            record_count: trucks.length,
+            trucks
+        });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
