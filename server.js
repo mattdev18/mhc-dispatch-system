@@ -429,7 +429,7 @@ app.post('/api/trucks/call-next', requirePermission('trucks:call'), async (req, 
         const calledTimestamp = now.toISOString();
 
         await run(
-            `UPDATE trucks SET status = 'Called', loading_door = ?, called_time = ?, called_timestamp = ? WHERE id = ?`,
+            `UPDATE trucks SET status = 'Called', loading_door = ?, called_time = ?, called_timestamp = ?, call_count = COALESCE(call_count, 0) + 1 WHERE id = ?`,
             [availableDoor, calledTime, calledTimestamp, nextTruck.id]
         );
 
@@ -480,8 +480,42 @@ app.post('/api/trucks/:id/call', requirePermission('trucks:call'), async (req, r
         const calledTimestamp = now.toISOString();
 
         await run(
-            `UPDATE trucks SET status = 'Called', loading_door = ?, called_time = ?, called_timestamp = ? WHERE id = ?`,
+            `UPDATE trucks SET status = 'Called', loading_door = ?, called_time = ?, called_timestamp = ?, call_count = COALESCE(call_count, 0) + 1 WHERE id = ?`,
             [assignedDoor, calledTime, calledTimestamp, id]
+        );
+
+        const updatedTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
+
+        io.emit('truck_called', updatedTruck);
+        io.emit('queue_updated');
+
+        res.json({ success: true, truck: updatedTruck });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// API: Recall / Re-page Truck (PROTECTED - Increments Call Count & Announces Again)
+app.post('/api/trucks/:id/recall', requirePermission('trucks:call'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
+        if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
+
+        if (truck.status !== 'Called' && truck.status !== 'Waiting') {
+            return res.status(400).json({
+                success: false,
+                error: `Only called or waiting trucks can be repaged. Current status: ${truck.status}`
+            });
+        }
+
+        const now = new Date();
+        const calledTime = getTimeString();
+        const calledTimestamp = now.toISOString();
+
+        await run(
+            `UPDATE trucks SET status = 'Called', called_time = ?, called_timestamp = ?, call_count = COALESCE(call_count, 1) + 1 WHERE id = ?`,
+            [calledTime, calledTimestamp, id]
         );
 
         const updatedTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);

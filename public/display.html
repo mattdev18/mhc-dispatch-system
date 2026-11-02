@@ -33,7 +33,10 @@
 
         <!-- Left: Now Serving Hero Box -->
         <section class="tv-calling-panel" id="callingPanel">
-            <div class="tv-calling-badge" id="callingBadge">NOW CALLING</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; margin-bottom: 12px;">
+                <div class="tv-calling-badge" id="callingBadge" style="margin-bottom: 0;">NOW CALLING</div>
+                <div id="callingCountBadge" style="display: none; font-size: 13px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid #22c55e; letter-spacing: 0.5px; text-transform: uppercase;">📢 1st Call</div>
+            </div>
             <div class="tv-calling-queue" id="callingQueue">---</div>
             <div class="tv-calling-truck" id="callingPlate">WAITING FOR CALL</div>
             <div class="tv-calling-door" id="callingDoor">PROCEED TO: ---</div>

@@ -89,6 +89,29 @@ function displayNowCalling(truck) {
     document.getElementById('callingDriver').textContent = `Driver: ${truck.driver_name}`;
     document.getElementById('callingLoad').textContent = `${truck.load_type} • Destination: ${truck.destination}`;
 
+    // Update Call Counter Badge
+    const countBadge = document.getElementById('callingCountBadge');
+    if (countBadge) {
+        const count = Number(truck.call_count) || 1;
+        countBadge.style.display = 'inline-block';
+        if (count === 1) {
+            countBadge.style.background = 'rgba(34, 197, 94, 0.2)';
+            countBadge.style.color = '#86efac';
+            countBadge.style.border = '1px solid #22c55e';
+            countBadge.textContent = '📢 1st Call';
+        } else if (count === 2) {
+            countBadge.style.background = 'rgba(245, 158, 11, 0.25)';
+            countBadge.style.color = '#fde047';
+            countBadge.style.border = '1px solid #eab308';
+            countBadge.textContent = '⚠️ 2nd Call';
+        } else {
+            countBadge.style.background = 'rgba(239, 68, 68, 0.3)';
+            countBadge.style.color = '#fca5a5';
+            countBadge.style.border = '1px solid #ef4444';
+            countBadge.textContent = `🚨 ${count}rd Call (Final Call)`;
+        }
+    }
+
     const panel = document.getElementById('callingPanel');
     panel.style.animation = 'none';
     void panel.offsetWidth; // trigger reflow
@@ -129,13 +152,16 @@ function renderDoors(activeTruckList) {
             const isCalled = truck.status === 'Called';
             const boxClass = isCalled ? 'tv-door-box called' : 'tv-door-box loading';
             const statusColor = isCalled ? '#f59e0b' : '#ea580c';
+            const callBadgeText = (isCalled && truck.call_count && Number(truck.call_count) > 1)
+                ? ` (${truck.call_count}x)`
+                : '';
 
             html += `
                 <div class="${boxClass}">
                     <div class="tv-door-top">
                         <span class="tv-door-num">DOOR ${door}</span>
                         <span class="tv-door-status" style="background: ${statusColor}; color: white;">
-                            ${escapeHtml(truck.status)}
+                            ${escapeHtml(truck.status)}${callBadgeText}
                         </span>
                     </div>
                     <div class="tv-door-plate">${escapeHtml(truck.truck_number)}</div>

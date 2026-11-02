@@ -243,7 +243,11 @@ function renderTable() {
                 </button>
             `;
         } else if (truck.status === 'Called') {
+            const callCount = Number(truck.call_count) || 1;
             actionButtons = `
+                <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="recallTruck(${truck.id})" title="Play 3x Airport Announcement again">
+                    📢 Recall (${callCount}x)
+                </button>
                 <button class="btn btn-warning" style="font-size: 11px; padding: 6px 10px;" onclick="startLoading(${truck.id})">
                     ▶ Start Loading
                 </button>
@@ -288,7 +292,7 @@ function renderTable() {
                 <td>${escapeHtml(truck.destination)}</td>
                 <td>${escapeHtml(truck.arrival_time)}</td>
                 <td><span class="badge badge-waiting">${escapeHtml(truck.priority)}</span></td>
-                <td><span class="badge badge-${truck.status.toLowerCase()}">${escapeHtml(truck.status)}</span></td>
+                <td><span class="badge badge-${truck.status.toLowerCase()}">${escapeHtml(truck.status)}${truck.status === 'Called' && Number(truck.call_count) > 1 ? ` (${truck.call_count}x)` : ''}</span></td>
                 <td><div style="display: flex; gap: 6px; flex-wrap: wrap;">${actionButtons}</div></td>
             </tr>
         `;
@@ -307,6 +311,25 @@ async function callNextTruck() {
         }
 
         alert(`CALLING TRUCK:\nQueue: ${data.truck.queue}\nPlate: ${data.truck.truck_number}\nAssigned Door: DOOR ${data.truck.loading_door}\nDriver: ${data.truck.driver_name}`);
+        loadTodayData();
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Recall / Re-page Truck (Increments call count & announces 3x on TV board)
+async function recallTruck(id) {
+    try {
+        const res = await fetch(`/api/trucks/${id}/recall`, { method: 'POST' });
+        const data = await res.json();
+
+        if (!data.success) {
+            alert(data.error || 'Failed to recall truck.');
+            return;
+        }
+
+        const callNum = data.truck.call_count || 1;
+        alert(`RECALLING TRUCK (${callNum}x):\nQueue: ${data.truck.queue}\nPlate: ${data.truck.truck_number}\nDoor: DOOR ${data.truck.loading_door || 'BAY'}\nDriver: ${data.truck.driver_name}`);
         loadTodayData();
     } catch (err) {
         alert('Network error: ' + err.message);
