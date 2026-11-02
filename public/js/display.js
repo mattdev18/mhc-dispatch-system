@@ -25,11 +25,55 @@ function toggleSound() {
     initAudio();
     isSoundActive = true;
     const btn = document.getElementById('soundBtn');
-    btn.innerHTML = '✓ Sound &amp; Voice Active';
+    btn.innerHTML = '✓ Airport Voice Active (Female)';
     btn.style.background = '#0f172a';
     btn.style.color = '#86efac';
     btn.style.border = '1px solid #22c55e';
+    updateTvVoiceOptions();
     playChime(); // test chime feedback
+}
+
+// TV Voice Selector: Populate available female airport voices
+function updateTvVoiceOptions() {
+    const select = document.getElementById('tvVoiceSelect');
+    if (!select || !('speechSynthesis' in window)) return;
+
+    const voices = window.speechSynthesis.getVoices() || [];
+    if (voices.length === 0) return;
+
+    const femaleRegex = /zira|jenny|aria|samantha|karen|victoria|sonia|hazel|susan|catherine|stephanie|linda|female/i;
+    const maleRegex = /david|george|mark|richard|james|guy|male/i;
+
+    let candidateList = voices.filter(v => v.lang.toLowerCase().startsWith('en') && !maleRegex.test(v.name));
+    if (candidateList.length === 0) {
+        candidateList = voices.filter(v => !maleRegex.test(v.name));
+    }
+    if (candidateList.length === 0) candidateList = voices;
+
+    const currentFemale = (typeof getPreferredFemaleVoice === 'function') ? getPreferredFemaleVoice() : null;
+
+    select.innerHTML = '';
+    candidateList.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.voiceURI || v.name;
+        const isFem = femaleRegex.test(v.name) || v.name.includes('Google');
+        opt.textContent = `👩 ${v.name} (${v.lang})${isFem ? ' — Female Airport' : ''}`;
+        if (currentFemale && (v.voiceURI === currentFemale.voiceURI || v.name === currentFemale.name)) {
+            opt.selected = true;
+        }
+        select.appendChild(opt);
+    });
+
+    select.style.display = 'inline-block';
+}
+
+function changeTvVoice(voiceKey) {
+    localStorage.setItem('mhc_preferred_voice', voiceKey);
+    console.log('[Airport Voice] Switched TV voice to:', voiceKey);
+}
+
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = updateTvVoiceOptions;
 }
 
 // Socket Events

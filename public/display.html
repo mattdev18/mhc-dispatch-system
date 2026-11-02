@@ -66,10 +66,14 @@
         </div>
     </footer>
 
-    <!-- Audio Activation Pill -->
-    <button class="tv-sound-btn" id="soundBtn" onclick="toggleSound()">
-        🔊 Click to Enable Voice &amp; Chime
-    </button>
+    <!-- Audio Activation & Female Airport Voice Selector -->
+    <div style="position: fixed; bottom: 16px; right: 20px; display: flex; align-items: center; gap: 8px; z-index: 9999; flex-wrap: wrap;">
+        <select id="tvVoiceSelect" onchange="changeTvVoice(this.value)" style="display: none; background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 9999px; padding: 10px 16px; font-size: 13px; font-weight: 700; outline: none; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
+        </select>
+        <button class="tv-sound-btn" id="soundBtn" onclick="toggleSound()" style="margin: 0; position: static;">
+            🔊 Click to Enable Voice &amp; Chime
+        </button>
+    </div>
 
     <script src="/js/display.js"></script>
 </body>

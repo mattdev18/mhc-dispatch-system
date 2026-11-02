@@ -2,6 +2,7 @@
 let audioCtx = null;
 let soundEnabled = false;
 let currentAnnouncementId = 0;
+let cachedVoices = [];
 
 function initAudio() {
     if (!audioCtx) {
@@ -11,9 +12,25 @@ function initAudio() {
         audioCtx.resume();
     }
     soundEnabled = true;
+    loadVoices();
 }
 
-// Classic 4-Tone International Airport Chime (Ding-Dong-Ding-Dong)
+// Preload and cache browser Speech Synthesis voices
+function loadVoices() {
+    if ('speechSynthesis' in window) {
+        cachedVoices = window.speechSynthesis.getVoices() || [];
+        if (typeof updateTvVoiceOptions === 'function') {
+            updateTvVoiceOptions();
+        }
+    }
+}
+
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+}
+
+// Classic 4-Tone European/Asian International Airport Chime (Ding-Dong-Ding-Dong)
 // Tones: C5 (523.25Hz) -> G4 (392.00Hz) -> A4 (440.00Hz) -> E4 (329.63Hz)
 function playChime() {
     return new Promise((resolve) => {
@@ -55,27 +72,59 @@ function playChime() {
     });
 }
 
-// Helper to choose the best available voice in user browser
-function getPreferredVoice() {
+// STRICT FEMALE AIRPORT ANNOUNCER VOICE SELECTION
+// 1. Explicitly blacklist male voices (Microsoft David, George, Mark, etc.)
+// 2. Prioritize natural English female voices (Zira, Jenny, Aria, Samantha, Karen, Google US English, etc.)
+function getPreferredFemaleVoice() {
     if (!('speechSynthesis' in window)) return null;
-    const voices = window.speechSynthesis.getVoices() || [];
+
+    let voices = cachedVoices;
+    if (!voices || voices.length === 0) {
+        voices = window.speechSynthesis.getVoices() || [];
+        cachedVoices = voices;
+    }
     if (voices.length === 0) return null;
 
-    // Look for clear English broadcast voices (Natural, Google, Samantha, Zira, Jenny, etc.)
-    const preferred = voices.find(v => 
-        v.lang.toLowerCase().startsWith('en') && 
-        /natural|google|samantha|zira|jenny/i.test(v.name)
-    );
-    if (preferred) return preferred;
+    // Check custom saved voice in localStorage
+    const savedVoiceUri = localStorage.getItem('mhc_preferred_voice');
+    if (savedVoiceUri) {
+        const foundSaved = voices.find(v => v.voiceURI === savedVoiceUri || v.name === savedVoiceUri);
+        if (foundSaved) return foundSaved;
+    }
 
-    // Fallback: any English voice
-    const anyEnglish = voices.find(v => v.lang.toLowerCase().startsWith('en'));
-    if (anyEnglish) return anyEnglish;
+    const femaleRegex = /zira|jenny|aria|samantha|karen|victoria|sonia|hazel|susan|catherine|stephanie|linda|female/i;
+    const maleRegex = /david|george|mark|richard|james|guy|male/i;
+
+    // 1st Priority: English voice explicitly known to be female
+    const femaleEnglish = voices.find(v => 
+        v.lang.toLowerCase().startsWith('en') && 
+        femaleRegex.test(v.name)
+    );
+    if (femaleEnglish) return femaleEnglish;
+
+    // 2nd Priority: Google US English (Standard clear female announcer in Chrome)
+    const googleUs = voices.find(v => 
+        v.name.includes('Google') && 
+        v.lang.toLowerCase().startsWith('en') && 
+        !maleRegex.test(v.name)
+    );
+    if (googleUs) return googleUs;
+
+    // 3rd Priority: Any English voice that is NOT in the male blacklist
+    const nonMaleEnglish = voices.find(v => 
+        v.lang.toLowerCase().startsWith('en') && 
+        !maleRegex.test(v.name)
+    );
+    if (nonMaleEnglish) return nonMaleEnglish;
+
+    // 4th Priority: Any non-male voice in any language
+    const anyNonMale = voices.find(v => !maleRegex.test(v.name));
+    if (anyNonMale) return anyNonMale;
 
     return voices[0] || null;
 }
 
-// Speak a single phrase via SpeechSynthesis
+// Speak single phrase with strict Female Airport Timbre
 function speakPhrase(text) {
     return new Promise((resolve) => {
         if (!('speechSynthesis' in window)) {
@@ -84,12 +133,15 @@ function speakPhrase(text) {
         }
 
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.88; // Crisp, clear, measured broadcast pace
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0; // Maximum loudness
+        utterance.rate = 0.88;   // Crisp, measured airport broadcast cadence
+        utterance.pitch = 1.15;  // Higher pitch for bright, distinct female PA sound
+        utterance.volume = 1.0;  // Maximum loudness
 
-        const voice = getPreferredVoice();
-        if (voice) utterance.voice = voice;
+        const voice = getPreferredFemaleVoice();
+        if (voice) {
+            utterance.voice = voice;
+            console.log('[Airport Voice] Speaking with female voice:', voice.name, `(${voice.lang})`);
+        }
 
         utterance.onend = () => {
             setTimeout(resolve, 600);
@@ -107,7 +159,12 @@ function speakPhrase(text) {
 async function announceTruck(truck) {
     if (!truck) return;
 
-    // Cancel any ongoing speech to prevent overlapping
+    // Ensure voices are initialized
+    if (cachedVoices.length === 0 && 'speechSynthesis' in window) {
+        cachedVoices = window.speechSynthesis.getVoices() || [];
+    }
+
+    // Cancel any previous announcement to avoid overlapping
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
@@ -121,17 +178,16 @@ async function announceTruck(truck) {
     const door = truck.loading_door ? `door ${truck.loading_door}` : 'the dispatch area';
     const phrase = `Paging truck with plate number ${spacedPlate}, please proceed to ${door}.`;
 
-    const REPEATS = 3; // Repeated 3 times as requested
+    const REPEATS = 3; // Repeated 3 times
 
     for (let i = 1; i <= REPEATS; i++) {
-        // If another truck was called during playback, stop this sequence
         if (thisAnnouncementId !== currentAnnouncementId) break;
 
         // 1. Play Airport 4-Tone Chime
         await playChime();
         if (thisAnnouncementId !== currentAnnouncementId) break;
 
-        // 2. Loud spoken announcement
+        // 2. Loud spoken announcement (Female Voice)
         await speakPhrase(phrase);
         if (thisAnnouncementId !== currentAnnouncementId) break;
 
