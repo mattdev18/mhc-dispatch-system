@@ -397,8 +397,41 @@ async function confirmCallWithDoor(door) {
     }
 }
 
-// Start Loading
-async function startLoading(id) {
+// State for action modals
+let pendingStartLoadingTruckId = null;
+let pendingDepartTruckId = null;
+let pendingCancelTruck = null;
+
+// Start Loading Modal Confirmation
+function startLoading(id) {
+    const truck = todayTrucks.find(t => t.id === id);
+    if (!truck) return;
+    pendingStartLoadingTruckId = id;
+
+    const details = document.getElementById('startLoadingTruckDetails');
+    if (details) {
+        details.innerHTML = `
+            <div><strong>Queue:</strong> ${escapeHtml(truck.queue)}</div>
+            <div><strong>Plate:</strong> ${escapeHtml(truck.truck_number)}</div>
+            <div><strong>Driver:</strong> ${escapeHtml(truck.driver_name)}</div>
+            <div><strong>Door:</strong> DOOR ${escapeHtml(truck.loading_door || 'N/A')}</div>
+            <div><strong>Load:</strong> ${escapeHtml(truck.load_type || '—')}</div>
+        `;
+    }
+    document.getElementById('startLoadingModal').classList.add('show');
+}
+
+function closeStartLoadingModal() {
+    pendingStartLoadingTruckId = null;
+    const modal = document.getElementById('startLoadingModal');
+    if (modal) modal.classList.remove('show');
+}
+
+async function executeStartLoading() {
+    if (!pendingStartLoadingTruckId) return;
+    const id = pendingStartLoadingTruckId;
+    closeStartLoadingModal();
+
     try {
         const res = await fetch(`/api/trucks/${id}/start-loading`, { method: 'POST' });
         const data = await res.json();
@@ -421,8 +454,36 @@ async function completeLoading(id) {
     }
 }
 
-// Depart Plant
-async function departTruck(id) {
+// Depart Plant Caution Modal
+function departTruck(id) {
+    const truck = todayTrucks.find(t => t.id === id);
+    if (!truck) return;
+    pendingDepartTruckId = id;
+
+    const details = document.getElementById('departTruckDetails');
+    if (details) {
+        details.innerHTML = `
+            <div><strong>Queue:</strong> ${escapeHtml(truck.queue)}</div>
+            <div><strong>Plate:</strong> ${escapeHtml(truck.truck_number)}</div>
+            <div><strong>Driver:</strong> ${escapeHtml(truck.driver_name)}</div>
+            <div><strong>Company:</strong> ${escapeHtml(truck.company || '—')}</div>
+            <div><strong>Destination:</strong> ${escapeHtml(truck.destination || '—')}</div>
+        `;
+    }
+    document.getElementById('departModal').classList.add('show');
+}
+
+function closeDepartModal() {
+    pendingDepartTruckId = null;
+    const modal = document.getElementById('departModal');
+    if (modal) modal.classList.remove('show');
+}
+
+async function executeDepartTruck() {
+    if (!pendingDepartTruckId) return;
+    const id = pendingDepartTruckId;
+    closeDepartModal();
+
     try {
         const res = await fetch(`/api/trucks/${id}/depart`, { method: 'POST' });
         const data = await res.json();
@@ -433,11 +494,98 @@ async function departTruck(id) {
     }
 }
 
-// Cancel Truck
-async function cancelTruck(id) {
-    if (!confirm('Are you sure you want to cancel this truck from the queue?')) return;
+// Two-Step Cancellation Modal Flow
+function cancelTruck(id) {
+    const truck = todayTrucks.find(t => t.id === id);
+    if (!truck) return;
+    pendingCancelTruck = truck;
+
+    // Reset to Step 1
+    document.getElementById('cancelStep1Container').style.display = 'block';
+    document.getElementById('cancelStep2Container').style.display = 'none';
+
+    // Show: “Q023 – CCP-4778 – Clarado Baer”
+    const truckInfoString = `${escapeHtml(truck.queue)} – ${escapeHtml(truck.truck_number)} – ${escapeHtml(truck.driver_name)}`;
+    document.getElementById('cancelTruckDetails').textContent = truckInfoString;
+
+    const reasonInput = document.getElementById('cancelReasonInput');
+    if (reasonInput) reasonInput.value = '';
+    onCancelReasonChange();
+
+    document.getElementById('cancelModal').classList.add('show');
+}
+
+function closeCancelModal() {
+    pendingCancelTruck = null;
+    const modal = document.getElementById('cancelModal');
+    if (modal) modal.classList.remove('show');
+}
+
+function proceedToCancelStep2() {
+    if (!pendingCancelTruck) return;
+    document.getElementById('cancelStep1Container').style.display = 'none';
+    document.getElementById('cancelStep2Container').style.display = 'block';
+
+    const truck = pendingCancelTruck;
+    document.getElementById('cancelStep2TruckSummary').innerHTML = `
+        Cancelling truck: <strong>${escapeHtml(truck.queue)}</strong> (${escapeHtml(truck.truck_number)} – ${escapeHtml(truck.driver_name)})
+    `;
+
+    const input = document.getElementById('cancelReasonInput');
+    if (input) {
+        input.focus();
+    }
+    onCancelReasonChange();
+}
+
+function backToCancelStep1() {
+    document.getElementById('cancelStep2Container').style.display = 'none';
+    document.getElementById('cancelStep1Container').style.display = 'block';
+}
+
+function onCancelReasonChange() {
+    const input = document.getElementById('cancelReasonInput');
+    const btn = document.getElementById('btnConfirmCancel');
+    const msg = document.getElementById('cancelReasonValidationMsg');
+    if (!input || !btn) return;
+
+    const val = input.value.trim();
+    const isValid = val.length >= 3;
+
+    if (isValid) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        if (msg) {
+            msg.textContent = '✓ Ready to confirm cancellation.';
+            msg.style.color = '#16a34a';
+        }
+    } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+        if (msg) {
+            msg.textContent = `At least 3 characters required (currently ${val.length}/3).`;
+            msg.style.color = '#64748b';
+        }
+    }
+}
+
+async function executeConfirmCancel() {
+    if (!pendingCancelTruck) return;
+    const input = document.getElementById('cancelReasonInput');
+    const reason = (input ? input.value : '').trim();
+    if (reason.length < 3) return;
+
+    const id = pendingCancelTruck.id;
+    closeCancelModal();
+
     try {
-        const res = await fetch(`/api/trucks/${id}/cancel`, { method: 'POST' });
+        const res = await fetch(`/api/trucks/${id}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+        });
         const data = await res.json();
         if (!data.success) alert(data.error);
         loadTodayData();

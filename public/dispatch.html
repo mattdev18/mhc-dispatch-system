@@ -153,6 +153,88 @@
         </div>
     </div>
 
+    <!-- Modal 1: Confirm Start Loading -->
+    <div class="modal" id="startLoadingModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <span style="font-size: 24px;">▶</span>
+                <h3 style="color: #0f172a; margin: 0; font-size: 18px;">Confirm Start Loading</h3>
+            </div>
+            <p style="color: #475569; font-size: 14px; margin-bottom: 12px;">
+                Are you sure you want to start loading for this truck?
+            </p>
+            <div id="startLoadingTruckDetails" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 14px; color: #1e293b; line-height: 1.6; margin-bottom: 20px;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeStartLoadingModal()">No, Go Back</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmStartLoading" onclick="executeStartLoading()">▶ Yes, Start Loading</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Depart Plant Caution -->
+    <div class="modal" id="departModal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <span style="font-size: 24px;">⚠️</span>
+                <h3 style="color: #991b1b; margin: 0; font-size: 18px;">Caution: Depart Plant</h3>
+            </div>
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 14px; color: #991b1b; font-size: 13px; line-height: 1.5;">
+                <strong>Caution:</strong> Are you sure you want to depart this truck? This will finish plant turnaround, mark the record as Departed, and release the dock door.
+            </div>
+            <div id="departTruckDetails" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 14px; color: #1e293b; line-height: 1.6; margin-bottom: 20px;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeDepartModal()">No, Go Back</button>
+                <button type="button" class="btn btn-dark" id="btnConfirmDepart" onclick="executeDepartTruck()">🚛 Yes, Depart Plant</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Two-Step Cancellation Flow -->
+    <div class="modal" id="cancelModal">
+        <div class="modal-content" style="max-width: 480px;">
+            <!-- Step 1: Caution Modal -->
+            <div id="cancelStep1Container">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                    <span style="font-size: 24px;">⚠️</span>
+                    <h3 style="color: #b91c1c; margin: 0; font-size: 18px;">Are you sure you want to cancel?</h3>
+                </div>
+                <p style="color: #475569; font-size: 14px; margin-bottom: 12px;">
+                    This will remove the truck from the active dispatch queue:
+                </p>
+                <div id="cancelTruckDetails" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; color: #991b1b; text-align: center; margin-bottom: 20px; line-height: 1.5;">
+                    <!-- Q023 – CCP-4778 – Clarado Baer -->
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCancelModal()">No, Go Back</button>
+                    <button type="button" class="btn btn-danger" onclick="proceedToCancelStep2()">Yes, Cancel</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Reason Input -->
+            <div id="cancelStep2Container" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                    <span style="font-size: 22px;">📝</span>
+                    <h3 style="color: #0f172a; margin: 0; font-size: 18px;">Reason for Cancellation</h3>
+                </div>
+                <div id="cancelStep2TruckSummary" style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+                </div>
+                <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                    Reason for cancellation <span style="color: #dc2626;">*</span>
+                </label>
+                <textarea id="cancelReasonInput" placeholder="Enter reason for cancellation (e.g., Driver request, wrong hauler, rejected order, truck breakdown)..." rows="3" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-size: 13px; outline: none; margin-bottom: 6px; box-sizing: border-box;" oninput="onCancelReasonChange()"></textarea>
+                <small id="cancelReasonValidationMsg" style="color: #64748b; font-size: 11px; display: block; margin-bottom: 20px;">
+                    At least 3 characters required to confirm.
+                </small>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="backToCancelStep1()">Back</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmCancel" onclick="executeConfirmCancel()" disabled style="opacity: 0.5; cursor: not-allowed;">Confirm Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/dispatch.js"></script>
 </body>
 </html>

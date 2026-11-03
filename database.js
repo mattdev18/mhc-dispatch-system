@@ -98,16 +98,24 @@ async function initDB() {
             departed_timestamp TEXT,
             cancelled_time TEXT,
             cancelled_timestamp TEXT,
+            cancellation_reason TEXT,
             call_count INTEGER DEFAULT 1,
             status TEXT NOT NULL DEFAULT 'Waiting',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
 
-    // Safe migration: Add call_count to trucks if it does not already exist
+    // Safe migration: Add call_count and cancellation_reason to trucks if they do not already exist
     try {
         await client.execute(`ALTER TABLE trucks ADD COLUMN call_count INTEGER DEFAULT 1`);
         console.log('[DB Migration] Added call_count column to trucks table.');
+    } catch (e) {
+        // Column already exists or table is already up to date
+    }
+
+    try {
+        await client.execute(`ALTER TABLE trucks ADD COLUMN cancellation_reason TEXT`);
+        console.log('[DB Migration] Added cancellation_reason column to trucks table.');
     } catch (e) {
         // Column already exists or table is already up to date
     }

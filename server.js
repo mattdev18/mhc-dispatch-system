@@ -611,16 +611,18 @@ app.post('/api/trucks/:id/depart', requirePermission('trucks:depart'), async (re
 app.post('/api/trucks/:id/cancel', requirePermission('trucks:cancel'), async (req, res) => {
     try {
         const { id } = req.params;
+        const { reason } = req.body || {};
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
 
         const now = new Date();
         const cancelledTime = getTimeString();
         const cancelledTimestamp = now.toISOString();
+        const cancelReason = (reason || '').trim();
 
         await run(
-            `UPDATE trucks SET status = 'Cancelled', loading_door = NULL, cancelled_time = ?, cancelled_timestamp = ? WHERE id = ?`,
-            [cancelledTime, cancelledTimestamp, id]
+            `UPDATE trucks SET status = 'Cancelled', loading_door = NULL, cancelled_time = ?, cancelled_timestamp = ?, cancellation_reason = ? WHERE id = ?`,
+            [cancelledTime, cancelledTimestamp, cancelReason, id]
         );
 
         const updatedTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);

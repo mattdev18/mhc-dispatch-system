@@ -157,6 +157,10 @@ function renderReportTable(trucks) {
             ? `<span style="font-size: 11px; padding: 2px 6px; background: #dcfce7; color: #166534; font-weight: 700; border-radius: 4px;">Today</span>`
             : `<span style="font-size: 11px; padding: 2px 6px; background: #f1f5f9; color: #475569; font-weight: 600; border-radius: 4px;">${escapeHtml(t.date || '—')}</span>`;
 
+            const reasonHtml = (t.status === 'Cancelled' && t.cancellation_reason) 
+                ? `<br><small style="color: #ef4444; font-size: 10px; display: block; margin-top: 2px;">Reason: ${escapeHtml(t.cancellation_reason)}</small>`
+                : '';
+
         return `
             <tr>
                 <td><strong>${escapeHtml(t.queue)}</strong></td>
@@ -173,7 +177,7 @@ function renderReportTable(trucks) {
                 <td>${escapeHtml(t.loading_time || '—')}</td>
                 <td>${escapeHtml(t.completed_time || '—')}</td>
                 <td>${escapeHtml(t.departed_time || '—')}</td>
-                <td><span class="badge badge-${(t.status || '').toLowerCase()}">${escapeHtml(t.status)}</span></td>
+                <td><span class="badge badge-${(t.status || '').toLowerCase()}">${escapeHtml(t.status)}</span>${reasonHtml}</td>
             </tr>
         `;
     }).join('');
@@ -204,7 +208,8 @@ function exportCSV() {
         "Loading Time",
         "Completed Time",
         "Departed Time",
-        "Current Status"
+        "Current Status",
+        "Cancellation Reason"
     ];
 
     const rows = reportTrucks.map(t => [
@@ -225,7 +230,8 @@ function exportCSV() {
         t.loading_time || '',
         t.completed_time || '',
         t.departed_time || '',
-        t.status
+        t.status,
+        t.cancellation_reason || ''
     ]);
 
     const escapeCsv = (val) => '"' + String(val ?? '').replace(/"/g, '""') + '"';
