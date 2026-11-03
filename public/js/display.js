@@ -86,6 +86,10 @@ socket.on('truck_called', (truck) => {
     fetchQueueData();
 });
 
+socket.on('truck_status_changed', () => {
+    fetchQueueData();
+});
+
 socket.on('queue_updated', () => {
     fetchQueueData();
 });
@@ -102,13 +106,26 @@ async function fetchQueueData() {
         const statsData = await statsRes.json();
 
         if (trucksData.success) {
-            renderTicker(trucksData.trucks || []);
+            const allTrucks = trucksData.trucks || [];
+            renderTicker(allTrucks);
 
-            // If no truck currently displayed as called, pick most recent Called or Loading truck
-            if (!lastCalledTruck) {
-                const active = (trucksData.trucks || []).filter(t => t.status === 'Called' || t.status === 'Loading');
-                if (active.length > 0) {
-                    displayNowCalling(active[active.length - 1]);
+            // 1. Check if there is an actively CALLED truck (must proceed to door)
+            const calledTrucks = allTrucks.filter(t => t.status === 'Called');
+            if (calledTrucks.length > 0) {
+                const activeCall = calledTrucks[calledTrucks.length - 1];
+                lastCalledTruck = activeCall;
+                displayNowCalling(activeCall);
+            } else {
+                // 2. No truck is currently called (e.g. previous truck has already started loading!)
+                // Switch left hero box to: STANDBY / NEXT TO BE CALLED (Option 1)
+                lastCalledTruck = null;
+                const waitingTrucks = allTrucks.filter(t => t.status === 'Waiting');
+                waitingTrucks.sort((a, b) => new Date(a.arrival_timestamp) - new Date(b.arrival_timestamp));
+
+                if (waitingTrucks.length > 0) {
+                    displayStandbyNextUp(waitingTrucks[0], waitingTrucks.length, statsData);
+                } else {
+                    displayAllClear(statsData);
                 }
             }
         }
@@ -121,9 +138,20 @@ async function fetchQueueData() {
     }
 }
 
-// Update Now Calling Panel
+// Update Now Calling Panel (Active Call Mode)
 function displayNowCalling(truck) {
     if (!truck) return;
+
+    const panel = document.getElementById('callingPanel');
+    if (panel) {
+        panel.classList.remove('standby');
+        panel.style.animation = 'none';
+        void panel.offsetWidth; // trigger reflow
+        panel.style.animation = 'tvGlow 1.5s 3 alternate';
+    }
+
+    const badge = document.getElementById('callingBadge');
+    if (badge) badge.textContent = 'NOW CALLING';
 
     document.getElementById('callingQueue').textContent = truck.queue;
     document.getElementById('callingPlate').textContent = truck.truck_number;
@@ -155,11 +183,67 @@ function displayNowCalling(truck) {
             countBadge.textContent = `🚨 ${count}rd Call (Final Call)`;
         }
     }
+}
 
+// Standby / Next In Line Mode (Option 1)
+function displayStandbyNextUp(truck, waitingCount, statsData) {
     const panel = document.getElementById('callingPanel');
-    panel.style.animation = 'none';
-    void panel.offsetWidth; // trigger reflow
-    panel.style.animation = 'tvGlow 1.5s 3 alternate';
+    if (panel) {
+        panel.classList.add('standby');
+        panel.style.animation = 'none';
+    }
+
+    const badge = document.getElementById('callingBadge');
+    if (badge) badge.textContent = '⏳ STANDBY • NEXT UP';
+
+    const countBadge = document.getElementById('callingCountBadge');
+    if (countBadge) {
+        countBadge.style.display = 'inline-block';
+        countBadge.style.background = 'rgba(56, 189, 248, 0.2)';
+        countBadge.style.color = '#7dd3fc';
+        countBadge.style.border = '1px solid #38bdf8';
+        countBadge.textContent = `1st of ${waitingCount} in Staging`;
+    }
+
+    document.getElementById('callingQueue').textContent = truck.queue;
+    document.getElementById('callingPlate').textContent = truck.truck_number;
+    document.getElementById('callingDoor').textContent = 'STANDBY AT STAGING AREA';
+    document.getElementById('callingDriver').textContent = `Driver: ${truck.driver_name} • ${truck.company || '—'}`;
+
+    const loadEl = document.getElementById('callingLoad');
+    if (loadEl) {
+        loadEl.innerHTML = `
+            <span>${escapeHtml(truck.load_type)} • Destination: ${escapeHtml(truck.destination)}</span>
+            <div style="margin-top: 8px; font-size: 13px; color: #38bdf8; font-weight: 600;">
+                Please prepare at staging. You will be paged via speaker once a dock door opens.
+            </div>
+        `;
+    }
+}
+
+// All Clear Mode (No trucks waiting)
+function displayAllClear(statsData) {
+    const panel = document.getElementById('callingPanel');
+    if (panel) {
+        panel.classList.add('standby');
+        panel.style.animation = 'none';
+    }
+
+    const badge = document.getElementById('callingBadge');
+    if (badge) badge.textContent = '✓ DOCKS IN OPERATION';
+
+    const countBadge = document.getElementById('callingCountBadge');
+    if (countBadge) countBadge.style.display = 'none';
+
+    document.getElementById('callingQueue').textContent = '---';
+    document.getElementById('callingPlate').textContent = 'STAGING CLEAR';
+    document.getElementById('callingDoor').textContent = 'ALL QUEUED TRUCKS SERVED';
+    document.getElementById('callingDriver').textContent = 'Plant logistics operating smoothly.';
+
+    const loadEl = document.getElementById('callingLoad');
+    if (loadEl) {
+        loadEl.innerHTML = `<span style="color: #94a3b8;">Gate registration is open for incoming trucks.</span>`;
+    }
 }
 
 // Render 8 Loading Doors on TV
