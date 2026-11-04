@@ -258,15 +258,10 @@ function renderTable() {
                 const sapDone = truck.doc_transfer_to_sap
                     ? `<span class="sap-done-badge">📄 SAP ✓</span>`
                     : `<button class="btn btn-primary sap-btn" onclick="openSapTransferToSapModal(${truck.id})">📄 Transfer to SAP</button>`;
-                // Depart is LOCKED until doc_transfer_to_warehouse is done
-                const canDepart = !!truck.doc_transfer_to_warehouse;
-                const departBtn = canDepart
-                    ? `<button class="btn btn-secondary sap-btn" onclick="departTruck(${truck.id})">🚛 Depart Plant</button>`
-                    : `<button class="btn sap-btn" disabled title="Depart is locked until SAP Doc Transfer to Warehouse is completed" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;border:1px dashed #cbd5e1;">🔒 Depart Plant</button>`;
                 actionButtons = `
                     <div class="sap-actions-wrap">
                         ${sapDone}
-                        ${departBtn}
+                        <button class="btn btn-secondary sap-btn" onclick="departTruck(${truck.id})">🚛 Depart Plant</button>
                     </div>
                 `;
             } else {
@@ -676,10 +671,8 @@ const SAP_ANALYSTS = [
 function buildSapActionButtons(truck) {
     const steps = [];
 
-    // Step 1: Document Received — 🔒 LOCKED until dispatcher has done "Transfer to SAP"
-    if (!truck.doc_transfer_to_sap) {
-        steps.push(`<button class="btn sap-btn" disabled title="Locked: Dispatcher must complete 'Document Transfer to SAP' first" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;border:1px dashed #cbd5e1;">🔒 Document Received</button>`);
-    } else if (!truck.doc_received_from_warehouse) {
+    // Step 1: Document Received (unlocked - directly clickable)
+    if (!truck.doc_received_from_warehouse) {
         steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapReceivedModal(${truck.id})">📦 Document Received</button>`);
     } else {
         steps.push(`<span class="sap-done-badge">📦 Doc Received ✓</span>`);
@@ -727,10 +720,8 @@ function buildAdminCompletedButtons(truck) {
         steps.push(`<span class="sap-done-badge">📄 SAP ✓</span>`);
     }
 
-    // SAP: Document Received — 🔒 locked until Transfer to SAP is done
-    if (!truck.doc_transfer_to_sap) {
-        steps.push(`<button class="btn sap-btn" disabled title="Locked: Complete 'Transfer to SAP' first" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;border:1px dashed #cbd5e1;">🔒 Document Received</button>`);
-    } else if (!truck.doc_received_from_warehouse) {
+    // SAP: Document Received (unlocked - directly clickable)
+    if (!truck.doc_received_from_warehouse) {
         steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapReceivedModal(${truck.id})">📦 Document Received</button>`);
     } else {
         steps.push(`<span class="sap-done-badge">📦 Doc Received ✓</span>`);
@@ -764,12 +755,8 @@ function buildAdminCompletedButtons(truck) {
         steps.push(`<span class="sap-done-badge">🏭 Transferred ✓</span>`);
     }
 
-    // Dispatcher: Depart Plant — LOCKED until doc_transfer_to_warehouse is done
-    if (truck.doc_transfer_to_warehouse) {
-        steps.push(`<button class="btn btn-secondary sap-btn" onclick="departTruck(${truck.id})">🚛 Depart Plant</button>`);
-    } else {
-        steps.push(`<button class="btn sap-btn" disabled title="Depart is locked until SAP Doc Transfer to Warehouse is completed" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;border:1px dashed #cbd5e1;">🔒 Depart Plant</button>`);
-    }
+    // Dispatcher: Depart Plant (always directly clickable)
+    steps.push(`<button class="btn btn-secondary sap-btn" onclick="departTruck(${truck.id})">🚛 Depart Plant</button>`);
 
     return `<div class="sap-actions-wrap">${steps.join('')}</div>`;
 }

@@ -597,14 +597,6 @@ app.post('/api/trucks/:id/depart', requirePermission('trucks:depart'), async (re
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
 
-        // 🔒 Block depart if SAP doc_transfer_to_warehouse not yet done
-        if (!truck.doc_transfer_to_warehouse) {
-            return res.status(403).json({
-                success: false,
-                error: '🔒 Hindi pa pwedeng mag-depart. Kailangan matapos muna ang Document Transfer to Warehouse bago mag-Depart Plant.'
-            });
-        }
-
         const now = new Date();
         const departedTime = getTimeString();
         const departedTimestamp = now.toISOString();
