@@ -34,10 +34,11 @@
 
     <!-- Navigation -->
     <nav class="navbar">
-        <a href="/" class="nav-link">🚛 Gate Registration</a>
-        <a href="/dispatch" class="nav-link active">📋 Dispatcher Station</a>
-        <a href="/display" class="nav-link" target="_blank">📺 Live TV Queue Board ↗</a>
-        <a href="/reports" class="nav-link">📊 Reports &amp; Logs</a>
+        <a href="/" class="nav-link" data-screen="register">🚛 Gate Registration</a>
+        <a href="/dispatch" class="nav-link active" data-screen="dispatch">📋 Dispatcher Station</a>
+        <a href="/display" class="nav-link" target="_blank" data-screen="display">📺 Live TV Queue Board ↗</a>
+        <a href="/reports" class="nav-link" data-screen="reports">📊 Reports &amp; Logs</a>
+        <a href="/sap-tv" class="nav-link" target="_blank" data-screen="sap-tv">🗂️ Live TV (SAP Documentation) ↗</a>
     </nav>
 
     <div class="container">
@@ -187,6 +188,133 @@
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" class="btn btn-secondary" onclick="closeDepartModal()">No, Go Back</button>
                 <button type="button" class="btn btn-dark" id="btnConfirmDepart" onclick="executeDepartTruck()">🚛 Yes, Depart Plant</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Document Transfer to SAP (Dispatcher / Admin action) -->
+    <div class="modal" id="sapTransferToSapModal">
+        <div class="modal-content" style="max-width: 460px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <span style="font-size: 26px;">📄</span>
+                <h3 style="color: #1e40af; margin: 0; font-size: 18px;">Document Transfer to SAP</h3>
+            </div>
+            <p style="color: #475569; font-size: 14px; margin-bottom: 16px;">
+                Confirm that documents have been transferred to the SAP team for:
+            </p>
+            <div id="sapTransferToSapTruckInfo" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;font-size:15px;font-weight:700;color:#1e40af;text-align:center;margin-bottom:20px;"></div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeSapTransferToSapModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="executeSapTransferToSap()">📄 Confirm Transfer to SAP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: SAP Doc Received from Warehouse -->    <div class="modal" id="sapReceivedModal">
+        <div class="modal-content" style="max-width: 460px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <span style="font-size: 26px;">📦</span>
+                <h3 style="color: #1e40af; margin: 0; font-size: 18px;">Document Received from Warehouse</h3>
+            </div>
+            <p style="color: #475569; font-size: 14px; margin-bottom: 16px;">
+                Confirm that documents have been received from the warehouse for:
+            </p>
+            <div id="sapReceivedTruckInfo" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;font-size:15px;font-weight:700;color:#1e40af;text-align:center;margin-bottom:20px;"></div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeSapReceivedModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="executeSapReceived()">✅ Confirm Received</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: SAP Analyst / OTC Selector -->
+    <div class="modal" id="sapAnalystModal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <span style="font-size: 26px;">👤</span>
+                <h3 style="color: #1e40af; margin: 0; font-size: 18px;">Select SAP Analyst / OTC</h3>
+            </div>
+            <p style="color: #475569; font-size: 14px; margin-bottom: 16px;">Select the SAP OTC analyst handling this document:</p>
+            <div id="sapAnalystTruckInfo" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px;font-size:14px;font-weight:700;color:#1e40af;text-align:center;margin-bottom:16px;"></div>
+            <div id="sapAnalystButtons" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;"></div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeSapAnalystModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 6: SAP Doc Start Confirmation -->
+    <div class="modal" id="sapDocStartModal">
+        <div class="modal-content" style="max-width: 460px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <span style="font-size: 26px;">⚠️</span>
+                <h3 style="color: #d97706; margin: 0; font-size: 18px;">Ready to Start SAP Documentation?</h3>
+            </div>
+            <p style="color: #475569; font-size: 14px; margin-bottom: 10px;">
+                You are about to start SAP documentation for:
+            </p>
+            <div id="sapDocStartTruckInfo" style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;font-size:15px;font-weight:700;color:#92400e;text-align:center;margin-bottom:20px;"></div>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">This will record the SAP documentation start time. Are you ready to begin?</p>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeSapDocStartModal()">No, Go Back</button>
+                <button type="button" class="btn btn-warning" onclick="executeSapDocStart()" style="background:#d97706;color:#fff;">▶ Yes, Start Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 7: SAP Doc End + Optional Remarks -->
+    <div class="modal" id="sapDocEndModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <!-- Step 1: Confirm End -->
+            <div id="sapDocEndStep1">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                    <span style="font-size: 26px;">✅</span>
+                    <h3 style="color: #15803d; margin: 0; font-size: 18px;">SAP Documentation Finished?</h3>
+                </div>
+                <p style="color: #475569; font-size: 14px; margin-bottom: 10px;">Confirm that SAP documentation is complete for:</p>
+                <div id="sapDocEndTruckInfo" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;font-size:15px;font-weight:700;color:#15803d;text-align:center;margin-bottom:16px;"></div>
+                <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">Do you want to add a remark? (e.g. reason for delay)</p>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeSapDocEndModal()">No, Go Back</button>
+                    <button type="button" class="btn btn-outline" onclick="sapDocEndSkipRemarks()" style="border-color:#15803d;color:#15803d;">✓ Done, No Remarks</button>
+                    <button type="button" class="btn btn-success" onclick="sapDocEndAddRemarks()">📝 Add Remarks</button>
+                </div>
+            </div>
+            <!-- Step 2: Remarks Input -->
+            <div id="sapDocEndStep2" style="display:none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                    <span style="font-size: 22px;">📝</span>
+                    <h3 style="color: #0f172a; margin: 0; font-size: 18px;">Add Remarks</h3>
+                </div>
+                <div id="sapDocEndStep2Info" style="font-size:13px;color:#64748b;margin-bottom:12px;"></div>
+                <label style="display:block;font-size:13px;font-weight:700;color:#334155;margin-bottom:6px;">
+                    Reason / Remarks <span style="color:#dc2626;">*</span>
+                </label>
+                <textarea id="sapRemarksInput" rows="4" placeholder="e.g. Delayed due to missing documents, system downtime, etc..."
+                    style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box;"
+                    oninput="checkSapRemarksInput()"></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+                    <button type="button" class="btn btn-secondary" onclick="sapDocEndBackToStep1()">← Back</button>
+                    <button type="button" id="sapRemarksConfirmBtn" class="btn btn-success" onclick="executeSapDocEnd(true)" disabled>✅ Confirm End</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 8: Doc Transfer to Warehouse -->
+    <div class="modal" id="sapTransferWarehouseModal">
+        <div class="modal-content" style="max-width: 460px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <span style="font-size: 26px;">🏭</span>
+                <h3 style="color: #1e40af; margin: 0; font-size: 18px;">Document Transfer to Warehouse</h3>
+            </div>
+            <p style="color: #475569; font-size: 14px; margin-bottom: 16px;">
+                Confirm that SAP documents have been transferred back to the warehouse for:
+            </p>
+            <div id="sapTransferWarehouseTruckInfo" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;font-size:15px;font-weight:700;color:#1e40af;text-align:center;margin-bottom:20px;"></div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeSapTransferWarehouseModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="executeSapTransferWarehouse()">✅ Confirm Transfer</button>
             </div>
         </div>
     </div>

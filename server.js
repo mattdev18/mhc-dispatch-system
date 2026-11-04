@@ -48,28 +48,37 @@ function requireAuth(req, res, next) {
 // Roles (galing sa database.js): admin, dispatcher, guard, warehouse
 // -------------------------------------------------------------
 const PERMISSIONS = {
-    'trucks:register': ['admin', 'guard'],                          // Gate Registration + Ticket Printing
-    'trucks:call':     ['admin', 'dispatcher'],                     // Dispatcher Command Center (call truck / door)
-    'trucks:loading':  ['admin', 'dispatcher', 'warehouse'],        // Loading Doors + Cargo Completion
-    'trucks:depart':   ['admin', 'dispatcher'],
-    'trucks:cancel':   ['admin', 'dispatcher'],
-    'reports:view':    ['admin'],
-    'users:manage':    ['admin']
+    // Gate Registration
+    'trucks:register':  ['admin', 'guard'],
+    // Dispatcher actions
+    'trucks:call':      ['admin', 'dispatcher'],
+    'trucks:loading':   ['admin', 'dispatcher'],          // start loading + complete loading
+    'trucks:depart':    ['admin', 'dispatcher'],
+    'trucks:cancel':    ['admin', 'dispatcher'],
+    // SAP OTC flow — dispatcher can set doc_transfer_to_sap; sapanalyst does the rest; admin does all
+    'trucks:sap_flow':  ['admin', 'sapanalyst', 'dispatcher'],
+    // Reports
+    'reports:view':     ['admin', 'sapanalyst', 'warehouse'],
+    // Admin only
+    'users:manage':     ['admin']
 };
 
 // Aling page/screen ang puwedeng buksan ng bawat role
 const SCREEN_ACCESS = {
-    register: ['admin', 'guard'],                       // index.html
-    dispatch: ['admin', 'dispatcher', 'warehouse'],     // dispatch.html
-    reports:  ['admin']                                 // reports.html
+    register: ['admin', 'guard'],                                           // index.html — Gate Registration
+    dispatch: ['admin', 'dispatcher', 'warehouse', 'sapanalyst'],           // dispatch.html
+    display:  ['admin', 'dispatcher', 'warehouse', 'sapanalyst', 'guard'], // display.html — Live TV Queue (public)
+    reports:  ['admin', 'sapanalyst', 'warehouse'],                         // reports.html — Reports & Logs
+    'sap-tv': ['admin', 'sapanalyst', 'dispatcher', 'warehouse']           // sap-tv.html — Live TV SAP Documentation
 };
 
 // Saan dadalhin ang user pagkatapos mag-login
 const HOME_PAGE = {
-    admin: '/dispatch',
+    admin:      '/dispatch',
     dispatcher: '/dispatch',
-    warehouse: '/dispatch',
-    guard: '/'
+    warehouse:  '/dispatch',
+    guard:      '/',
+    sapanalyst: '/dispatch'
 };
 
 function screensFor(role) {
@@ -588,6 +597,14 @@ app.post('/api/trucks/:id/depart', requirePermission('trucks:depart'), async (re
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
 
+        // 🔒 Block depart if SAP doc_transfer_to_warehouse not yet done
+        if (!truck.doc_transfer_to_warehouse) {
+            return res.status(403).json({
+                success: false,
+                error: '🔒 Hindi pa pwedeng mag-depart. Kailangan matapos muna ang Document Transfer to Warehouse bago mag-Depart Plant.'
+            });
+        }
+
         const now = new Date();
         const departedTime = getTimeString();
         const departedTimestamp = now.toISOString();
@@ -624,6 +641,52 @@ app.post('/api/trucks/:id/cancel', requirePermission('trucks:cancel'), async (re
             `UPDATE trucks SET status = 'Cancelled', loading_door = NULL, cancelled_time = ?, cancelled_timestamp = ?, cancellation_reason = ? WHERE id = ?`,
             [cancelledTime, cancelledTimestamp, cancelReason, id]
         );
+
+        const updatedTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
+        io.emit('truck_status_changed', updatedTruck);
+        io.emit('queue_updated');
+
+        res.json({ success: true, truck: updatedTruck });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// API: SAP OTC Documentation Flow (PROTECTED)
+app.post('/api/trucks/:id/sap-flow', requirePermission('trucks:sap_flow'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            doc_transfer_to_sap,
+            doc_received_from_warehouse,
+            sap_analyst,
+            sap_doc_start,
+            sap_doc_end,
+            remarks,
+            doc_transfer_to_warehouse
+        } = req.body || {};
+
+        const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
+        if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
+
+        // Build SET clause dynamically — only update provided fields
+        const fields = [];
+        const values = [];
+
+        if (doc_transfer_to_sap !== undefined)       { fields.push('doc_transfer_to_sap = ?');       values.push(doc_transfer_to_sap); }
+        if (doc_received_from_warehouse !== undefined){ fields.push('doc_received_from_warehouse = ?'); values.push(doc_received_from_warehouse); }
+        if (sap_analyst !== undefined)               { fields.push('sap_analyst = ?');               values.push(sap_analyst); }
+        if (sap_doc_start !== undefined)             { fields.push('sap_doc_start = ?');             values.push(sap_doc_start); }
+        if (sap_doc_end !== undefined)               { fields.push('sap_doc_end = ?');               values.push(sap_doc_end); }
+        if (remarks !== undefined)                   { fields.push('remarks = ?');                   values.push(remarks); }
+        if (doc_transfer_to_warehouse !== undefined) { fields.push('doc_transfer_to_warehouse = ?'); values.push(doc_transfer_to_warehouse); }
+
+        if (fields.length === 0) {
+            return res.status(400).json({ success: false, error: 'No SAP fields provided.' });
+        }
+
+        values.push(id);
+        await run(`UPDATE trucks SET ${fields.join(', ')} WHERE id = ?`, values);
 
         const updatedTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         io.emit('truck_status_changed', updatedTruck);
@@ -754,6 +817,7 @@ app.get('/dispatch', (req, res) => res.sendFile('dispatch.html', { root: PUBLIC_
 app.get('/display', (req, res) => res.sendFile('display.html', { root: PUBLIC_DIR })); // PUBLIC (Trucker view)
 app.get('/driver', (req, res) => res.sendFile('display.html', { root: PUBLIC_DIR }));  // PUBLIC (Trucker shortcut)
 app.get('/reports', (req, res) => res.sendFile('reports.html', { root: PUBLIC_DIR }));
+app.get('/sap-tv', (req, res) => res.sendFile('sap-tv.html', { root: PUBLIC_DIR }));
 
 // WebSockets connection
 io.on('connection', (socket) => {

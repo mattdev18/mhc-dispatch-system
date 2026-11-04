@@ -232,43 +232,99 @@ function renderTable() {
 
     tbody.innerHTML = list.map(truck => {
         let actionButtons = '';
+        const role = currentUser ? currentUser.role : null;
 
-        if (truck.status === 'Waiting') {
-            actionButtons = `
-                <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="openDoorModal(${truck.id})">
-                    📢 Call &amp; Door
-                </button>
-                <button class="btn btn-danger" style="font-size: 11px; padding: 6px 10px;" onclick="cancelTruck(${truck.id})">
-                    Cancel
-                </button>
-            `;
-        } else if (truck.status === 'Called') {
-            const callCount = Number(truck.call_count) || 1;
-            actionButtons = `
-                <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="recallTruck(${truck.id})" title="Play 3x Airport Announcement again">
-                    📢 Recall (${callCount}x)
-                </button>
-                <button class="btn btn-warning" style="font-size: 11px; padding: 6px 10px;" onclick="startLoading(${truck.id})">
-                    ▶ Start Loading
-                </button>
-                <button class="btn btn-danger" style="font-size: 11px; padding: 6px 10px;" onclick="cancelTruck(${truck.id})">
-                    Cancel
-                </button>
-            `;
-        } else if (truck.status === 'Loading') {
-            actionButtons = `
-                <button class="btn btn-success" style="font-size: 11px; padding: 6px 10px;" onclick="completeLoading(${truck.id})">
-                    ✓ Complete
-                </button>
-            `;
-        } else if (truck.status === 'Completed') {
-            actionButtons = `
-                <button class="btn btn-secondary" style="font-size: 11px; padding: 6px 10px;" onclick="departTruck(${truck.id})">
-                    🚛 Depart Plant
-                </button>
-            `;
+        // ── WAREHOUSE: view only, no action buttons ──────────────────────
+        if (role === 'warehouse') {
+            actionButtons = `<span style="color:#94a3b8;font-size:12px;">View Only</span>`;
+
+        // ── DISPATCHER: Call+Cancel / Recall+Load+Cancel / Complete / DocTransferSAP+Depart ──
+        } else if (role === 'dispatcher') {
+            if (truck.status === 'Waiting') {
+                actionButtons = `
+                    <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="openDoorModal(${truck.id})">📢 Call &amp; Door</button>
+                    <button class="btn btn-danger" style="font-size: 11px; padding: 6px 10px;" onclick="cancelTruck(${truck.id})">Cancel</button>
+                `;
+            } else if (truck.status === 'Called') {
+                const callCount = Number(truck.call_count) || 1;
+                actionButtons = `
+                    <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="recallTruck(${truck.id})" title="Play 3x Airport Announcement again">📢 Recall (${callCount}x)</button>
+                    <button class="btn btn-warning" style="font-size: 11px; padding: 6px 10px;" onclick="startLoading(${truck.id})">▶ Start Loading</button>
+                    <button class="btn btn-danger" style="font-size: 11px; padding: 6px 10px;" onclick="cancelTruck(${truck.id})">Cancel</button>
+                `;
+            } else if (truck.status === 'Loading') {
+                actionButtons = `<button class="btn btn-success" style="font-size: 11px; padding: 6px 10px;" onclick="completeLoading(${truck.id})">✓ Complete</button>`;
+            } else if (truck.status === 'Completed') {
+                const sapDone = truck.doc_transfer_to_sap
+                    ? `<span class="sap-done-badge">📄 SAP ✓</span>`
+                    : `<button class="btn btn-primary sap-btn" onclick="openSapTransferToSapModal(${truck.id})">📄 Transfer to SAP</button>`;
+                // Depart is LOCKED until doc_transfer_to_warehouse is done
+                const canDepart = !!truck.doc_transfer_to_warehouse;
+                const departBtn = canDepart
+                    ? `<button class="btn btn-secondary sap-btn" onclick="departTruck(${truck.id})">🚛 Depart Plant</button>`
+                    : `<button class="btn sap-btn" disabled title="Depart is locked until SAP Doc Transfer to Warehouse is completed" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;border:1px dashed #cbd5e1;">🔒 Depart Plant</button>`;
+                actionButtons = `
+                    <div class="sap-actions-wrap">
+                        ${sapDone}
+                        ${departBtn}
+                    </div>
+                `;
+            } else {
+                actionButtons = `<span style="color:#94a3b8;font-size:12px;">Finished</span>`;
+            }
+
+        // ── SAP ANALYST: only SAP flow on Completed trucks ──────────────
+        } else if (role === 'sapanalyst') {
+            if (truck.status === 'Completed') {
+                actionButtons = buildSapActionButtons(truck);
+            } else {
+                actionButtons = `<span style="color:#94a3b8;font-size:12px;">—</span>`;
+            }
+
+        // ── ADMIN: ALL buttons — dispatcher + SAP OTC combined ───────────
+        } else if (role === 'admin') {
+            if (truck.status === 'Waiting') {
+                actionButtons = `
+                    <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="openDoorModal(${truck.id})">📢 Call &amp; Door</button>
+                    <button class="btn btn-danger" style="font-size: 11px; padding: 6px 10px;" onclick="cancelTruck(${truck.id})">Cancel</button>
+                `;
+            } else if (truck.status === 'Called') {
+                const callCount = Number(truck.call_count) || 1;
+                actionButtons = `
+                    <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="recallTruck(${truck.id})" title="Play 3x Airport Announcement again">📢 Recall (${callCount}x)</button>
+                    <button class="btn btn-warning" style="font-size: 11px; padding: 6px 10px;" onclick="startLoading(${truck.id})">▶ Start Loading</button>
+                    <button class="btn btn-danger" style="font-size: 11px; padding: 6px 10px;" onclick="cancelTruck(${truck.id})">Cancel</button>
+                `;
+            } else if (truck.status === 'Loading') {
+                actionButtons = `<button class="btn btn-success" style="font-size: 11px; padding: 6px 10px;" onclick="completeLoading(${truck.id})">✓ Complete</button>`;
+            } else if (truck.status === 'Completed') {
+                // Admin = Dispatcher buttons + All SAP buttons combined
+                actionButtons = buildAdminCompletedButtons(truck);
+            } else {
+                actionButtons = `<span style="color:#94a3b8;font-size:12px;">Finished</span>`;
+            }
+
+        // ── FALLBACK (unknown role) ───────────────────────────────────────
         } else {
-            actionButtons = `<span style="color: #94a3b8; font-size: 12px;">Finished</span>`;
+            if (truck.status === 'Waiting') {
+                actionButtons = `
+                    <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="openDoorModal(${truck.id})">📢 Call &amp; Door</button>
+                    <button class="btn btn-danger" style="font-size: 11px; padding: 6px 10px;" onclick="cancelTruck(${truck.id})">Cancel</button>
+                `;
+            } else if (truck.status === 'Called') {
+                const callCount = Number(truck.call_count) || 1;
+                actionButtons = `
+                    <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px;" onclick="recallTruck(${truck.id})">📢 Recall (${callCount}x)</button>
+                    <button class="btn btn-warning" style="font-size: 11px; padding: 6px 10px;" onclick="startLoading(${truck.id})">▶ Start Loading</button>
+                    <button class="btn btn-danger" style="font-size: 11px; padding: 6px 10px;" onclick="cancelTruck(${truck.id})">Cancel</button>
+                `;
+            } else if (truck.status === 'Loading') {
+                actionButtons = `<button class="btn btn-success" style="font-size: 11px; padding: 6px 10px;" onclick="completeLoading(${truck.id})">✓ Complete</button>`;
+            } else if (truck.status === 'Completed') {
+                actionButtons = `<button class="btn btn-secondary" style="font-size: 11px; padding: 6px 10px;" onclick="departTruck(${truck.id})">🚛 Depart Plant</button>`;
+            } else {
+                actionButtons = `<span style="color:#94a3b8;font-size:12px;">Finished</span>`;
+            }
         }
 
         const doorText = truck.loading_door 
@@ -605,3 +661,294 @@ function escapeHtml(str) {
 
 // Initial Load
 loadTodayData();
+
+// =============================================================
+// SAP OTC DOCUMENTATION FLOW
+// Visible only to sapanalyst role in Dispatcher Station
+// =============================================================
+
+const SAP_ANALYSTS = [
+    'Louell Santos', 'Marlo Romasanta', 'Aron Detiquiz', 'Julius San Jose',
+    'Grant Gener', 'Gerwin Cristobal', 'Erick Gulinao', 'Hernan Santos'
+];
+
+// Build SAP action buttons for a completed truck (sapanalyst role)
+function buildSapActionButtons(truck) {
+    const steps = [];
+
+    // Step 1: Document Received — 🔒 LOCKED until dispatcher has done "Transfer to SAP"
+    if (!truck.doc_transfer_to_sap) {
+        steps.push(`<button class="btn sap-btn" disabled title="Locked: Dispatcher must complete 'Document Transfer to SAP' first" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;border:1px dashed #cbd5e1;">🔒 Document Received</button>`);
+    } else if (!truck.doc_received_from_warehouse) {
+        steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapReceivedModal(${truck.id})">📦 Document Received</button>`);
+    } else {
+        steps.push(`<span class="sap-done-badge">📦 Doc Received ✓</span>`);
+    }
+
+    // Step 2: SAP Analyst / OTC
+    if (!truck.sap_analyst) {
+        steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapAnalystModal(${truck.id})">👤 Set Analyst</button>`);
+    } else {
+        steps.push(`<span class="sap-done-badge">👤 ${escapeHtml(truck.sap_analyst.split(' ')[0])} ✓</span>`);
+    }
+
+    // Step 3: Document Start
+    if (!truck.sap_doc_start) {
+        steps.push(`<button class="btn btn-warning sap-btn" style="background:#d97706;color:#fff;" onclick="openSapDocStartModal(${truck.id})">▶ Document Start</button>`);
+    } else {
+        steps.push(`<span class="sap-done-badge">▶ Doc Started ✓</span>`);
+    }
+
+    // Step 4: Document End
+    if (truck.sap_doc_start && !truck.sap_doc_end) {
+        steps.push(`<button class="btn btn-success sap-btn" onclick="openSapDocEndModal(${truck.id})">✅ Document End</button>`);
+    } else if (truck.sap_doc_end) {
+        steps.push(`<span class="sap-done-badge">✅ Doc Ended ✓</span>`);
+    }
+
+    // Step 5: Doc Transfer to Warehouse
+    if (truck.sap_doc_end && !truck.doc_transfer_to_warehouse) {
+        steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapTransferWarehouseModal(${truck.id})">🏭 Transfer</button>`);
+    } else if (truck.doc_transfer_to_warehouse) {
+        steps.push(`<span class="sap-done-badge">🏭 Transferred ✓</span>`);
+    }
+
+    return `<div class="sap-actions-wrap">${steps.join('')}</div>`;
+}
+
+// Admin combined view: Dispatcher + SAP OTC buttons for Completed trucks
+function buildAdminCompletedButtons(truck) {
+    const steps = [];
+
+    // Dispatcher: Doc Transfer to SAP
+    if (!truck.doc_transfer_to_sap) {
+        steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapTransferToSapModal(${truck.id})">📄 Transfer to SAP</button>`);
+    } else {
+        steps.push(`<span class="sap-done-badge">📄 SAP ✓</span>`);
+    }
+
+    // SAP: Document Received — 🔒 locked until Transfer to SAP is done
+    if (!truck.doc_transfer_to_sap) {
+        steps.push(`<button class="btn sap-btn" disabled title="Locked: Complete 'Transfer to SAP' first" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;border:1px dashed #cbd5e1;">🔒 Document Received</button>`);
+    } else if (!truck.doc_received_from_warehouse) {
+        steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapReceivedModal(${truck.id})">📦 Document Received</button>`);
+    } else {
+        steps.push(`<span class="sap-done-badge">📦 Doc Received ✓</span>`);
+    }
+
+    // SAP: Analyst
+    if (!truck.sap_analyst) {
+        steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapAnalystModal(${truck.id})">👤 Set Analyst</button>`);
+    } else {
+        steps.push(`<span class="sap-done-badge">👤 ${escapeHtml(truck.sap_analyst.split(' ')[0])} ✓</span>`);
+    }
+
+    // SAP: Document Start
+    if (!truck.sap_doc_start) {
+        steps.push(`<button class="btn btn-warning sap-btn" style="background:#d97706;color:#fff;" onclick="openSapDocStartModal(${truck.id})">▶ Document Start</button>`);
+    } else {
+        steps.push(`<span class="sap-done-badge">▶ Doc Started ✓</span>`);
+    }
+
+    // SAP: Document End
+    if (truck.sap_doc_start && !truck.sap_doc_end) {
+        steps.push(`<button class="btn btn-success sap-btn" onclick="openSapDocEndModal(${truck.id})">✅ Document End</button>`);
+    } else if (truck.sap_doc_end) {
+        steps.push(`<span class="sap-done-badge">✅ Doc Ended ✓</span>`);
+    }
+
+    // SAP: Transfer to Warehouse
+    if (truck.sap_doc_end && !truck.doc_transfer_to_warehouse) {
+        steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapTransferWarehouseModal(${truck.id})">🏭 Transfer</button>`);
+    } else if (truck.doc_transfer_to_warehouse) {
+        steps.push(`<span class="sap-done-badge">🏭 Transferred ✓</span>`);
+    }
+
+    // Dispatcher: Depart Plant — LOCKED until doc_transfer_to_warehouse is done
+    if (truck.doc_transfer_to_warehouse) {
+        steps.push(`<button class="btn btn-secondary sap-btn" onclick="departTruck(${truck.id})">🚛 Depart Plant</button>`);
+    } else {
+        steps.push(`<button class="btn sap-btn" disabled title="Depart is locked until SAP Doc Transfer to Warehouse is completed" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;border:1px dashed #cbd5e1;">🔒 Depart Plant</button>`);
+    }
+
+    return `<div class="sap-actions-wrap">${steps.join('')}</div>`;
+}
+
+// --- Shared helper: get truck from cache ---
+function getTruckFromCache(id) {
+    return allTrucks.find(t => t.id === id) || null;
+}
+
+function truckLabel(truck) {
+    return truck ? `${escapeHtml(truck.queue)} – ${escapeHtml(truck.truck_number)} – ${escapeHtml(truck.driver_name)}` : '';
+}
+
+// ---- SAP: Doc Received from Warehouse ----
+let pendingSapReceivedId = null;
+function openSapReceivedModal(id) {
+    pendingSapReceivedId = id;
+    const truck = getTruckFromCache(id);
+    document.getElementById('sapReceivedTruckInfo').textContent = truckLabel(truck);
+    document.getElementById('sapReceivedModal').classList.add('show');
+}
+function closeSapReceivedModal() {
+    pendingSapReceivedId = null;
+    document.getElementById('sapReceivedModal').classList.remove('show');
+}
+async function executeSapReceived() {
+    if (!pendingSapReceivedId) return;
+    const id = pendingSapReceivedId;
+    closeSapReceivedModal();
+    await callSapFlow(id, { doc_received_from_warehouse: getCurrentTimeString() });
+}
+
+// ---- SAP: Analyst Selector ----
+let pendingSapAnalystId = null;
+function openSapAnalystModal(id) {
+    pendingSapAnalystId = id;
+    const truck = getTruckFromCache(id);
+    document.getElementById('sapAnalystTruckInfo').textContent = truckLabel(truck);
+    const btnContainer = document.getElementById('sapAnalystButtons');
+    btnContainer.innerHTML = SAP_ANALYSTS.map(name =>
+        `<button class="btn btn-outline sap-analyst-name-btn" style="font-size:13px;padding:10px 8px;border-color:#1e40af;color:#1e40af;" onclick="executeSapAnalyst('${name.replace(/'/g, "\\'")}')">👤 ${name}</button>`
+    ).join('');
+    document.getElementById('sapAnalystModal').classList.add('show');
+}
+function closeSapAnalystModal() {
+    pendingSapAnalystId = null;
+    document.getElementById('sapAnalystModal').classList.remove('show');
+}
+async function executeSapAnalyst(analystName) {
+    if (!pendingSapAnalystId) return;
+    const id = pendingSapAnalystId;
+    closeSapAnalystModal();
+    await callSapFlow(id, { sap_analyst: analystName });
+}
+
+// ---- SAP: Doc Start ----
+let pendingSapDocStartId = null;
+function openSapDocStartModal(id) {
+    pendingSapDocStartId = id;
+    const truck = getTruckFromCache(id);
+    document.getElementById('sapDocStartTruckInfo').textContent = truckLabel(truck);
+    document.getElementById('sapDocStartModal').classList.add('show');
+}
+function closeSapDocStartModal() {
+    pendingSapDocStartId = null;
+    document.getElementById('sapDocStartModal').classList.remove('show');
+}
+async function executeSapDocStart() {
+    if (!pendingSapDocStartId) return;
+    const id = pendingSapDocStartId;
+    closeSapDocStartModal();
+    await callSapFlow(id, { sap_doc_start: getCurrentTimeString() });
+}
+
+// ---- SAP: Doc End ----
+let pendingSapDocEndId = null;
+function openSapDocEndModal(id) {
+    pendingSapDocEndId = id;
+    const truck = getTruckFromCache(id);
+    document.getElementById('sapDocEndTruckInfo').textContent = truckLabel(truck);
+    document.getElementById('sapDocEndStep2Info').textContent = truckLabel(truck);
+    document.getElementById('sapRemarksInput').value = '';
+    document.getElementById('sapRemarksConfirmBtn').disabled = true;
+    document.getElementById('sapDocEndStep1').style.display = '';
+    document.getElementById('sapDocEndStep2').style.display = 'none';
+    document.getElementById('sapDocEndModal').classList.add('show');
+}
+function closeSapDocEndModal() {
+    pendingSapDocEndId = null;
+    document.getElementById('sapDocEndModal').classList.remove('show');
+}
+function sapDocEndAddRemarks() {
+    document.getElementById('sapDocEndStep1').style.display = 'none';
+    document.getElementById('sapDocEndStep2').style.display = '';
+}
+function sapDocEndBackToStep1() {
+    document.getElementById('sapDocEndStep1').style.display = '';
+    document.getElementById('sapDocEndStep2').style.display = 'none';
+}
+function checkSapRemarksInput() {
+    const val = document.getElementById('sapRemarksInput').value.trim();
+    document.getElementById('sapRemarksConfirmBtn').disabled = val.length < 3;
+}
+async function sapDocEndSkipRemarks() {
+    if (!pendingSapDocEndId) return;
+    const id = pendingSapDocEndId;
+    closeSapDocEndModal();
+    await callSapFlow(id, { sap_doc_end: getCurrentTimeString() });
+}
+async function executeSapDocEnd(withRemarks) {
+    if (!pendingSapDocEndId) return;
+    const id = pendingSapDocEndId;
+    const remarks = withRemarks ? document.getElementById('sapRemarksInput').value.trim() : '';
+    closeSapDocEndModal();
+    const payload = { sap_doc_end: getCurrentTimeString() };
+    if (remarks) payload.remarks = remarks;
+    await callSapFlow(id, payload);
+}
+
+// ---- SAP: Doc Transfer TO SAP (Dispatcher / Admin action) ----
+let pendingSapTransferToSapId = null;
+function openSapTransferToSapModal(id) {
+    pendingSapTransferToSapId = id;
+    const truck = getTruckFromCache(id);
+    document.getElementById('sapTransferToSapTruckInfo').textContent = truckLabel(truck);
+    document.getElementById('sapTransferToSapModal').classList.add('show');
+}
+function closeSapTransferToSapModal() {
+    pendingSapTransferToSapId = null;
+    document.getElementById('sapTransferToSapModal').classList.remove('show');
+}
+async function executeSapTransferToSap() {
+    if (!pendingSapTransferToSapId) return;
+    const id = pendingSapTransferToSapId;
+    closeSapTransferToSapModal();
+    await callSapFlow(id, { doc_transfer_to_sap: getCurrentTimeString() });
+}
+
+// ---- SAP: Transfer to Warehouse ----
+let pendingSapTransferWarehouseId = null;
+function openSapTransferWarehouseModal(id) {
+    pendingSapTransferWarehouseId = id;
+    const truck = getTruckFromCache(id);
+    document.getElementById('sapTransferWarehouseTruckInfo').textContent = truckLabel(truck);
+    document.getElementById('sapTransferWarehouseModal').classList.add('show');
+}
+function closeSapTransferWarehouseModal() {
+    pendingSapTransferWarehouseId = null;
+    document.getElementById('sapTransferWarehouseModal').classList.remove('show');
+}
+async function executeSapTransferWarehouse() {
+    if (!pendingSapTransferWarehouseId) return;
+    const id = pendingSapTransferWarehouseId;
+    closeSapTransferWarehouseModal();
+    await callSapFlow(id, { doc_transfer_to_warehouse: getCurrentTimeString() });
+}
+
+// ---- Core API caller for SAP flow ----
+async function callSapFlow(id, fields) {
+    try {
+        const token = localStorage.getItem('mhc_token');
+        const res = await fetch(`/api/trucks/${id}/sap-flow`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(fields)
+        });
+        const data = await res.json();
+        if (!data.success) alert('SAP update error: ' + data.error);
+        loadTodayData();
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// ---- Helper: current PHT time string ----
+function getCurrentTimeString() {
+    return new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: true
+    }).format(new Date());
+}

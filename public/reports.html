@@ -34,10 +34,11 @@
 
     <!-- Navigation -->
     <nav class="navbar">
-        <a href="/" class="nav-link">🚛 Gate Registration</a>
-        <a href="/dispatch" class="nav-link">📋 Dispatcher Station</a>
-        <a href="/display" class="nav-link" target="_blank">📺 Live TV Queue Board ↗</a>
-        <a href="/reports" class="nav-link active">📊 Reports &amp; Logs</a>
+        <a href="/" class="nav-link" data-screen="register">🚛 Gate Registration</a>
+        <a href="/dispatch" class="nav-link" data-screen="dispatch">📋 Dispatcher Station</a>
+        <a href="/display" class="nav-link" target="_blank" data-screen="display">📺 Live TV Queue Board ↗</a>
+        <a href="/reports" class="nav-link active" data-screen="reports">📊 Reports &amp; Logs</a>
+        <a href="/sap-tv" class="nav-link" target="_blank" data-screen="sap-tv">🗂️ Live TV (SAP Documentation) ↗</a>
     </nav>
 
     <div class="container">
@@ -146,13 +147,20 @@
                             <th>Called</th>
                             <th>Loading</th>
                             <th>Completed</th>
+                            <th style="background:#1e3a5f;color:#60a5fa;white-space:nowrap;">Doc Transfer to SAP</th>
+                            <th style="background:#1e3a5f;color:#60a5fa;white-space:nowrap;">Doc Received from Warehouse</th>
+                            <th style="background:#1e3a5f;color:#60a5fa;white-space:nowrap;">SAP Analyst / OTC</th>
+                            <th style="background:#1e3a5f;color:#60a5fa;white-space:nowrap;">SAP Doc Start</th>
+                            <th style="background:#1e3a5f;color:#60a5fa;white-space:nowrap;">SAP Doc End</th>
+                            <th style="background:#1e3a5f;color:#60a5fa;white-space:nowrap;">Remarks</th>
+                            <th style="background:#1e3a5f;color:#60a5fa;white-space:nowrap;">Doc Transfer to Warehouse</th>
                             <th>Departed</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="reportTableBody">
                         <tr>
-                            <td colspan="15" style="text-align: center; padding: 30px; color: #64748b;">
+                            <td colspan="22" style="text-align: center; padding: 30px; color: #64748b;">
                                 Loading report data...
                             </td>
                         </tr>

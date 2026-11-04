@@ -15,7 +15,8 @@
         '/index': 'register',
         '/register': 'register',
         '/dispatch': 'dispatch',
-        '/reports': 'reports'
+        '/reports': 'reports',
+        '/sap-tv': 'sap-tv'
     };
     const screen = PAGE_SCREEN[path];
     if (!screen) return; // login at display (TV) ay hindi binabantayan
@@ -62,11 +63,18 @@
 
             whenDomReady(function () {
                 // Alisin ang mga elementong may data-roles na hindi kasama ang role ng user.
-                // Halimbawa: <section data-roles="admin,dispatcher"> ... </section>
                 document.querySelectorAll('[data-roles]').forEach(function (el) {
                     const roles = el.dataset.roles.split(',').map(function (r) { return r.trim(); });
                     if (!roles.includes(data.user.role)) el.remove();
                 });
+
+                // Dynamic nav: itago ang mga nav link na wala sa screens ng user
+                // Nav links ay may data-screen attribute
+                document.querySelectorAll('[data-screen]').forEach(function (el) {
+                    const sc = el.dataset.screen;
+                    if (!data.screens.includes(sc)) el.style.display = 'none';
+                });
+
                 document.documentElement.style.visibility = '';
             });
         })

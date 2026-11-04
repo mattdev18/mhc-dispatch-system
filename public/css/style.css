@@ -520,4 +520,35 @@ tr:hover {
     .brand-text h1 { font-size: 16px; }
     .brand-text h2 { font-size: 12px; }
     .header-right { flex-direction: column; align-items: flex-end; }
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .sap-actions-wrap { flex-direction: column; gap: 4px; }
+    .sap-btn { width: 100% !important; }
+    .modal-content { margin: 10px; max-width: calc(100vw - 20px) !important; }
+}
+
+/* SAP OTC Action Buttons */
+.sap-actions-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-width: 160px;
+}
+.sap-btn {
+    font-size: 11px !important;
+    padding: 5px 8px !important;
+    white-space: nowrap;
+}
+.sap-done-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 4px 8px;
+    background: #dcfce7;
+    color: #15803d;
+    border-radius: 6px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.sap-analyst-name-btn:hover {
+    background: #1e40af !important;
+    color: #fff !important;
 }

@@ -176,6 +176,13 @@ function renderReportTable(trucks) {
                 <td>${escapeHtml(t.called_time || '—')}</td>
                 <td>${escapeHtml(t.loading_time || '—')}</td>
                 <td>${escapeHtml(t.completed_time || '—')}</td>
+                <td style="color:#60a5fa;font-weight:600;">${escapeHtml(t.doc_transfer_to_sap || '—')}</td>
+                <td style="color:#60a5fa;font-weight:600;">${escapeHtml(t.doc_received_from_warehouse || '—')}</td>
+                <td style="color:#60a5fa;font-weight:600;">${escapeHtml(t.sap_analyst || '—')}</td>
+                <td style="color:#60a5fa;font-weight:600;">${escapeHtml(t.sap_doc_start || '—')}</td>
+                <td style="color:#60a5fa;font-weight:600;">${escapeHtml(t.sap_doc_end || '—')}</td>
+                <td style="color:#60a5fa;font-weight:600;">${escapeHtml(t.remarks || '—')}</td>
+                <td style="color:#60a5fa;font-weight:600;">${escapeHtml(t.doc_transfer_to_warehouse || '—')}</td>
                 <td>${escapeHtml(t.departed_time || '—')}</td>
                 <td><span class="badge badge-${(t.status || '').toLowerCase()}">${escapeHtml(t.status)}</span>${reasonHtml}</td>
             </tr>
@@ -207,6 +214,13 @@ function exportCSV() {
         "Times Called",
         "Loading Time",
         "Completed Time",
+        "Doc Transfer to SAP",
+        "Doc Received from Warehouse",
+        "SAP Analyst / OTC",
+        "SAP Doc Start",
+        "SAP Doc End",
+        "Remarks",
+        "Doc Transfer to Warehouse",
         "Departed Time",
         "Current Status",
         "Cancellation Reason"
@@ -229,6 +243,13 @@ function exportCSV() {
         t.call_count ? `${t.call_count}x` : '1x',
         t.loading_time || '',
         t.completed_time || '',
+        t.doc_transfer_to_sap || '',
+        t.doc_received_from_warehouse || '',
+        t.sap_analyst || '',
+        t.sap_doc_start || '',
+        t.sap_doc_end || '',
+        t.remarks || '',
+        t.doc_transfer_to_warehouse || '',
         t.departed_time || '',
         t.status,
         t.cancellation_reason || ''

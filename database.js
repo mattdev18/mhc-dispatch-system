@@ -94,6 +94,13 @@ async function initDB() {
             loading_timestamp TEXT,
             completed_time TEXT,
             completed_timestamp TEXT,
+            doc_transfer_to_sap TEXT,
+            doc_received_from_warehouse TEXT,
+            sap_analyst TEXT,
+            sap_doc_start TEXT,
+            sap_doc_end TEXT,
+            remarks TEXT,
+            doc_transfer_to_warehouse TEXT,
             departed_time TEXT,
             departed_timestamp TEXT,
             cancelled_time TEXT,
@@ -118,6 +125,26 @@ async function initDB() {
         console.log('[DB Migration] Added cancellation_reason column to trucks table.');
     } catch (e) {
         // Column already exists or table is already up to date
+    }
+
+    // Safe migration: SAP & Warehouse Documentation Flow columns
+    const sapColumns = [
+        'doc_transfer_to_sap',
+        'doc_received_from_warehouse',
+        'sap_analyst',
+        'sap_doc_start',
+        'sap_doc_end',
+        'remarks',
+        'doc_transfer_to_warehouse'
+    ];
+
+    for (const col of sapColumns) {
+        try {
+            await client.execute(`ALTER TABLE trucks ADD COLUMN ${col} TEXT`);
+            console.log(`[DB Migration] Added ${col} column to trucks table.`);
+        } catch (e) {
+            // Column already exists or table is already up to date
+        }
     }
 
     // Settings Table
@@ -154,6 +181,24 @@ async function initDB() {
         { username: 'guard',       env: 'MHC_GUARD',       name: 'Gate Security Guard', role: 'guard' },
         { username: 'warehouse',   env: 'MHC_WAREHOUSE',   name: 'Dock Supervisor',     role: 'warehouse' }
     ];
+
+    // Special case: seed or update sapanalyst with default password if env var is missing
+    const sapPwd = process.env.MHC_SAPANALYST || 'sap_otc26';
+    const hashedSap = hashPassword(sapPwd);
+    const sapAnalystExists = await get('SELECT id FROM users WHERE username = ?', ['sapanalyst']);
+    if (!sapAnalystExists) {
+        await client.execute({
+            sql: 'INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)',
+            args: ['sapanalyst', hashedSap, 'SAP OTC Analyst', 'sapanalyst']
+        });
+        console.log('Seeded sapanalyst user (default password).');
+    } else {
+        await client.execute({
+            sql: 'UPDATE users SET password = ?, role = ? WHERE username = ?',
+            args: [hashedSap, 'sapanalyst', 'sapanalyst']
+        });
+        console.log('Synchronized sapanalyst user credentials.');
+    }
 
     for (const u of staffUsers) {
         const pwd = process.env[u.env];
