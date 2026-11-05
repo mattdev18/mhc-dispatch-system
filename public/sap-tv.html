@@ -235,16 +235,9 @@
     </main>
 
     <footer class="tv-ticker" style="margin-top: auto;">
-        <div class="tv-ticker-label">SAP OTC TEAM:</div>
-        <div class="tv-ticker-list">
-            <span>Louell Santos</span> • 
-            <span>Marlo Romasanta</span> • 
-            <span>Aron Detiquiz</span> • 
-            <span>Julius San Jose</span> • 
-            <span>Grant Gener</span> • 
-            <span>Gerwin Cristobal</span> • 
-            <span>Erick Gulinao</span> • 
-            <span>Hernan Santos</span>
+        <div class="tv-ticker-label" style="background: #1e3a5f; color: #60a5fa;">⏳ PENDING SAP DOCUMENTS:</div>
+        <div class="tv-ticker-list" id="sapTickerList">
+            <span style="color: #64748b;">Loading pending documentation tasks...</span>
         </div>
     </footer>
 
@@ -315,6 +308,89 @@
             document.getElementById('kpiInDocumentation').textContent = inDocumentation;
             document.getElementById('kpiDocsFinished').textContent = docsFinished;
             document.getElementById('kpiTransferredWh').textContent = transferredWh;
+
+            // Render Pending SAP Documents / Upcoming Tasks Ticker
+            const pendingTasks = [];
+
+            // 1. Trucks that need SAP actions (Completed or in SAP pipeline, but not yet transferred back to WH)
+            trucks.forEach(t => {
+                if (t.status === 'Completed' || (t.doc_transfer_to_sap && !t.doc_transfer_to_warehouse)) {
+                    if (!t.doc_transfer_to_sap) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            action: 'Awaiting Transfer to SAP',
+                            color: '#60a5fa',
+                            icon: '📄'
+                        });
+                    } else if (!t.doc_received_from_warehouse) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            action: 'Pending Document Received',
+                            color: '#facc15',
+                            icon: '📦'
+                        });
+                    } else if (!t.sap_analyst) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            action: 'Assign SAP Analyst',
+                            color: '#38bdf8',
+                            icon: '👤'
+                        });
+                    } else if (!t.sap_doc_start) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            action: `Ready to Start Doc (${t.sap_analyst.split(' ')[0]})`,
+                            color: '#fbbf24',
+                            icon: '▶'
+                        });
+                    } else if (!t.sap_doc_end) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            action: `Doc in Progress (${t.sap_analyst.split(' ')[0]})`,
+                            color: '#f97316',
+                            icon: '⏳'
+                        });
+                    } else if (!t.doc_transfer_to_warehouse) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            action: 'Transfer to Warehouse',
+                            color: '#c084fc',
+                            icon: '🏭'
+                        });
+                    }
+                }
+            });
+
+            // 2. Incoming trucks currently loading in docks
+            trucks.filter(t => t.status === 'Loading').forEach(t => {
+                pendingTasks.push({
+                    queue: t.queue,
+                    plate: t.truck_number,
+                    action: `Door ${t.loading_door || '?'} Loading (Incoming)`,
+                    color: '#4ade80',
+                    icon: '🚛'
+                });
+            });
+
+            const tickerEl = document.getElementById('sapTickerList');
+            if (tickerEl) {
+                if (pendingTasks.length === 0) {
+                    tickerEl.innerHTML = '<span style="color: #64748b; font-size: 13px;">Walang pending SAP documents sa ngayon. Lahat ng dokumento ay updated.</span>';
+                } else {
+                    tickerEl.innerHTML = pendingTasks.map(item => `
+                        <span class="tv-ticker-item">
+                            <strong>${escapeHtml(item.queue)} • ${escapeHtml(item.plate)}</strong>: 
+                            <span style="color: ${item.color}; font-weight: 700;">${item.icon} ${escapeHtml(item.action)}</span>
+                        </span>
+                    `).join('');
+                }
+            }
 
             const tbody = document.getElementById('sapTableBody');
             if (sapTrucks.length === 0) {
