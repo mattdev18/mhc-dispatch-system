@@ -163,6 +163,10 @@ function renderDoors(activeTruckList) {
             // Find full truck object
             const fullTruck = todayTrucks.find(t => t.id === truck.id) || truck;
 
+            const recorderTag = fullTruck.warehouse_recorder
+                ? `<div style="margin-top: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; color: #334155;">👷 Recorder: <span style="color: #1d4ed8;">${escapeHtml(fullTruck.warehouse_recorder)}</span></div>`
+                : '';
+
             let actionBtn = '';
             if (isCalled) {
                 actionBtn = `<button class="btn btn-warning" style="width: 100%; font-size: 11px; padding: 6px;" onclick="startLoading(${fullTruck.id})">▶ Start Loading</button>`;
@@ -179,6 +183,7 @@ function renderDoors(activeTruckList) {
                     <div class="door-truck">${escapeHtml(truck.truck_number)}</div>
                     <div class="door-driver">Queue: <strong>${escapeHtml(truck.queue)}</strong> | ${escapeHtml(truck.driver_name)}</div>
                     <div class="door-load">${escapeHtml(truck.load_type || '')}</div>
+                    ${recorderTag}
                     <div style="margin-top: 10px;">
                         ${actionBtn}
                     </div>
@@ -331,6 +336,10 @@ function renderTable() {
             ? `<span style="display: inline-block; font-size: 11px; padding: 2px 7px; background: #dcfce7; color: #166534; font-weight: 700; border-radius: 4px;">Today</span>`
             : `<span style="display: inline-block; font-size: 11px; padding: 2px 7px; background: #f1f5f9; color: #475569; font-weight: 600; border-radius: 4px;">${escapeHtml(truck.date || '—')}</span>`;
 
+        const recorderHtml = truck.warehouse_recorder
+            ? `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; font-weight: 700;" onclick="openRecorderModal(${truck.id})">👷 ${escapeHtml(truck.warehouse_recorder)} ✏️</button>`
+            : `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border: 1px dashed #94a3b8; color: #64748b; background: #f8fafc;" onclick="openRecorderModal(${truck.id})">➕ Enter Name</button>`;
+
         return `
             <tr>
                 <td><strong>${escapeHtml(truck.queue)}</strong></td>
@@ -344,6 +353,7 @@ function renderTable() {
                 <td>${escapeHtml(truck.arrival_time)}</td>
                 <td><span class="badge badge-waiting">${escapeHtml(truck.priority)}</span></td>
                 <td><span class="badge badge-${truck.status.toLowerCase()}">${escapeHtml(truck.status)}${truck.status === 'Called' && Number(truck.call_count) > 1 ? ` (${truck.call_count}x)` : ''}</span></td>
+                <td>${recorderHtml}</td>
                 <td><div style="display: flex; gap: 6px; flex-wrap: wrap;">${actionButtons}</div></td>
             </tr>
         `;
@@ -939,3 +949,86 @@ function getCurrentTimeString() {
         hour12: true
     }).format(new Date());
 }
+
+// =============================================================
+// WAREHOUSE RECORDER MODAL & ASSIGNMENT
+// =============================================================
+let pendingRecorderTruckId = null;
+
+function openRecorderModal(id) {
+    pendingRecorderTruckId = id;
+    const truck = todayTrucks.find(t => t.id === id);
+    if (!truck) return;
+
+    const summaryEl = document.getElementById('modalRecorderTruckInfo');
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <div><strong>Queue:</strong> ${escapeHtml(truck.queue)} &bull; <strong>Plate:</strong> ${escapeHtml(truck.truck_number)}</div>
+            <div><strong>Driver:</strong> ${escapeHtml(truck.driver_name)}</div>
+        `;
+    }
+
+    const input = document.getElementById('recorderNameInput');
+    if (input) {
+        input.value = truck.warehouse_recorder || '';
+    }
+
+    const modal = document.getElementById('recorderModal');
+    if (modal) {
+        modal.classList.add('show');
+    }
+    setTimeout(() => { if (input) input.focus(); }, 150);
+}
+
+function closeRecorderModal() {
+    pendingRecorderTruckId = null;
+    const modal = document.getElementById('recorderModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+async function executeSaveRecorder() {
+    if (!pendingRecorderTruckId) return;
+    const input = document.getElementById('recorderNameInput');
+    const val = input ? input.value.trim() : '';
+
+    if (!val) {
+        alert('Please enter the name of the Warehouse Recorder.');
+        return;
+    }
+
+    const id = pendingRecorderTruckId;
+    closeRecorderModal();
+
+    try {
+        const token = localStorage.getItem('mhc_token');
+        const res = await fetch(`/api/trucks/${id}/warehouse-recorder`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ warehouse_recorder: val })
+        });
+        const data = await res.json();
+        if (!data.success) {
+            alert('Error updating Warehouse Recorder: ' + data.error);
+        }
+        loadTodayData();
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Enter key shortcut in recorder input
+document.addEventListener('DOMContentLoaded', () => {
+    const recInput = document.getElementById('recorderNameInput');
+    if (recInput) {
+        recInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                executeSaveRecorder();
+            }
+        });
+    }
+});

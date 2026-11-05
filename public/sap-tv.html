@@ -214,7 +214,6 @@
                             <th>Cargo</th>
                             <th class="highlight">Transfer to SAP</th>
                             <th class="highlight">Doc Received</th>
-                            <th class="highlight">SAP Analyst / OTC</th>
                             <th class="highlight">Doc Start</th>
                             <th class="highlight">Doc End</th>
                             <th class="highlight">Remarks</th>
@@ -224,7 +223,7 @@
                     </thead>
                     <tbody id="sapTableBody">
                         <tr>
-                            <td colspan="14" style="text-align: center; padding: 40px; color: #64748b;">
+                            <td colspan="13" style="text-align: center; padding: 40px; color: #64748b;">
                                 Loading real-time SAP Documentation records...
                             </td>
                         </tr>
@@ -343,7 +342,7 @@
                         pendingTasks.push({
                             queue: t.queue,
                             plate: t.truck_number,
-                            action: `Ready to Start Doc (${t.sap_analyst.split(' ')[0]})`,
+                            action: 'Ready to Start Documentation',
                             color: '#fbbf24',
                             icon: '▶'
                         });
@@ -351,7 +350,7 @@
                         pendingTasks.push({
                             queue: t.queue,
                             plate: t.truck_number,
-                            action: `Doc in Progress (${t.sap_analyst.split(' ')[0]})`,
+                            action: 'Documentation in Progress',
                             color: '#f97316',
                             icon: '⏳'
                         });
@@ -417,10 +416,6 @@
                     ? `<span class="badge-otc-status status-received">📦 ${escapeHtml(t.doc_received_from_warehouse)}</span>`
                     : '<span style="color:#64748b;">—</span>';
 
-                const analystHtml = t.sap_analyst
-                    ? `<span class="analyst-pill">👤 ${escapeHtml(t.sap_analyst)}</span>`
-                    : '<span style="color:#64748b;">Unassigned</span>';
-
                 const docStartHtml = t.sap_doc_start
                     ? `<span class="badge-otc-status status-in-progress">▶ ${escapeHtml(t.sap_doc_start)}</span>`
                     : '<span style="color:#64748b;">—</span>';
@@ -449,7 +444,6 @@
                         <td>${escapeHtml(t.load_type || '—')}</td>
                         <td>${transferSapHtml}</td>
                         <td>${receivedHtml}</td>
-                        <td>${analystHtml}</td>
                         <td>${docStartHtml}</td>
                         <td>${docEndHtml}</td>
                         <td>${remarksHtml}</td>

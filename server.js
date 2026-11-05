@@ -690,6 +690,27 @@ app.post('/api/trucks/:id/sap-flow', requirePermission('trucks:sap_flow'), async
     }
 });
 
+// API: Assign / Update Warehouse Recorder (PROTECTED)
+app.post('/api/trucks/:id/warehouse-recorder', requireAuth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { warehouse_recorder } = req.body || {};
+        const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
+        if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
+
+        const recorderName = (warehouse_recorder || '').trim();
+        await run(`UPDATE trucks SET warehouse_recorder = ? WHERE id = ?`, [recorderName || null, id]);
+
+        const updatedTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
+        io.emit('truck_status_changed', updatedTruck);
+        io.emit('queue_updated');
+
+        res.json({ success: true, truck: updatedTruck });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // API: Reports query (PROTECTED)
 app.get('/api/reports', requirePermission('reports:view'), async (req, res) => {
     try {

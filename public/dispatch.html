@@ -121,12 +121,13 @@
                             <th>Arrival</th>
                             <th>Priority Category</th>
                             <th>Status</th>
+                            <th style="color:#2563eb; background:#eff6ff;">Warehouse Recorder</th>
                             <th>Dispatch Actions</th>
                         </tr>
                     </thead>
                     <tbody id="queueTableBody">
                         <tr>
-                            <td colspan="12" style="text-align: center; padding: 30px; color: #64748b;">
+                            <td colspan="13" style="text-align: center; padding: 30px; color: #64748b;">
                                 Loading queue data...
                             </td>
                         </tr>
@@ -359,6 +360,28 @@
                     <button type="button" class="btn btn-secondary" onclick="backToCancelStep1()">Back</button>
                     <button type="button" class="btn btn-danger" id="btnConfirmCancel" onclick="executeConfirmCancel()" disabled style="opacity: 0.5; cursor: not-allowed;">Confirm Cancel</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Assign Warehouse Recorder (Direct text input only) -->
+    <div class="modal" id="recorderModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <span style="font-size: 24px;">👷</span>
+                <h3 style="color: #1e3a5f; margin: 0; font-size: 18px;">Assign Warehouse Recorder</h3>
+            </div>
+            <div class="truck-info-summary" id="modalRecorderTruckInfo" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; margin-bottom:14px; font-size:13px; line-height: 1.5;"></div>
+            <label style="display:block; font-size:13px; font-weight:700; color:#334155; margin-bottom:6px;">
+                Warehouse Recorder Name <span style="color:#dc2626;">*</span>
+            </label>
+            <input type="text" id="recorderNameInput" placeholder="Enter personnel name..." style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:14px; box-sizing:border-box;">
+            <small style="color:#64748b; font-size:12px; margin-top:6px; display:block;">
+                Designated staff handling this vehicle from call to final plant departure.
+            </small>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+                <button type="button" class="btn btn-secondary" onclick="closeRecorderModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="executeSaveRecorder()">💾 Save Recorder</button>
             </div>
         </div>
     </div>

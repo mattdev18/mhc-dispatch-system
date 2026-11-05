@@ -167,6 +167,7 @@ function renderReportTable(trucks) {
                 <td>${dateBadge}</td>
                 <td style="font-weight: 700; color: #0f172a;">${escapeHtml(t.truck_number)}</td>
                 <td>${escapeHtml(t.driver_name)}</td>
+                <td style="color: #0369a1; font-weight: 700;">${escapeHtml(t.warehouse_recorder || '—')}</td>
                 <td>${escapeHtml(t.company || '—')}</td>
                 <td>${escapeHtml(t.load_type)}</td>
                 <td>${escapeHtml(t.destination)}</td>
@@ -202,6 +203,7 @@ function exportCSV() {
         "Date",
         "Truck / Plate Number",
         "Driver Name",
+        "Warehouse Recorder",
         "Company / Hauler",
         "Contact Number",
         "Product / Load",
@@ -231,6 +233,7 @@ function exportCSV() {
         t.date,
         t.truck_number,
         t.driver_name,
+        t.warehouse_recorder || '',
         t.company || '',
         t.contact || '',
         t.load_type,
