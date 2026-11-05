@@ -6,36 +6,93 @@
     <title>Staff Login - May Harvest Corporation</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        :root {
+            --card-bg: #ffffff;
+            --card-text: #0f172a;
+            --card-sub: #64748b;
+            --card-border: #e2e8f0;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --input-text: #0f172a;
+            --input-focus-bg: #ffffff;
+            --driver-bg: #f8fafc;
+            --driver-border: #cbd5e1;
+            --driver-text: #475569;
+            --footer-text: #94a3b8;
+            --accent-green: #16a34a;
+            --accent-focus: rgba(22, 163, 74, 0.2);
+            --toggle-color: #64748b;
+            --toggle-hover: #1e293b;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --card-bg: #1e293b;
+                --card-text: #f8fafc;
+                --card-sub: #94a3b8;
+                --card-border: #334155;
+                --input-bg: #0f172a;
+                --input-border: #475569;
+                --input-text: #f8fafc;
+                --input-focus-bg: #0f172a;
+                --driver-bg: rgba(15, 23, 42, 0.7);
+                --driver-border: #334155;
+                --driver-text: #94a3b8;
+                --footer-text: #64748b;
+                --accent-green: #22c55e;
+                --accent-focus: rgba(34, 197, 94, 0.3);
+                --toggle-color: #94a3b8;
+                --toggle-hover: #f8fafc;
+            }
+        }
+
         .login-wrap {
-            min-height: 80vh;
+            min-height: calc(100vh - 120px);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px 16px;
+        }
+
+        @keyframes cardEntrance {
+            0% {
+                opacity: 0;
+                transform: translateY(18px) scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .login-card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
             width: 100%;
             max-width: 440px;
-            padding: 32px;
+            padding: 34px 28px;
             text-align: center;
-            border-top: 5px solid #16a34a;
+            border-top: 5px solid var(--accent-green);
+            border-left: 1px solid var(--card-border);
+            border-right: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--card-border);
+            animation: cardEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .login-logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 16px auto;
-            border-radius: 12px;
-            padding: 5px;
-            background: #f0fdf4;
+            width: 82px;
+            height: 82px;
+            margin: 0 auto 12px auto;
+            border-radius: 14px;
+            padding: 6px;
+            background: #ffffff;
             border: 1px solid #bbf7d0;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
         }
 
         .login-logo img {
@@ -44,31 +101,131 @@
             object-fit: contain;
         }
 
-        .login-title {
-            font-size: 20px;
+        .brand-heading {
+            margin-bottom: 22px;
+        }
+
+        .company-name {
+            font-size: 19px;
             font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 4px;
+            color: var(--card-text);
+            letter-spacing: 0.3px;
+            margin: 0;
+            line-height: 1.25;
+        }
+
+        .system-subtitle {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 4px;
         }
 
         .login-sub {
             font-size: 13px;
-            color: #64748b;
-            margin-bottom: 24px;
+            color: var(--card-sub);
+            margin-bottom: 22px;
+            line-height: 1.4;
         }
 
         .login-field {
             text-align: left;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
+            position: relative;
         }
 
         .login-field label {
             display: block;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 700;
-            color: #334155;
+            color: var(--card-sub);
             margin-bottom: 6px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .login-field input[type="text"],
+        .login-field input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1.5px solid var(--input-border);
+            font-size: 14px;
+            background: var(--input-bg);
+            color: var(--input-text);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .login-field input.has-toggle {
+            padding-right: 46px;
+        }
+
+        .login-field input:focus {
+            background: var(--input-focus-bg);
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 4px var(--accent-focus);
+        }
+
+        .pwd-toggle-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--toggle-color);
+            border-radius: 6px;
+            transition: color 0.15s ease, background 0.15s ease;
+        }
+
+        .pwd-toggle-btn:hover {
+            color: var(--toggle-hover);
+            background: rgba(148, 163, 184, 0.15);
+        }
+
+        .pwd-toggle-btn svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+
+        .caps-warning {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 6px 10px;
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: left;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .caps-warning {
+                background: #78350f;
+                color: #fef3c7;
+                border-color: #b45309;
+            }
         }
 
         .login-alert {
@@ -76,32 +233,123 @@
             background: #fee2e2;
             color: #991b1b;
             border: 1px solid #f87171;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 11px 14px;
+            border-radius: 10px;
             font-size: 13px;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
             text-align: left;
+            line-height: 1.4;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .login-alert {
+                background: rgba(153, 27, 27, 0.35);
+                color: #fecaca;
+                border-color: #dc2626;
+            }
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 13px 18px;
+            font-size: 15px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(22, 163, 74, 0.4);
+        }
+
+        .btn-submit:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.65s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-3px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .driver-box {
-            margin-top: 24px;
+            margin-top: 22px;
             padding: 14px;
-            background: #f8fafc;
-            border: 1px dashed #cbd5e1;
+            background: var(--driver-bg);
+            border: 1px dashed var(--driver-border);
             border-radius: 10px;
             font-size: 13px;
-            color: #475569;
+            color: var(--driver-text);
+            line-height: 1.5;
         }
 
         .driver-box a {
-            color: #15803d;
+            color: var(--accent-green);
             font-weight: 800;
             text-decoration: none;
+            display: inline-block;
+            margin-top: 4px;
         }
 
         .driver-box a:hover {
             text-decoration: underline;
+        }
+
+        .login-footer {
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid var(--card-border);
+            font-size: 11.5px;
+            color: var(--footer-text);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .login-footer .version-tag {
+            font-weight: 600;
+            letter-spacing: 0.4px;
+        }
+
+        .login-footer .help-text {
+            color: var(--footer-text);
+        }
+
+        .login-footer .help-text strong {
+            color: var(--accent-green);
         }
     </style>
 </head>
@@ -124,58 +372,123 @@
 
     <div class="login-wrap">
         <div class="login-card">
+            <!-- Logo -->
             <div class="login-logo">
-                <img src="/images/mhc-logo.png" alt="Logo">
+                <img src="/images/mhc-logo.png" alt="May Harvest Logo">
             </div>
 
-            <h2 class="login-title">Staff &amp; Dispatcher Login</h2>
+            <!-- Company Name & Branding Under Logo -->
+            <div class="brand-heading">
+                <h1 class="company-name">May Harvest Corporation</h1>
+                <div class="system-subtitle">Dispatch Queuing System</div>
+            </div>
+
             <p class="login-sub">Please enter your authorized plant credentials to access the dispatch backend.</p>
 
-            <div id="loginAlert" class="login-alert"></div>
+            <!-- Error Banner -->
+            <div id="loginAlert" class="login-alert" role="alert"></div>
 
-            <form id="loginForm">
+            <form id="loginForm" autocomplete="on">
                 <div class="login-field">
-                    <label>Username</label>
-                    <input type="text" id="username" placeholder="e.g. admin, dispatcher1, sapanalyst, guard" required autocomplete="username" autofocus>
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            placeholder="Enter your username" 
+                            required 
+                            autocomplete="username" 
+                            autofocus>
+                    </div>
                 </div>
 
                 <div class="login-field">
-                    <label>Password</label>
-                    <input type="password" id="password" placeholder="Enter password" required autocomplete="current-password">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="has-toggle" 
+                            placeholder="Enter your password" 
+                            required 
+                            autocomplete="current-password">
+                        <button 
+                            type="button" 
+                            id="togglePasswordBtn" 
+                            class="pwd-toggle-btn" 
+                            aria-label="Show password" 
+                            title="Show/hide password" 
+                            tabindex="-1">
+                            <!-- Eye icon (visible password) -->
+                            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <!-- Eye-off icon (hidden password) -->
+                            <svg id="eyeOffIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Caps Lock Warning -->
+                    <div id="capsLockAlert" class="caps-warning" role="status">
+                        <span>⚠️</span>
+                        <span>Caps Lock is ON</span>
+                    </div>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 13px;">
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0; font-weight: normal; color: #475569;">
-                        <input type="checkbox" id="rememberMe" checked style="width: auto;">
+                    <label style="display: flex; align-items: center; gap: 7px; cursor: pointer; margin: 0; font-weight: 500; color: var(--card-sub);">
+                        <input type="checkbox" id="rememberMe" checked style="width: auto; cursor: pointer; accent-color: var(--accent-green);">
                         Remember me on this device
                     </label>
                 </div>
 
-                <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;">
-                    🔒 SIGN IN TO BACKEND
+                <button type="submit" id="loginBtn" class="btn-submit">
+                    <span id="btnIcon">🔒</span>
+                    <span id="btnText">SIGN IN TO BACKEND</span>
                 </button>
             </form>
 
+            <!-- Driver Self-service portal link -->
             <div class="driver-box">
                 🚛 <strong>Are you a Truck Driver?</strong><br>
                 You don't need a password! Click below to view the live queue:<br>
                 <a href="/display">👉 Open Public Live Queue Board (View Only)</a>
+            </div>
+
+            <!-- Footer -->
+            <div class="login-footer">
+                <div class="version-tag">System Version v2.4.0</div>
+                <div class="help-text">Need help? Contact <strong>IT / Admin</strong></div>
             </div>
         </div>
     </div>
 
     <script src="/js/auth.js"></script>
     <script>
-        // Clock
+        // Realtime Clock
         function updateClock() {
             const el = document.getElementById('clock');
-            if (el) el.textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+            if (el) {
+                el.textContent = new Date().toLocaleTimeString('en-US', {
+                    timeZone: 'Asia/Manila',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                });
+            }
         }
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Redirect if already logged in
-        if (getAuthToken()) {
+        // Redirect if already authenticated
+        if (typeof getAuthToken === 'function' && getAuthToken()) {
             const params = new URLSearchParams(window.location.search);
             const returnUrl = params.get('returnUrl') || '/dispatch';
             window.location.href = returnUrl;
@@ -183,18 +496,59 @@
 
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');
+        const btnIcon = document.getElementById('btnIcon');
+        const btnText = document.getElementById('btnText');
         const loginAlert = document.getElementById('loginAlert');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const eyeOffIcon = document.getElementById('eyeOffIcon');
+        const capsLockAlert = document.getElementById('capsLockAlert');
 
+        // 1. Show/Hide Password Toggle
+        togglePasswordBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+            eyeIcon.style.display = isPassword ? 'none' : 'block';
+            eyeOffIcon.style.display = isPassword ? 'block' : 'none';
+            togglePasswordBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+            passwordInput.focus();
+        });
+
+        // 2. Caps Lock Warning Detector
+        function checkCapsLock(e) {
+            if (e && typeof e.getModifierState === 'function') {
+                const isCapsOn = e.getModifierState('CapsLock');
+                capsLockAlert.style.display = isCapsOn ? 'flex' : 'none';
+            }
+        }
+        passwordInput.addEventListener('keydown', checkCapsLock);
+        passwordInput.addEventListener('keyup', checkCapsLock);
+        passwordInput.addEventListener('focus', checkCapsLock);
+        passwordInput.addEventListener('blur', () => {
+            capsLockAlert.style.display = 'none';
+        });
+
+        // 3. Form Submit with Double-click Protection & Clean Error Handling
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             loginAlert.style.display = 'none';
 
             const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+            const password = passwordInput.value;
             const rememberMe = document.getElementById('rememberMe').checked;
 
+            if (!username || !password) {
+                loginAlert.style.display = 'block';
+                loginAlert.textContent = 'Please enter both your username and password.';
+                return;
+            }
+
+            // Set Loading State
             loginBtn.disabled = true;
-            loginBtn.textContent = 'Verifying credentials...';
+            btnIcon.className = 'btn-spinner';
+            btnIcon.textContent = '';
+            btnText.textContent = 'Signing in...';
 
             try {
                 const res = await fetch('/api/auth/login', {
@@ -207,24 +561,40 @@
 
                 if (!data.success) {
                     loginAlert.style.display = 'block';
-                    loginAlert.textContent = data.error || 'Login failed. Please check your credentials.';
+                    // Clear and user-friendly error message
+                    if (res.status === 401 || (data.error && data.error.toLowerCase().includes('invalid'))) {
+                        loginAlert.textContent = 'Wrong username or password. Please try again.';
+                    } else {
+                        loginAlert.textContent = data.error || 'Wrong username or password. Please try again.';
+                    }
+
+                    // Reset Button State
                     loginBtn.disabled = false;
-                    loginBtn.textContent = '🔒 SIGN IN TO BACKEND';
+                    btnIcon.className = '';
+                    btnIcon.textContent = '🔒';
+                    btnText.textContent = 'SIGN IN TO BACKEND';
+                    passwordInput.focus();
+                    passwordInput.select();
                     return;
                 }
 
-                // Save session
-                setAuthSession(data.token, data.user, rememberMe);
+                // Successful login
+                btnText.textContent = 'Success! Redirecting...';
+                if (typeof setAuthSession === 'function') {
+                    setAuthSession(data.token, data.user, rememberMe);
+                }
 
-                // Redirect to requested page or dispatch
                 const params = new URLSearchParams(window.location.search);
                 const returnUrl = params.get('returnUrl') || '/dispatch';
                 window.location.href = returnUrl;
+
             } catch (err) {
                 loginAlert.style.display = 'block';
-                loginAlert.textContent = 'Network error: ' + err.message;
+                loginAlert.textContent = 'Unable to connect to server. Please check your internet connection.';
                 loginBtn.disabled = false;
-                loginBtn.textContent = '🔒 SIGN IN TO BACKEND';
+                btnIcon.className = '';
+                btnIcon.textContent = '🔒';
+                btnText.textContent = 'SIGN IN TO BACKEND';
             }
         });
     </script>
