@@ -467,6 +467,14 @@ let pendingCancelTruck = null;
 function startLoading(id) {
     const truck = todayTrucks.find(t => t.id === id);
     if (!truck) return;
+
+    // Strict validation: Require Warehouse Recorder before starting loading
+    if (!truck.warehouse_recorder || !truck.warehouse_recorder.trim()) {
+        alert(`⚠️ Warehouse Recorder Required!\n\nPlease assign a Warehouse Recorder first for ${truck.truck_number} (${truck.queue}) before starting loading.`);
+        openRecorderModal(id);
+        return;
+    }
+
     pendingStartLoadingTruckId = id;
 
     const details = document.getElementById('startLoadingTruckDetails');
@@ -476,6 +484,7 @@ function startLoading(id) {
             <div><strong>Plate:</strong> ${escapeHtml(truck.truck_number)}</div>
             <div><strong>Driver:</strong> ${escapeHtml(truck.driver_name)}</div>
             <div><strong>Door:</strong> DOOR ${escapeHtml(truck.loading_door || 'N/A')}</div>
+            <div><strong>Warehouse Recorder:</strong> <span style="color:#2563eb;font-weight:700;">👷 ${escapeHtml(truck.warehouse_recorder)}</span></div>
             <div><strong>Load:</strong> ${escapeHtml(truck.load_type || '—')}</div>
         `;
     }

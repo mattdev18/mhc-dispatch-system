@@ -538,12 +538,20 @@ app.post('/api/trucks/:id/recall', requirePermission('trucks:call'), async (req,
     }
 });
 
-// API: Start Loading (PROTECTED)
+// API: Start Loading (PROTECTED - Requires Assigned Warehouse Recorder)
 app.post('/api/trucks/:id/start-loading', requirePermission('trucks:loading'), async (req, res) => {
     try {
         const { id } = req.params;
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
+
+        // Enforce assigned Warehouse Recorder
+        if (!truck.warehouse_recorder || !truck.warehouse_recorder.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Warehouse Recorder is required before starting loading. Please assign personnel first.'
+            });
+        }
 
         const now = new Date();
         const loadingTime = getTimeString();
@@ -602,7 +610,7 @@ app.post('/api/trucks/:id/depart', requirePermission('trucks:depart'), async (re
         const departedTimestamp = now.toISOString();
 
         await run(
-            `UPDATE trucks SET status = 'Departed', loading_door = NULL, departed_time = ?, departed_timestamp = ? WHERE id = ?`,
+            `UPDATE trucks SET status = 'Departed', departed_time = ?, departed_timestamp = ? WHERE id = ?`,
             [departedTime, departedTimestamp, id]
         );
 

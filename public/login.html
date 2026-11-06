@@ -155,19 +155,21 @@
         .login-field input[type="text"],
         .login-field input[type="password"] {
             width: 100%;
-            padding: 12px 14px;
+            height: 48px;
+            padding: 0 16px;
             border-radius: 10px;
             border: 1.5px solid var(--input-border);
-            font-size: 14px;
+            font-size: 14.5px;
             background: var(--input-bg);
             color: var(--input-text);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
             box-sizing: border-box;
+            line-height: normal;
         }
 
         .login-field input.has-toggle {
-            padding-right: 46px;
+            padding-right: 48px;
         }
 
         .login-field input:focus {
@@ -176,32 +178,55 @@
             box-shadow: 0 0 0 4px var(--accent-focus);
         }
 
+        /* Bulletproof override to completely nullify global button styles */
+        button.pwd-toggle-btn,
         .pwd-toggle-btn {
+            all: unset;
             position: absolute;
-            right: 10px;
+            right: 8px;
             top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--toggle-color);
-            border-radius: 6px;
-            transition: color 0.15s ease, background 0.15s ease;
+            transform: translateY(-50%) !important;
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            max-width: 32px !important;
+            max-height: 32px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            color: var(--toggle-color) !important;
+            border-radius: 8px !important;
+            transition: color 0.15s ease, background-color 0.15s ease !important;
+            z-index: 5;
+            box-sizing: border-box !important;
         }
 
+        button.pwd-toggle-btn:hover,
         .pwd-toggle-btn:hover {
-            color: var(--toggle-hover);
-            background: rgba(148, 163, 184, 0.15);
+            transform: translateY(-50%) !important;
+            color: var(--toggle-hover) !important;
+            background-color: rgba(148, 163, 184, 0.18) !important;
+            box-shadow: none !important;
+        }
+
+        button.pwd-toggle-btn:active,
+        .pwd-toggle-btn:active {
+            transform: translateY(-50%) scale(0.92) !important;
         }
 
         .pwd-toggle-btn svg {
-            width: 20px;
-            height: 20px;
+            width: 19px;
+            height: 19px;
             display: block;
+            pointer-events: none;
+            stroke-width: 2.2;
         }
 
         .caps-warning {
