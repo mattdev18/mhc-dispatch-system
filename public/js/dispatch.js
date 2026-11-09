@@ -1058,48 +1058,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // =============================================================
-// SEGMENTED THEME SWITCHER (Light | Dark | Device Sync)
-// =============================================================
-
-function setAppTheme(mode, save = true) {
-    const body = document.body;
-    const btnLight = document.getElementById('btnThemeLight');
-    const btnDark = document.getElementById('btnThemeDark');
-    const chkLight = document.getElementById('checkLight');
-    const chkDark = document.getElementById('checkDark');
-
-    if (mode === 'dark') {
-        body.classList.add('dark-mode');
-        if (btnDark) btnDark.classList.add('active');
-        if (btnLight) btnLight.classList.remove('active');
-        if (chkDark) chkDark.style.display = 'inline-block';
-        if (chkLight) chkLight.style.display = 'none';
-    } else {
-        body.classList.remove('dark-mode');
-        if (btnLight) btnLight.classList.add('active');
-        if (btnDark) btnDark.classList.remove('active');
-        if (chkLight) chkLight.style.display = 'inline-block';
-        if (chkDark) chkDark.style.display = 'none';
-    }
-
-    if (save) {
-        localStorage.setItem('mhc_theme', mode);
-    }
-}
-
-// Initialize theme on load (respects localStorage or system preference)
-function initAppTheme() {
-    const saved = localStorage.getItem('mhc_theme');
-    if (saved) {
-        setAppTheme(saved, false);
-    } else {
-        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setAppTheme(isDark ? 'dark' : 'light', false);
-    }
-}
-initAppTheme();
-
-// =============================================================
 // QUEUE SEQUENCE RESET (SAPPHIRE ENTERPRISE BUTTON & MODAL)
 // =============================================================
 
