@@ -201,13 +201,22 @@ app.post('/api/auth/change-password', requireAuth, async (req, res) => {
 // HELPERS
 // -------------------------------------------------------------
 
-function getTodayString() {
+// Operational date based on 10:00 AM daily cycle cut-off:
+// Trucks registered between 10:00 AM today and 9:59 AM tomorrow share the same operational date.
+function getTodayString(offsetHours = 10) {
+    const d = new Date(Date.now() - offsetHours * 60 * 60 * 1000);
     return new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Manila',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
-    }).format(new Date());
+    }).format(d);
+}
+
+// Compute the ISO timestamp of the current 10:00 AM cut-off
+function getCurrentCycleCutoffIso() {
+    const cycleDateStr = getTodayString(10); // e.g. "2026-11-09"
+    return new Date(`${cycleDateStr}T10:00:00+08:00`).toISOString();
 }
 
 function getTimeString() {
@@ -370,8 +379,18 @@ app.post('/api/trucks/register', requirePermission('trucks:register'), async (re
             });
         }
 
-        // Generate Queue Number
-        const countRow = await get(`SELECT count(*) as total FROM trucks WHERE date = ?`, [today]);
+        // Generate Queue Number (10:00 AM cycle cut-off & manual reset support)
+        const cycleCutoff = getCurrentCycleCutoffIso();
+        const resetCfg = await get(`SELECT value FROM settings WHERE key = 'last_queue_reset'`);
+        let effectiveCutoff = cycleCutoff;
+        if (resetCfg && resetCfg.value && resetCfg.value > cycleCutoff) {
+            effectiveCutoff = resetCfg.value;
+        }
+
+        const countRow = await get(
+            `SELECT count(*) as total FROM trucks WHERE (arrival_timestamp >= ? OR created_at >= ?)`,
+            [effectiveCutoff, effectiveCutoff]
+        );
         const nextNum = (countRow ? countRow.total : 0) + 1;
         const queueCode = 'Q' + String(nextNum).padStart(3, '0');
 
@@ -722,6 +741,59 @@ app.post('/api/trucks/:id/warehouse-recorder', requireAuth, async (req, res) => 
         io.emit('queue_updated');
 
         res.json({ success: true, truck: updatedTruck });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// API: Get Current Queue Sequence Status (PROTECTED)
+app.get('/api/queue/status', requireAuth, async (req, res) => {
+    try {
+        const cycleCutoff = getCurrentCycleCutoffIso();
+        const resetCfg = await get(`SELECT value FROM settings WHERE key = 'last_queue_reset'`);
+        let effectiveCutoff = cycleCutoff;
+        if (resetCfg && resetCfg.value && resetCfg.value > cycleCutoff) {
+            effectiveCutoff = resetCfg.value;
+        }
+
+        const countRow = await get(
+            `SELECT count(*) as total FROM trucks WHERE (arrival_timestamp >= ? OR created_at >= ?)`,
+            [effectiveCutoff, effectiveCutoff]
+        );
+        const count = countRow ? countRow.total : 0;
+        const currentQueue = count > 0 ? ('Q' + String(count).padStart(3, '0')) : 'Q000';
+        const nextQueue = 'Q' + String(count + 1).padStart(3, '0');
+
+        res.json({
+            success: true,
+            current_queue: currentQueue,
+            next_queue: nextQueue,
+            effective_cutoff: effectiveCutoff,
+            cycle_date: getTodayString(10)
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// API: Manual Queue Sequence Reset to Q001 (PROTECTED)
+app.post('/api/queue/reset', requireAuth, async (req, res) => {
+    try {
+        const nowIso = new Date().toISOString();
+        await run(
+            `INSERT OR REPLACE INTO settings (key, value) VALUES ('last_queue_reset', ?)`,
+            [nowIso]
+        );
+
+        io.emit('queue_updated');
+        io.emit('queue_sequence_reset', { reset_at: nowIso, next_queue: 'Q001' });
+
+        res.json({
+            success: true,
+            message: 'Queue sequence reset to Q001 successfully.',
+            reset_at: nowIso,
+            next_queue: 'Q001'
+        });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

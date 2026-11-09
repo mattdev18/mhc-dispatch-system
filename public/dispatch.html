@@ -28,6 +28,43 @@
                 <span class="conn-dot" id="connDot"></span>
                 <span id="connText">Connecting...</span>
             </div>
+
+            <!-- Segmented Theme Switcher: Light | Dark | Device -->
+            <div class="theme-pill-track" role="radiogroup" aria-label="Theme switcher">
+                <button type="button" class="theme-toggle-btn active" id="btnThemeLight" onclick="setAppTheme('light')">
+                    <span class="check-icon" id="checkLight">✓</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <span>Light</span>
+                </button>
+
+                <button type="button" class="theme-toggle-btn" id="btnThemeDark" onclick="setAppTheme('dark')">
+                    <span class="check-icon" id="checkDark" style="display:none;">✓</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <span>Dark</span>
+                </button>
+
+                <div class="device-indicator" title="Synchronized with current device theme">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                    <span>Device</span>
+                </div>
+            </div>
+
             <div id="clock">--:--:--</div>
         </div>
     </header>
@@ -100,9 +137,15 @@
                         </button>
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <input type="text" id="searchInput" placeholder="Search plate, driver, queue..." oninput="renderTable()" style="max-width: 220px; padding: 8px 12px; font-size: 13px;">
                     <button class="btn btn-outline" onclick="loadTodayData()">🔄 Refresh</button>
+                    <!-- SAPPHIRE ENTERPRISE RESET QUEUE BUTTON -->
+                    <button type="button" class="btn btn-sapphire-reset" id="btnResetQueue" onclick="openResetQueueModal()">
+                        <span>⚡</span>
+                        <span>Reset Queue Sequence</span>
+                        <span class="sub-pill">Start Q001</span>
+                    </button>
                 </div>
             </div>
 
@@ -382,6 +425,51 @@
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
                 <button type="button" class="btn btn-secondary" onclick="closeRecorderModal()">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="executeSaveRecorder()">💾 Save Recorder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Reset Queue Sequence Confirmation (100% Professional English) -->
+    <div class="modal" id="resetQueueModal">
+        <div class="modal-content" style="max-width: 490px; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #e0f2fe; color: #0284c7; border: 1.5px solid #bae6fd; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                    ⚡
+                </div>
+                <div>
+                    <h3 style="color: #0f172a; margin: 0; font-size: 18px; font-weight: 800;">Reset Queue Sequence</h3>
+                    <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Operational Shift &amp; Numbering Cut-off</div>
+                </div>
+            </div>
+
+            <p style="color: #334155; font-size: 13.5px; line-height: 1.55; margin-bottom: 14px;">
+                Are you sure you want to initialize a <strong>Queue Sequence Reset</strong> now?
+                The next registered truck will begin at <strong>Q001</strong> for the new operational cycle.
+            </p>
+
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">
+                <div style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px;">
+                    <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 2px;">Current Sequence</div>
+                    <div id="modalCurrentSeq" style="font-size: 24px; font-weight: 900; color: #64748b;">--</div>
+                </div>
+                <div style="background: white; border: 1px solid #bae6fd; border-radius: 8px; padding: 8px;">
+                    <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #0284c7; margin-bottom: 2px;">Next Sequence</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #0284c7;">Q001</div>
+                </div>
+            </div>
+
+            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 11px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; line-height: 1.45;">
+                <span style="font-size: 18px;">🛡️</span>
+                <div>
+                    <strong>Zero Data Loss Guaranteed:</strong> All historical truck records, timestamps, bay door logs, and reports will remain 100% safe and accessible.
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeResetQueueModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmResetQueue" style="background: linear-gradient(135deg, #0369a1, #0284c7); border: none; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);" onclick="executeResetQueue()">
+                    ✓ Confirm &amp; Reset to Q001
+                </button>
             </div>
         </div>
     </div>

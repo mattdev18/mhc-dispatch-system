@@ -1055,3 +1055,104 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+// =============================================================
+// SEGMENTED THEME SWITCHER (Light | Dark | Device Sync)
+// =============================================================
+
+function setAppTheme(mode, save = true) {
+    const body = document.body;
+    const btnLight = document.getElementById('btnThemeLight');
+    const btnDark = document.getElementById('btnThemeDark');
+    const chkLight = document.getElementById('checkLight');
+    const chkDark = document.getElementById('checkDark');
+
+    if (mode === 'dark') {
+        body.classList.add('dark-mode');
+        if (btnDark) btnDark.classList.add('active');
+        if (btnLight) btnLight.classList.remove('active');
+        if (chkDark) chkDark.style.display = 'inline-block';
+        if (chkLight) chkLight.style.display = 'none';
+    } else {
+        body.classList.remove('dark-mode');
+        if (btnLight) btnLight.classList.add('active');
+        if (btnDark) btnDark.classList.remove('active');
+        if (chkLight) chkLight.style.display = 'inline-block';
+        if (chkDark) chkDark.style.display = 'none';
+    }
+
+    if (save) {
+        localStorage.setItem('mhc_theme', mode);
+    }
+}
+
+// Initialize theme on load (respects localStorage or system preference)
+function initAppTheme() {
+    const saved = localStorage.getItem('mhc_theme');
+    if (saved) {
+        setAppTheme(saved, false);
+    } else {
+        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setAppTheme(isDark ? 'dark' : 'light', false);
+    }
+}
+initAppTheme();
+
+// =============================================================
+// QUEUE SEQUENCE RESET (SAPPHIRE ENTERPRISE BUTTON & MODAL)
+// =============================================================
+
+async function openResetQueueModal() {
+    try {
+        const token = getAuthToken();
+        const res = await fetch('/api/queue/status', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const curEl = document.getElementById('modalCurrentSeq');
+        if (curEl) {
+            curEl.textContent = data.current_queue || 'Q000';
+        }
+    } catch (e) {
+        console.warn('Queue status query failed:', e);
+    }
+
+    const modal = document.getElementById('resetQueueModal');
+    if (modal) modal.classList.add('show');
+}
+
+function closeResetQueueModal() {
+    const modal = document.getElementById('resetQueueModal');
+    if (modal) modal.classList.remove('show');
+}
+
+async function executeResetQueue() {
+    closeResetQueueModal();
+    try {
+        const token = getAuthToken();
+        const res = await fetch('/api/queue/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('✓ Queue Sequence Reset to Q001 Successfully!\n\nThe next registered truck will be assigned Q001.\nAll historical logs and reports remain safe.');
+            loadTodayData();
+        } else {
+            alert('Failed to reset queue: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Socket listener for real-time queue sequence reset
+if (typeof socket !== 'undefined') {
+    socket.on('queue_sequence_reset', () => {
+        loadTodayData();
+    });
+}
