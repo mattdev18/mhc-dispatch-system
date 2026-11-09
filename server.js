@@ -706,6 +706,14 @@ app.post('/api/trucks/:id/warehouse-recorder', requireAuth, async (req, res) => 
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
 
+        // Lock editing once truck is Completed (finished loading), Departed, or Cancelled
+        if (['Completed', 'Departed', 'Cancelled'].includes(truck.status)) {
+            return res.status(400).json({
+                success: false,
+                error: `Warehouse Recorder cannot be edited once truck is ${truck.status}.`
+            });
+        }
+
         const recorderName = (warehouse_recorder || '').trim();
         await run(`UPDATE trucks SET warehouse_recorder = ? WHERE id = ?`, [recorderName || null, id]);
 

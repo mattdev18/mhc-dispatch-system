@@ -336,9 +336,17 @@ function renderTable() {
             ? `<span style="display: inline-block; font-size: 11px; padding: 2px 7px; background: #dcfce7; color: #166534; font-weight: 700; border-radius: 4px;">Today</span>`
             : `<span style="display: inline-block; font-size: 11px; padding: 2px 7px; background: #f1f5f9; color: #475569; font-weight: 600; border-radius: 4px;">${escapeHtml(truck.date || '—')}</span>`;
 
-        const recorderHtml = truck.warehouse_recorder
-            ? `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; font-weight: 700;" onclick="openRecorderModal(${truck.id})">👷 ${escapeHtml(truck.warehouse_recorder)} ✏️</button>`
-            : `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border: 1px dashed #94a3b8; color: #64748b; background: #f8fafc;" onclick="openRecorderModal(${truck.id})">➕ Enter Name</button>`;
+        const isRecorderLocked = ['Completed', 'Departed', 'Cancelled'].includes(truck.status);
+        let recorderHtml;
+        if (isRecorderLocked) {
+            recorderHtml = truck.warehouse_recorder
+                ? `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; color: #0369a1; background: #f0f9ff; border: 1px solid #bae6fd; padding: 4px 8px; border-radius: 6px;">👷 ${escapeHtml(truck.warehouse_recorder)}</span>`
+                : `<span style="color: #94a3b8; font-size: 12px;">—</span>`;
+        } else {
+            recorderHtml = truck.warehouse_recorder
+                ? `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; font-weight: 700;" onclick="openRecorderModal(${truck.id})">👷 ${escapeHtml(truck.warehouse_recorder)} ✏️</button>`
+                : `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border: 1px dashed #94a3b8; color: #64748b; background: #f8fafc;" onclick="openRecorderModal(${truck.id})">➕ Enter Name</button>`;
+        }
 
         return `
             <tr>
@@ -965,9 +973,15 @@ function getCurrentTimeString() {
 let pendingRecorderTruckId = null;
 
 function openRecorderModal(id) {
-    pendingRecorderTruckId = id;
     const truck = todayTrucks.find(t => t.id === id);
     if (!truck) return;
+
+    if (['Completed', 'Departed', 'Cancelled'].includes(truck.status)) {
+        alert(`Cannot edit Warehouse Recorder: Truck ${truck.truck_number} (${truck.queue}) is already ${truck.status}.`);
+        return;
+    }
+
+    pendingRecorderTruckId = id;
 
     const summaryEl = document.getElementById('modalRecorderTruckInfo');
     if (summaryEl) {
