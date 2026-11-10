@@ -1061,11 +1061,29 @@ document.addEventListener('DOMContentLoaded', () => {
 // QUEUE SEQUENCE RESET (SAPPHIRE ENTERPRISE BUTTON & MODAL)
 // =============================================================
 
+function getCurrentStaffUser() {
+    return window.currentUser || getAuthUser();
+}
+
+// Main handler for "Reset Queue Sequence" button
 async function openResetQueueModal() {
+    const user = getCurrentStaffUser();
+    const role = user ? user.role : null;
+
+    if (role === 'admin') {
+        // Admin is authorized to execute reset
+        await openAdminResetQueueModal();
+    } else {
+        // Non-admin (Dispatcher 1, Dispatcher 2, Warehouse, etc.) sees restriction dialog
+        openRestrictedResetQueueModal(user);
+    }
+}
+
+async function openAdminResetQueueModal() {
     try {
         const token = getAuthToken();
         const res = await fetch('/api/queue/status', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
         const curEl = document.getElementById('modalCurrentSeq');
@@ -1085,6 +1103,73 @@ function closeResetQueueModal() {
     if (modal) modal.classList.remove('show');
 }
 
+function openRestrictedResetQueueModal(user) {
+    const roleLabel = document.getElementById('lblCurrentStaffRole');
+    if (roleLabel) {
+        if (user) {
+            roleLabel.textContent = (user.name || user.username) + ' (' + (user.role || '').toUpperCase() + ')';
+        } else {
+            roleLabel.textContent = 'Dispatcher';
+        }
+    }
+
+    const notice = document.getElementById('requestSuccessNotice');
+    if (notice) notice.style.display = 'none';
+
+    const btn = document.getElementById('btnRequestAdminReset');
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔔 Notify Admin to Reset';
+    }
+
+    const modal = document.getElementById('resetQueueRestrictedModal');
+    if (modal) modal.classList.add('show');
+}
+
+function closeResetQueueRestrictedModal() {
+    const modal = document.getElementById('resetQueueRestrictedModal');
+    if (modal) modal.classList.remove('show');
+}
+
+// Non-admin action: Send request to Admin
+async function executeRequestResetQueue() {
+    const btn = document.getElementById('btnRequestAdminReset');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Transmitting...';
+    }
+
+    try {
+        const token = getAuthToken();
+        const res = await fetch('/api/queue/request-reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            const notice = document.getElementById('requestSuccessNotice');
+            if (notice) notice.style.display = 'block';
+            if (btn) btn.textContent = '✓ Admin Alerted!';
+        } else {
+            alert('Failed to send request: ' + (data.error || 'Unknown error'));
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '🔔 Notify Admin to Reset';
+            }
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '🔔 Notify Admin to Reset';
+        }
+    }
+}
+
+// Admin execution: Perform Reset
 async function executeResetQueue() {
     closeResetQueueModal();
     try {
@@ -1093,7 +1178,7 @@ async function executeResetQueue() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             }
         });
         const data = await res.json();
@@ -1108,9 +1193,60 @@ async function executeResetQueue() {
     }
 }
 
-// Socket listener for real-time queue sequence reset
+// Floating Toast helpers for Admin
+function showAdminResetToast(data) {
+    const banner = document.getElementById('adminToastBanner');
+    const msg = document.getElementById('adminToastMessage');
+    if (!banner || !msg) return;
+
+    const requester = escapeHtml(data.requesterName || data.requesterUsername || 'Dispatcher');
+    const time = escapeHtml(data.requestedAtDisplay || 'just now');
+
+    msg.innerHTML = 'Dispatcher <strong>' + requester + '</strong> requested a manual queue sequence reset to <strong>Q001</strong> at ' + time + '.';
+    banner.style.display = 'block';
+
+    playNotificationBeep();
+}
+
+function dismissAdminToast() {
+    const banner = document.getElementById('adminToastBanner');
+    if (banner) banner.style.display = 'none';
+}
+
+function openAdminModalFromToast() {
+    dismissAdminToast();
+    openAdminResetQueueModal();
+}
+
+function playNotificationBeep() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.35);
+    } catch (e) {}
+}
+
+// Socket listener for real-time queue sequence reset & admin alerts
 if (typeof socket !== 'undefined') {
     socket.on('queue_sequence_reset', () => {
         loadTodayData();
+    });
+
+    socket.on('queue_reset_requested', (data) => {
+        const user = getCurrentStaffUser();
+        if (user && user.role === 'admin') {
+            showAdminResetToast(data);
+        }
     });
 }

@@ -60,7 +60,8 @@ const PERMISSIONS = {
     // Reports
     'reports:view':     ['admin', 'sapanalyst', 'warehouse'],
     // Admin only
-    'users:manage':     ['admin']
+    'users:manage':     ['admin'],
+    'queue:reset':      ['admin']
 };
 
 // Aling page/screen ang puwedeng buksan ng bawat role
@@ -786,8 +787,36 @@ app.get('/api/queue/status', requireAuth, async (req, res) => {
     }
 });
 
-// API: Manual Queue Sequence Reset to Q001 (PROTECTED)
-app.post('/api/queue/reset', requireAuth, async (req, res) => {
+// API: Request Manual Queue Sequence Reset (Any staff, e.g. Dispatcher 1 or 2)
+app.post('/api/queue/request-reset', requireAuth, async (req, res) => {
+    try {
+        const requesterName = req.user.name || req.user.username;
+        const requesterRole = req.user.role;
+        const requesterUsername = req.user.username;
+        const requestedAt = new Date().toISOString();
+        const requestedAtDisplay = getTimeString();
+
+        // Broadcast to all connected clients (especially Admin on dispatch command center)
+        io.emit('queue_reset_requested', {
+            requesterName,
+            requesterRole,
+            requesterUsername,
+            requestedAt,
+            requestedAtDisplay
+        });
+
+        res.json({
+            success: true,
+            message: 'Queue reset request successfully transmitted to Plant Administrator.',
+            requestedAtDisplay
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// API: Manual Queue Sequence Reset to Q001 (PROTECTED - Admin Only)
+app.post('/api/queue/reset', requirePermission('queue:reset'), async (req, res) => {
     try {
         const nowIso = new Date().toISOString();
         await run(
