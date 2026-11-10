@@ -229,6 +229,16 @@ function getTimeString() {
     });
 }
 
+// Real calendar date in Manila timezone (no offset) - for displaying actual truck arrival date
+function getActualDateString() {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(new Date());
+}
+
 function getDateDaysAgo(days = 7) {
     const d = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     return new Intl.DateTimeFormat('en-CA', {
@@ -363,7 +373,7 @@ app.post('/api/trucks/register', requirePermission('trucks:register'), async (re
             return res.status(400).json({ success: false, error: 'Truck number, driver name, product load, and destination are required.' });
         }
 
-        const today = getTodayString();
+        const today = getActualDateString(); // Real Manila date (no offset) for display
         const cleanTruckNum = truck_number.trim().toUpperCase();
 
         // Check duplicate active truck currently inside the plant
