@@ -361,10 +361,14 @@ function renderTable() {
         }
         let rowClass = '';
         let elapsedBadge = '';
+        let isStaleOver12Hours = false;
 
         if (truck.status === 'Waiting' && (truck.arrival_timestamp || truck.created_at)) {
             const ts = truck.arrival_timestamp || truck.created_at;
             const elapsedMins = (Date.now() - new Date(ts).getTime()) / (60 * 1000);
+            if (elapsedMins >= 12 * 60) {
+                isStaleOver12Hours = true;
+            }
             if (elapsedMins >= 60) {
                 rowClass = 'overdue-critical';
                 elapsedBadge = '<div class="badge-overdue-critical">⚠️ Overdue: ' + (elapsedMins / 60).toFixed(1) + 'h in Staging</div>';
@@ -373,11 +377,17 @@ function renderTable() {
                 rowClass = 'overdue-warning';
                 elapsedBadge = '<div class="badge-overdue-warning">⏳ Wait: ' + Math.round(elapsedMins) + 'm elapsed</div>';
             }
+        } else if (['Called', 'Loading'].includes(truck.status) && (truck.arrival_timestamp || truck.created_at)) {
+            const ts = truck.arrival_timestamp || truck.created_at;
+            const elapsedMins = (Date.now() - new Date(ts).getTime()) / (60 * 1000);
+            if (elapsedMins >= 12 * 60) {
+                isStaleOver12Hours = true;
+            }
         }
 
-        // Admin-Only Quick Depart button for overdue trucks
-        if (role === 'admin' && (rowClass === 'overdue-critical' || rowClass === 'overdue-warning')) {
-            actionButtons += '<button type="button" class="btn btn-admin-quick-depart" onclick="openQuickDepartModal(' + truck.id + ')" title="Plant Admin Only: Clear truck that physically left earlier"><span>⚡ Quick Depart</span></button>';
+        // Admin-Only Quick Depart button (Strictly visible only for trucks waiting over 12 hours)
+        if (role === 'admin' && isStaleOver12Hours) {
+            actionButtons += '<button type="button" class="btn btn-admin-quick-depart" onclick="openQuickDepartModal(' + truck.id + ')" title="Plant Admin Only: Clear stale truck waiting over 12 hours that physically left earlier"><span>⚡ Quick Depart</span></button>';
         }
 
         return `
@@ -1528,6 +1538,13 @@ let selectedTruckForQuickDepart = null;
 function openQuickDepartModal(truckId) {
     selectedTruckForQuickDepart = todayTrucks.find(t => t.id === truckId);
     if (!selectedTruckForQuickDepart) return;
+
+    const ts = selectedTruckForQuickDepart.arrival_timestamp || selectedTruckForQuickDepart.created_at;
+    const elapsedMins = ts ? (Date.now() - new Date(ts).getTime()) / (60 * 1000) : 0;
+    if (elapsedMins < 12 * 60) {
+        alert('Quick Depart is strictly restricted to trucks that have been in the queue for more than 12 hours.');
+        return;
+    }
 
     const truckIdInput = document.getElementById('quickDepartTruckId');
     if (truckIdInput) truckIdInput.value = selectedTruckForQuickDepart.id;

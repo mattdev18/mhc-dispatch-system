@@ -613,6 +613,18 @@ app.post('/api/trucks/:id/quick-depart', requirePermission('trucks:quick_depart'
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
 
+        // Enforce > 12 hours in queue requirement (with small 10-minute clock variance tolerance ~ 710 mins)
+        const ts = truck.arrival_timestamp || truck.created_at;
+        if (ts) {
+            const elapsedMins = (Date.now() - new Date(ts).getTime()) / (60 * 1000);
+            if (elapsedMins < 710) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Quick Depart is restricted to stale trucks that have exceeded 12 hours in staging.'
+                });
+            }
+        }
+
         const now = new Date();
         const departedTime = getTimeString();
         const departedTimestamp = now.toISOString();
