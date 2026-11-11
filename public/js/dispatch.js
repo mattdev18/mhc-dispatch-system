@@ -223,6 +223,7 @@ function renderTable() {
     });
 
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
+    let hasCriticalOverdue = false;
 
     if (list.length === 0) {
         tbody.innerHTML = `
@@ -357,8 +358,29 @@ function renderTable() {
         } else {
             priorityHtml = `<span class="badge badge-waiting">${escapeHtml(truck.priority || 'Standard')}</span>`;
         }
+        let rowClass = '';
+        let elapsedBadge = '';
+
+        if (truck.status === 'Waiting' && (truck.arrival_timestamp || truck.created_at)) {
+            const ts = truck.arrival_timestamp || truck.created_at;
+            const elapsedMins = (Date.now() - new Date(ts).getTime()) / (60 * 1000);
+            if (elapsedMins >= 60) {
+                rowClass = 'overdue-critical';
+                elapsedBadge = '<div class="badge-overdue-critical">⚠️ Overdue: ' + (elapsedMins / 60).toFixed(1) + 'h in Staging</div>';
+                hasCriticalOverdue = true;
+            } else if (elapsedMins >= 30) {
+                rowClass = 'overdue-warning';
+                elapsedBadge = '<div class="badge-overdue-warning">⏳ Wait: ' + Math.round(elapsedMins) + 'm elapsed</div>';
+            }
+        }
+
+        // Admin-Only Quick Depart button for overdue trucks
+        if (role === 'admin' && (rowClass === 'overdue-critical' || rowClass === 'overdue-warning')) {
+            actionButtons += '<button type="button" class="btn btn-admin-quick-depart" onclick="openQuickDepartModal(' + truck.id + ')" title="Plant Admin Only: Clear truck that physically left earlier"><span>⚡ Quick Depart</span></button>';
+        }
+
         return `
-            <tr>
+            <tr class="${rowClass}">
                 <td><strong>${escapeHtml(truck.queue)}</strong></td>
                 <td>${doorText}</td>
                 <td>${dateBadge}</td>
@@ -367,7 +389,10 @@ function renderTable() {
                 <td>${escapeHtml(truck.company || '—')}</td>
                 <td>${escapeHtml(truck.load_type)}</td>
                 <td>${escapeHtml(truck.destination)}</td>
-                <td>${escapeHtml(truck.arrival_time)}</td>
+                <td>
+                    <div>${escapeHtml(truck.arrival_time)}</div>
+                    ${elapsedBadge}
+                </td>
                 <td>${priorityHtml}</td>
                 <td><span class="badge badge-${truck.status.toLowerCase()}">${escapeHtml(truck.status)}${truck.status === 'Called' && Number(truck.call_count) > 1 ? ` (${truck.call_count}x)` : ''}</span></td>
                 <td>${recorderHtml}</td>
@@ -375,6 +400,10 @@ function renderTable() {
             </tr>
         `;
     }).join('');
+
+    if (hasCriticalOverdue) {
+        checkAndTriggerAlarmSound();
+    }
 }
 
 // Call Next Truck (Auto door assignment)
@@ -1355,6 +1384,186 @@ async function executeSavePriority() {
         if (btn) {
             btn.disabled = false;
             btn.textContent = '✓ Confirm & Update Priority';
+        }
+    }
+}
+
+// =============================================================
+// HIGH-PITCH STACCATO SOUND ALARM (950Hz 8-PULSE) & QUICK DEPART
+// =============================================================
+
+let isAlarmMuted = localStorage.getItem('mhc_sound_alarm_muted') === 'true';
+let lastAlarmPlayTime = 0;
+
+function updateAlarmToggleButton() {
+    const icon = document.getElementById('soundAlarmIcon');
+    const text = document.getElementById('soundAlarmText');
+    const btn = document.getElementById('btnSoundAlarmToggle');
+    if (!icon || !text || !btn) return;
+
+    if (isAlarmMuted) {
+        icon.textContent = '🔇';
+        text.textContent = 'Alarm: Muted';
+        btn.style.color = '#ef4444';
+        btn.style.borderColor = '#f87171';
+        btn.style.background = '#fef2f2';
+    } else {
+        icon.textContent = '🔔';
+        text.textContent = 'Alarm: ON';
+        btn.style.color = '#15803d';
+        btn.style.borderColor = '#86efac';
+        btn.style.background = '#f0fdf4';
+    }
+}
+
+function toggleSoundAlarm() {
+    isAlarmMuted = !isAlarmMuted;
+    localStorage.setItem('mhc_sound_alarm_muted', isAlarmMuted ? 'true' : 'false');
+    updateAlarmToggleButton();
+    if (!isAlarmMuted) {
+        playStaccatoAlarm();
+    }
+}
+
+// ⚡ Sound 2: High-Pitch Staccato Pulses (8 rapid beeps at 950Hz)
+function playStaccatoAlarm() {
+    if (isAlarmMuted) return;
+
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+        const beepTimes = [0, 0.12, 0.24, 0.36, 0.6, 0.72, 0.84, 0.96];
+
+        beepTimes.forEach(t => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(950, now + t);
+
+            gain.gain.setValueAtTime(0.2, now + t);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.08);
+
+            osc.start(now + t);
+            osc.stop(now + t + 0.08);
+        });
+    } catch (e) {
+        console.warn('Alarm audio error:', e);
+    }
+}
+
+function checkAndTriggerAlarmSound() {
+    const now = Date.now();
+    // Sound alarm once every 3 minutes if critical overdue trucks are present
+    if (!isAlarmMuted && (now - lastAlarmPlayTime > 3 * 60 * 1000)) {
+        lastAlarmPlayTime = now;
+        playStaccatoAlarm();
+    }
+}
+
+// Initial button state sync on page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateAlarmToggleButton();
+});
+
+// Periodic alarm check every 60 seconds
+setInterval(() => {
+    const hasCritical = (todayTrucks || []).some(t => {
+        if (t.status === 'Waiting' && (t.arrival_timestamp || t.created_at)) {
+            const elapsed = (Date.now() - new Date(t.arrival_timestamp || t.created_at).getTime()) / (60 * 1000);
+            return elapsed >= 60;
+        }
+        return false;
+    });
+
+    if (hasCritical) {
+        checkAndTriggerAlarmSound();
+    }
+}, 60000);
+
+// Quick Depart Modal Handlers
+let selectedTruckForQuickDepart = null;
+
+function openQuickDepartModal(truckId) {
+    selectedTruckForQuickDepart = todayTrucks.find(t => t.id === truckId);
+    if (!selectedTruckForQuickDepart) return;
+
+    const truckIdInput = document.getElementById('quickDepartTruckId');
+    if (truckIdInput) truckIdInput.value = selectedTruckForQuickDepart.id;
+
+    const summaryEl = document.getElementById('quickDepartTruckSummary');
+    if (summaryEl) {
+        const ts = selectedTruckForQuickDepart.arrival_timestamp || selectedTruckForQuickDepart.created_at;
+        const elapsedMins = ts ? Math.round((Date.now() - new Date(ts).getTime()) / (60 * 1000)) : 0;
+        const elapsedStr = elapsedMins >= 60 ? (elapsedMins / 60).toFixed(1) + ' hours' : elapsedMins + ' mins';
+
+        summaryEl.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div><strong>Queue:</strong> <span style="color:#b91c1c; font-weight:800;">${escapeHtml(selectedTruckForQuickDepart.queue)}</span></div>
+                <div><strong>Plate Number:</strong> <strong>${escapeHtml(selectedTruckForQuickDepart.truck_number)}</strong></div>
+                <div><strong>Driver Name:</strong> ${escapeHtml(selectedTruckForQuickDepart.driver_name)}</div>
+                <div><strong>Hauler / Co:</strong> ${escapeHtml(selectedTruckForQuickDepart.company || '—')}</div>
+                <div><strong>Product Load:</strong> ${escapeHtml(selectedTruckForQuickDepart.load_type)}</div>
+                <div><strong>Gate Arrival:</strong> ${escapeHtml(selectedTruckForQuickDepart.arrival_time)}</div>
+            </div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; font-weight:700; color:#b91c1c;">
+                Elapsed Wait Duration: ~${elapsedStr} (Stale Physical Exit)
+            </div>
+        `;
+    }
+
+    const modal = document.getElementById('quickDepartModal');
+    if (modal) modal.classList.add('show');
+}
+
+function closeQuickDepartModal() {
+    const modal = document.getElementById('quickDepartModal');
+    if (modal) modal.classList.remove('show');
+    selectedTruckForQuickDepart = null;
+}
+
+async function executeQuickDepart() {
+    const truckIdInput = document.getElementById('quickDepartTruckId');
+    const truckId = truckIdInput ? truckIdInput.value : null;
+    const reasonSelect = document.getElementById('quickDepartReason');
+    const reason = reasonSelect ? reasonSelect.value : '';
+
+    if (!truckId) return;
+
+    const btn = document.getElementById('btnConfirmQuickDepart');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Clearing...';
+    }
+
+    try {
+        const token = getAuthToken();
+        const res = await fetch('/api/trucks/' + encodeURIComponent(truckId) + '/quick-depart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ reason: reason })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            closeQuickDepartModal();
+            loadTodayData();
+        } else {
+            alert('Failed to Quick Depart: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '⚡ Confirm Quick Depart & Archive Record';
         }
     }
 }

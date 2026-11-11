@@ -62,7 +62,8 @@ const PERMISSIONS = {
     // Admin only
     'users:manage':     ['admin'],
     'queue:reset':      ['admin'],
-    'trucks:priority':  ['admin']
+    'trucks:priority':  ['admin'],
+    'trucks:quick_depart': ['admin']
 };
 
 // Aling page/screen ang puwedeng buksan ng bawat role
@@ -598,6 +599,46 @@ app.post('/api/trucks/:id/start-loading', requirePermission('trucks:loading'), a
         io.emit('queue_updated');
 
         res.json({ success: true, truck: updatedTruck });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// API: Quick Depart Stale Truck (PROTECTED - Admin Only Override)
+app.post('/api/trucks/:id/quick-depart', requirePermission('trucks:quick_depart'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
+        if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
+
+        const now = new Date();
+        const departedTime = getTimeString();
+        const departedTimestamp = now.toISOString();
+        const auditRemark = reason && reason.trim()
+            ? reason.trim()
+            : 'Procedural Non-Compliance: Warehouse Recorder failed to follow step-by-step dispatch workflow';
+
+        await run(
+            `UPDATE trucks SET 
+                status = 'Departed', 
+                departed_time = ?, 
+                departed_timestamp = ?,
+                remarks = ?
+             WHERE id = ?`,
+            [departedTime, departedTimestamp, auditRemark, id]
+        );
+
+        const updatedTruck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
+        io.emit('truck_status_changed', updatedTruck);
+        io.emit('queue_updated');
+
+        res.json({
+            success: true,
+            message: `Truck ${truck.truck_number} (${truck.queue}) marked as Departed via Admin Quick Depart.`,
+            truck: updatedTruck
+        });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

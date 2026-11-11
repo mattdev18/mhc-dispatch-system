@@ -595,3 +595,85 @@ tr:hover {
     border-radius: 4px;
     letter-spacing: 0.4px;
 }
+
+
+/* =============================================================
+   OVERDUE / STALE TRUCK VISUAL ALERTS & ADMIN QUICK DEPART
+   ============================================================= */
+
+tr.overdue-critical td {
+    background: #fef2f2 !important;
+    border-bottom: 1px solid #fecaca !important;
+}
+
+tr.overdue-critical:hover td {
+    background: #fee2e2 !important;
+}
+
+tr.overdue-warning td {
+    background: #fffbeb !important;
+    border-bottom: 1px solid #fde68a !important;
+}
+
+tr.overdue-warning:hover td {
+    background: #fef3c7 !important;
+}
+
+.badge-overdue-critical {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #f87171;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    animation: pulseOverdueWarning 1.5s infinite;
+}
+
+.badge-overdue-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+@keyframes pulseOverdueWarning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.65; }
+}
+
+/* Admin Quick Depart Button */
+.btn-admin-quick-depart {
+    all: unset;
+    background: linear-gradient(135deg, #b91c1c, #991b1b) !important;
+    color: #ffffff !important;
+    border: 1px solid #f87171 !important;
+    padding: 5px 10px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    box-shadow: 0 2px 6px rgba(185, 28, 28, 0.35) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    white-space: nowrap !important;
+}
+
+.btn-admin-quick-depart:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.45) !important;
+}

@@ -104,6 +104,10 @@
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <input type="text" id="searchInput" placeholder="Search plate, driver, queue..." oninput="renderTable()" style="max-width: 220px; padding: 8px 12px; font-size: 13px;">
                     <button class="btn btn-outline" onclick="loadTodayData()">🔄 Refresh</button>
+                    <button type="button" id="btnSoundAlarmToggle" class="btn btn-outline" onclick="toggleSoundAlarm()" style="font-size: 12px; padding: 6px 12px; border-color: #cbd5e1; color: #334155; display: inline-flex; align-items: center; gap: 5px; font-weight: 700;" title="Toggle Stale Truck Overdue Sound Alarm">
+                        <span id="soundAlarmIcon">🔔</span>
+                        <span id="soundAlarmText">Alarm: ON</span>
+                    </button>
                     <!-- SAPPHIRE ENTERPRISE RESET QUEUE BUTTON -->
                     <button type="button" class="btn btn-sapphire-reset" id="btnResetQueue" onclick="openResetQueueModal()">
                         <span>⚡</span>
@@ -542,6 +546,65 @@
                     <button type="button" class="btn btn-secondary" onclick="closeEditPriorityModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="btnSavePriority" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: none; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);">
                         ✓ Confirm &amp; Update Priority
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+        <!-- Modal: Admin Quick Depart (Clear Stale Truck Override) -->
+    <div class="modal" id="quickDepartModal">
+        <div class="modal-content" style="max-width: 520px; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                    ⚡
+                </div>
+                <div>
+                    <h3 style="color: #0f172a; margin: 0; font-size: 18px; font-weight: 800;">Quick Depart (Clear Stale Truck)</h3>
+                    <div style="font-size: 11.5px; color: #dc2626; font-weight: 800; margin-top: 2px;">ADMINISTRATOR AUDIT OVERRIDE</div>
+                </div>
+            </div>
+
+            <!-- Caution Banner -->
+            <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px; line-height: 1.55; color: #92400e;">
+                <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #b45309;">
+                    <span>⚠️</span> NOTICE — PHYSICAL DEPARTURE RECONCILIATION
+                </div>
+                <div>
+                    Use this utility only when the vehicle has <strong>already physically departed May Harvest plant premises</strong> without standard dispatcher checkout. This marks the truck as Departed and archives the record for daily reporting.
+                </div>
+            </div>
+
+            <!-- Truck Info Box -->
+            <div id="quickDepartTruckSummary" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; color: #334155;"></div>
+
+            <form onsubmit="event.preventDefault(); executeQuickDepart();">
+                <input type="hidden" id="quickDepartTruckId">
+                <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                    Administrative Audit Remark <span style="color: #dc2626;">*</span>
+                    <small style="display: block; font-size: 11px; color: #64748b; font-weight: normal; margin-top: 2px;">
+                        This remark will be permanently logged and displayed in the downloadable Excel / CSV dispatch report.
+                    </small>
+                </label>
+                <select id="quickDepartReason" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box; margin-bottom: 16px; background: white; font-weight: 600; color: #0f172a;">
+                    <option value="Procedural Non-Compliance: Warehouse Recorder failed to follow step-by-step dispatch workflow" selected>
+                        ⭐ Procedural Non-Compliance: Warehouse Recorder failed to follow step-by-step dispatch workflow
+                    </option>
+                    <option value="Gate Reconciled: Physical departure confirmed via Gate Security exit logbook">
+                        Gate Reconciled: Physical departure confirmed via Gate Security exit logbook
+                    </option>
+                    <option value="Offline Operation: Vehicle processed via manual paper dispatch ticket">
+                        Offline Operation: Vehicle processed via manual paper dispatch ticket
+                    </option>
+                    <option value="Pull-Out / Re-routed: Vehicle exited plant premises without loading">
+                        Pull-Out / Re-routed: Vehicle exited plant premises without loading
+                    </option>
+                </select>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeQuickDepartModal()">Cancel</button>
+                    <button type="submit" class="btn btn-admin-quick-depart" id="btnConfirmQuickDepart" style="padding: 10px 16px; font-size: 13px;">
+                        ⚡ Confirm Quick Depart &amp; Archive Record
                     </button>
                 </div>
             </form>
