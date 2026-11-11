@@ -348,6 +348,15 @@ function renderTable() {
                 : `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border: 1px dashed #94a3b8; color: #64748b; background: #f8fafc;" onclick="openRecorderModal(${truck.id})">➕ Enter Name</button>`;
         }
 
+        let priorityHtml = '';
+        if (role === 'admin') {
+            priorityHtml = `<button type="button" class="btn btn-outline" style="font-size: 11px; padding: 3px 8px; border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onclick="openEditPriorityModal(${truck.id})" title="Plant Admin: Click to reclassify Priority Category">`
+                + `<span>${escapeHtml(truck.priority || 'Standard')}</span>`
+                + `<span style="font-size: 10px; opacity: 0.85;">✏️</span>`
+                + `</button>`;
+        } else {
+            priorityHtml = `<span class="badge badge-waiting">${escapeHtml(truck.priority || 'Standard')}</span>`;
+        }
         return `
             <tr>
                 <td><strong>${escapeHtml(truck.queue)}</strong></td>
@@ -359,7 +368,7 @@ function renderTable() {
                 <td>${escapeHtml(truck.load_type)}</td>
                 <td>${escapeHtml(truck.destination)}</td>
                 <td>${escapeHtml(truck.arrival_time)}</td>
-                <td><span class="badge badge-waiting">${escapeHtml(truck.priority)}</span></td>
+                <td>${priorityHtml}</td>
                 <td><span class="badge badge-${truck.status.toLowerCase()}">${escapeHtml(truck.status)}${truck.status === 'Called' && Number(truck.call_count) > 1 ? ` (${truck.call_count}x)` : ''}</span></td>
                 <td>${recorderHtml}</td>
                 <td><div style="display: flex; gap: 6px; flex-wrap: wrap;">${actionButtons}</div></td>
@@ -1249,4 +1258,103 @@ if (typeof socket !== 'undefined') {
             showAdminResetToast(data);
         }
     });
+}
+
+
+// =============================================================
+// ADMIN PRIORITY CATEGORY RECLASSIFICATION
+// =============================================================
+
+let selectedTruckForPriority = null;
+
+function openEditPriorityModal(truckId) {
+    selectedTruckForPriority = todayTrucks.find(t => t.id === truckId);
+    if (!selectedTruckForPriority) return;
+
+    const truckIdInput = document.getElementById('editPriorityTruckId');
+    if (truckIdInput) truckIdInput.value = selectedTruckForPriority.id;
+
+    const summaryEl = document.getElementById('priorityTruckSummary');
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div><strong>Queue:</strong> ${escapeHtml(selectedTruckForPriority.queue || '—')}</div>
+                <div><strong>Plate Number:</strong> ${escapeHtml(selectedTruckForPriority.truck_number || '—')}</div>
+                <div><strong>Driver:</strong> ${escapeHtml(selectedTruckForPriority.driver_name || '—')}</div>
+                <div><strong>Product Load:</strong> ${escapeHtml(selectedTruckForPriority.load_type || '—')}</div>
+            </div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
+                <strong>Current Priority Category:</strong>
+                <span class="badge badge-waiting" style="margin-left: 6px;">${escapeHtml(selectedTruckForPriority.priority || 'Standard')}</span>
+            </div>
+        `;
+    }
+
+    const selectEl = document.getElementById('editPrioritySelect');
+    if (selectEl) {
+        const curVal = selectedTruckForPriority.priority || 'Standard';
+        selectEl.value = curVal;
+        const exists = Array.from(selectEl.options).some(opt => opt.value === curVal);
+        if (!exists && curVal) {
+            const newOpt = document.createElement('option');
+            newOpt.value = curVal;
+            newOpt.textContent = curVal;
+            selectEl.appendChild(newOpt);
+            selectEl.value = curVal;
+        }
+    }
+
+    const modal = document.getElementById('editPriorityModal');
+    if (modal) modal.classList.add('show');
+}
+
+function closeEditPriorityModal() {
+    const modal = document.getElementById('editPriorityModal');
+    if (modal) modal.classList.remove('show');
+    selectedTruckForPriority = null;
+}
+
+async function executeSavePriority() {
+    const truckIdInput = document.getElementById('editPriorityTruckId');
+    const truckId = truckIdInput ? truckIdInput.value : null;
+    const selectEl = document.getElementById('editPrioritySelect');
+    const newPriority = selectEl ? selectEl.value : '';
+
+    if (!truckId || !newPriority) {
+        alert('Please select a valid Priority Category.');
+        return;
+    }
+
+    const btn = document.getElementById('btnSavePriority');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+    }
+
+    try {
+        const token = getAuthToken();
+        const res = await fetch('/api/trucks/' + encodeURIComponent(truckId) + '/priority', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ priority: newPriority })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            closeEditPriorityModal();
+            loadTodayData();
+        } else {
+            alert('Failed to update priority: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '✓ Confirm & Update Priority';
+        }
+    }
 }

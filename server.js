@@ -61,7 +61,8 @@ const PERMISSIONS = {
     'reports:view':     ['admin', 'sapanalyst', 'warehouse'],
     // Admin only
     'users:manage':     ['admin'],
-    'queue:reset':      ['admin']
+    'queue:reset':      ['admin'],
+    'trucks:priority':  ['admin']
 };
 
 // Aling page/screen ang puwedeng buksan ng bawat role
@@ -202,9 +203,9 @@ app.post('/api/auth/change-password', requireAuth, async (req, res) => {
 // HELPERS
 // -------------------------------------------------------------
 
-// Operational date based on 10:00 AM daily cycle cut-off:
-// Trucks registered between 10:00 AM today and 9:59 AM tomorrow share the same operational date.
-function getTodayString(offsetHours = 10) {
+// Operational date based on 12:00 PM daily cycle cut-off:
+// Trucks registered between 12:00 PM today and 11:59 AM tomorrow share the same operational date.
+function getTodayString(offsetHours = 12) {
     const d = new Date(Date.now() - offsetHours * 60 * 60 * 1000);
     return new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Manila',
@@ -214,10 +215,10 @@ function getTodayString(offsetHours = 10) {
     }).format(d);
 }
 
-// Compute the ISO timestamp of the current 10:00 AM cut-off
+// Compute the ISO timestamp of the current 12:00 PM cut-off
 function getCurrentCycleCutoffIso() {
-    const cycleDateStr = getTodayString(10); // e.g. "2026-11-09"
-    return new Date(`${cycleDateStr}T10:00:00+08:00`).toISOString();
+    const cycleDateStr = getTodayString(12); // e.g. "2026-11-11"
+    return new Date(`${cycleDateStr}T12:00:00+08:00`).toISOString();
 }
 
 function getTimeString() {
@@ -390,7 +391,7 @@ app.post('/api/trucks/register', requirePermission('trucks:register'), async (re
             });
         }
 
-        // Generate Queue Number (10:00 AM cycle cut-off & manual reset support)
+        // Generate Queue Number (12:00 PM cycle cut-off & manual reset support)
         const cycleCutoff = getCurrentCycleCutoffIso();
         const resetCfg = await get(`SELECT value FROM settings WHERE key = 'last_queue_reset'`);
         let effectiveCutoff = cycleCutoff;
@@ -780,7 +781,7 @@ app.get('/api/queue/status', requireAuth, async (req, res) => {
             current_queue: currentQueue,
             next_queue: nextQueue,
             effective_cutoff: effectiveCutoff,
-            cycle_date: getTodayString(10)
+            cycle_date: getTodayString(12)
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -832,6 +833,44 @@ app.post('/api/queue/reset', requirePermission('queue:reset'), async (req, res) 
             message: 'Queue sequence reset to Q001 successfully.',
             reset_at: nowIso,
             next_queue: 'Q001'
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// API: Update Truck Priority Category (PROTECTED - Admin Only)
+app.patch('/api/trucks/:id/priority', requirePermission('trucks:priority'), async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { priority } = req.body;
+
+        if (!priority || !priority.trim()) {
+            return res.status(400).json({ success: false, error: 'Priority category is required.' });
+        }
+
+        const cleanPriority = priority.trim();
+
+        const truck = await get('SELECT * FROM trucks WHERE id = ?', [id]);
+        if (!truck) {
+            return res.status(404).json({ success: false, error: 'Truck not found.' });
+        }
+
+        const oldPriority = truck.priority || 'Standard';
+
+        await run('UPDATE trucks SET priority = ? WHERE id = ?', [cleanPriority, id]);
+
+        const updatedTruck = await get('SELECT * FROM trucks WHERE id = ?', [id]);
+
+        io.emit('truck_status_changed', updatedTruck);
+        io.emit('queue_updated');
+
+        res.json({
+            success: true,
+            message: `Priority successfully changed from "${oldPriority}" to "${cleanPriority}".`,
+            old_priority: oldPriority,
+            new_priority: cleanPriority,
+            truck: updatedTruck
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
