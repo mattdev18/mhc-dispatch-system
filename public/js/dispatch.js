@@ -114,6 +114,7 @@ async function loadTodayData() {
         }
 
         renderTable();
+        updateAlarmToggleButton();
     } catch (err) {
         console.error('Error fetching dispatch data:', err);
     }
@@ -1392,6 +1393,11 @@ async function executeSavePriority() {
 // HIGH-PITCH STACCATO SOUND ALARM (950Hz 8-PULSE) & QUICK DEPART
 // =============================================================
 
+function isCurrentUserAdmin() {
+    const user = window.currentUser || getAuthUser();
+    return user && user.role === 'admin';
+}
+
 let isAlarmMuted = localStorage.getItem('mhc_sound_alarm_muted') === 'true';
 let lastAlarmPlayTime = 0;
 
@@ -1400,6 +1406,27 @@ function updateAlarmToggleButton() {
     const text = document.getElementById('soundAlarmText');
     const btn = document.getElementById('btnSoundAlarmToggle');
     if (!icon || !text || !btn) return;
+
+    const isAdmin = isCurrentUserAdmin();
+
+    if (!isAdmin) {
+        // Dispatcher 1 & Dispatcher 2: ALARM CANNOT BE TURNED OFF (MANDATORY)
+        isAlarmMuted = false;
+        icon.textContent = '🔔';
+        text.textContent = 'Alarm: Active (Mandatory)';
+        btn.style.color = '#15803d';
+        btn.style.borderColor = '#86efac';
+        btn.style.background = '#f0fdf4';
+        btn.style.cursor = 'default';
+        btn.style.pointerEvents = 'none'; // Disables click toggle for non-admin
+        btn.title = 'Overdue Alert Alarm is mandatory for dispatchers';
+        return;
+    }
+
+    // Admin User: Can toggle mute if doing administrative reviews
+    btn.style.cursor = 'pointer';
+    btn.style.pointerEvents = 'auto';
+    btn.title = 'Admin: Toggle Stale Truck Overdue Sound Alarm';
 
     if (isAlarmMuted) {
         icon.textContent = '🔇';
@@ -1417,6 +1444,11 @@ function updateAlarmToggleButton() {
 }
 
 function toggleSoundAlarm() {
+    // Only Admin is authorized to mute the sound alarm
+    if (!isCurrentUserAdmin()) {
+        return;
+    }
+
     isAlarmMuted = !isAlarmMuted;
     localStorage.setItem('mhc_sound_alarm_muted', isAlarmMuted ? 'true' : 'false');
     updateAlarmToggleButton();
@@ -1427,7 +1459,12 @@ function toggleSoundAlarm() {
 
 // ⚡ Sound 2: High-Pitch Staccato Pulses (8 rapid beeps at 950Hz)
 function playStaccatoAlarm() {
-    if (isAlarmMuted) return;
+    // Dispatchers can NEVER mute the alarm
+    if (!isCurrentUserAdmin()) {
+        isAlarmMuted = false;
+    } else if (isAlarmMuted) {
+        return;
+    }
 
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
