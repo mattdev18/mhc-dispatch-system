@@ -346,7 +346,7 @@ function renderTable() {
         } else {
             recorderHtml = truck.warehouse_recorder
                 ? `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; font-weight: 700;" onclick="openRecorderModal(${truck.id})">👷 ${escapeHtml(truck.warehouse_recorder)} ✏️</button>`
-                : `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border: 1px dashed #94a3b8; color: #64748b; background: #f8fafc;" onclick="openRecorderModal(${truck.id})">➕ Enter Name</button>`;
+                : `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; border: 1px dashed #94a3b8; color: #64748b; background: #f8fafc;" onclick="openRecorderModal(${truck.id})">➕ Assign</button>`;
         }
 
         let priorityHtml = '';
