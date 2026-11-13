@@ -800,6 +800,17 @@ app.post('/api/trucks/:id/sap-flow', requirePermission('trucks:sap_flow'), async
         io.emit('truck_status_changed', updatedTruck);
         io.emit('queue_updated');
 
+        // Dedicated real-time broadcast events for instant warehouse & dispatcher notifications
+        if (doc_transfer_to_warehouse !== undefined) {
+            io.emit('sap_docs_transferred_to_warehouse', updatedTruck);
+        }
+        if (doc_runner_dispatched !== undefined) {
+            io.emit('runner_dispatched', updatedTruck);
+        }
+        if (doc_runner_received !== undefined) {
+            io.emit('runner_docs_received', updatedTruck);
+        }
+
         res.json({ success: true, truck: updatedTruck });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });

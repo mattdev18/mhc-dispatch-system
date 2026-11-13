@@ -62,6 +62,33 @@ socket.on('truck_called', (truck) => {
     loadTodayData();
 });
 
+// Dedicated Real-time Event: When SAP completes Transfer to Warehouse
+socket.on('sap_docs_transferred_to_warehouse', (truck) => {
+    loadTodayData();
+    const user = window.currentUser || getAuthUser();
+    const userRole = user ? user.role : '';
+    if (['warehouse', 'dispatcher', 'admin'].includes(userRole)) {
+        if (truck && truck.id) {
+            lastRunnerReminderTime[truck.id] = Date.now();
+        }
+        showWarehouseRunnerToast(truck, false);
+    }
+});
+
+socket.on('runner_dispatched', (truck) => {
+    loadTodayData();
+});
+
+socket.on('runner_docs_received', (truck) => {
+    loadTodayData();
+    const user = window.currentUser || getAuthUser();
+    const userRole = user ? user.role : '';
+    if (['dispatcher', 'admin'].includes(userRole)) {
+        showDepartReadyToast(truck);
+        playDepartReadyAlarm();
+    }
+});
+
 socket.on('truck_status_changed', (truck) => {
     loadTodayData();
     if (!truck || truck.status !== 'Completed' || truck.departed_time) return;
@@ -70,9 +97,14 @@ socket.on('truck_status_changed', (truck) => {
     const userRole = user ? user.role : '';
 
     // 1. Warehouse & Dispatcher Notification: When SAP completes Transfer to Warehouse
-    if (truck.doc_transfer_to_warehouse && !truck.doc_runner_dispatched && !truck.doc_runner_received) {
+    if (truck.doc_transfer_to_warehouse && !truck.doc_runner_received) {
         if (['warehouse', 'dispatcher', 'admin'].includes(userRole)) {
-            showWarehouseRunnerToast(truck);
+            const lastTime = lastRunnerReminderTime[truck.id] || 0;
+            // Only fire if not fired in the last 60 seconds
+            if (Date.now() - lastTime > 60 * 1000) {
+                lastRunnerReminderTime[truck.id] = Date.now();
+                showWarehouseRunnerToast(truck, false);
+            }
         }
     }
 
@@ -138,6 +170,7 @@ async function loadTodayData() {
 
         renderTable();
         updateAlarmToggleButton();
+        checkPendingRunnerReminders();
     } catch (err) {
         console.error('Error fetching dispatch data:', err);
     }
@@ -1500,20 +1533,59 @@ async function receiveRunnerDocs(id) {
 
 // Floating Toast helpers for Warehouse Runner
 let runnerToastDismissTimer = null;
+const lastRunnerReminderTime = {};
 
-function showWarehouseRunnerToast(truck) {
+function showWarehouseRunnerToast(truck, isReminder = false) {
     const banner = document.getElementById('warehouseRunnerToastBanner');
     const msg = document.getElementById('warehouseRunnerToastMessage');
+    const title = document.getElementById('warehouseRunnerToastTitle');
+    const icon = document.getElementById('warehouseRunnerToastIcon');
     const actionBtn = document.getElementById('warehouseRunnerToastActionBtn');
     if (!banner || !msg) return;
 
     const user = window.currentUser || getAuthUser();
     const canAction = user && ['dispatcher', 'admin'].includes(user.role);
 
-    msg.innerHTML = `
-        <strong>${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)}</strong> (${escapeHtml(truck.driver_name || 'Driver')})<br>
-        Ready na ang SAP documents sa Admin (${escapeHtml(truck.doc_transfer_to_warehouse || '')}). Pakipadala ang runner para kunin ang dokumento.
-    `;
+    if (isReminder) {
+        if (icon) icon.textContent = '🔔';
+        if (title) {
+            title.textContent = '10-Min Reminder: SAP Documents Ready for Pickup!';
+            title.style.color = '#fbbf24';
+        }
+        banner.style.border = '1.5px solid #f59e0b';
+        banner.style.borderLeft = '6px solid #fbbf24';
+        banner.style.boxShadow = '0 12px 36px rgba(0, 0, 0, 0.75), 0 0 25px rgba(245, 158, 11, 0.45)';
+
+        msg.innerHTML = `
+            <div style="font-size: 14.5px; font-weight: 800; color: #60a5fa; margin-bottom: 4px;">
+                ${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">(${escapeHtml(truck.driver_name || 'Driver')})</span>
+            </div>
+            <div style="color: #fef08a; font-weight: 700; margin-bottom: 4px;">
+                ⚠️ Mahigit 10 minuto nang naghihintay ang dokumento sa Admin office (${escapeHtml(truck.doc_transfer_to_warehouse || '')})!
+            </div>
+            <div style="color: #e2e8f0; font-size: 12.5px; line-height: 1.4;">
+                Wala pa ring response o natatanggap na dokumento ang warehouse. Pakipadala agad ang runner sa Admin/SAP upang hindi maantala ang truck departure.
+            </div>
+        `;
+    } else {
+        if (icon) icon.textContent = '📄';
+        if (title) {
+            title.textContent = 'SAP Documents Ready for Pickup!';
+            title.style.color = '#4ade80';
+        }
+        banner.style.border = '1.5px solid #16a34a';
+        banner.style.borderLeft = '6px solid #22c55e';
+        banner.style.boxShadow = '0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(34, 197, 94, 0.35)';
+
+        msg.innerHTML = `
+            <div style="font-size: 14.5px; font-weight: 800; color: #60a5fa; margin-bottom: 4px;">
+                ${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">(${escapeHtml(truck.driver_name || 'Driver')})</span>
+            </div>
+            <div style="color: #e2e8f0; font-size: 13px; line-height: 1.4;">
+                Ready na ang SAP documents sa Admin (${escapeHtml(truck.doc_transfer_to_warehouse || '')}). Pakipadala ang runner para kunin ang dokumento.
+            </div>
+        `;
+    }
 
     if (actionBtn) {
         if (canAction) {
@@ -1535,7 +1607,7 @@ function showWarehouseRunnerToast(truck) {
     if (runnerToastDismissTimer) clearTimeout(runnerToastDismissTimer);
     runnerToastDismissTimer = setTimeout(() => {
         dismissRunnerToast();
-    }, 25000);
+    }, 40000);
 }
 
 function dismissRunnerToast() {
@@ -1649,19 +1721,48 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Periodic reminder every 10 minutes for pending runner pickups
-setInterval(() => {
+// 🔔 Periodic 10-Minute Recurring Reminder: Checks pending unresponded runner pickups
+function checkPendingRunnerReminders() {
     const user = window.currentUser || getAuthUser();
-    if (!user || !['warehouse', 'admin'].includes(user.role)) return;
+    if (!user || !['warehouse', 'dispatcher', 'admin'].includes(user.role)) return;
 
+    const now = Date.now();
     const pendingPickups = (todayTrucks || []).filter(t =>
-        t.status === 'Completed' && t.doc_transfer_to_warehouse && !t.doc_runner_received && !t.departed_time
+        t.status === 'Completed' &&
+        t.doc_transfer_to_warehouse &&
+        !t.doc_runner_received &&
+        !t.departed_time
     );
 
+    // Update browser tab title with badge count
     if (pendingPickups.length > 0) {
-        showWarehouseRunnerToast(pendingPickups[0]);
+        document.title = `(${pendingPickups.length}) 📄 DOCS READY - MHC Dispatch`;
+    } else {
+        document.title = 'May Harvest Corporation - Dispatch Queuing System';
     }
-}, 10 * 60 * 1000);
+
+    if (pendingPickups.length === 0) return;
+
+    // Check if 10 minutes have elapsed since the last notification for any pending truck
+    const TEN_MINUTES_MS = 10 * 60 * 1000;
+    for (const truck of pendingPickups) {
+        const lastTime = lastRunnerReminderTime[truck.id];
+        if (!lastTime) {
+            // First time seeing this truck in this session: record time and alert
+            lastRunnerReminderTime[truck.id] = now;
+            showWarehouseRunnerToast(truck, false);
+            break;
+        } else if (now - lastTime >= TEN_MINUTES_MS) {
+            // 10 minutes elapsed without response: Re-trigger high-priority reminder popup!
+            lastRunnerReminderTime[truck.id] = now;
+            showWarehouseRunnerToast(truck, true);
+            break;
+        }
+    }
+}
+
+// Check every 15 seconds so 10-minute reminders trigger with zero delay
+setInterval(checkPendingRunnerReminders, 15 * 1000);
 
 function playNotificationBeep() {
     try {
