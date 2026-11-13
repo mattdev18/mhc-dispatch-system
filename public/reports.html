@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/auth.js"></script>
+    <!-- SheetJS for styled Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -53,8 +55,11 @@
                     </span>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button class="btn btn-success" onclick="exportCSV()">
-                        📥 EXPORT TO CSV (EXCEL)
+                    <button class="btn btn-success" onclick="exportExcel()">
+                        📊 EXPORT TO EXCEL (.xlsx)
+                    </button>
+                    <button class="btn btn-outline" onclick="exportCSV()">
+                        📥 Export CSV
                     </button>
                     <a href="/api/backup/export" class="btn btn-outline" download style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                         💾 Backup Data (JSON)

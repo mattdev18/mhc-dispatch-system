@@ -811,7 +811,7 @@ function buildSapActionButtons(truck) {
             steps.push(`<button class="btn btn-primary sap-btn" style="opacity:0.45;cursor:not-allowed;background:#94a3b8;border-color:#94a3b8;" disabled title="Complete Document End first before returning to Warehouse">🏭 Transfer</button>`);
         }
     } else {
-        steps.push(`<span class="sap-done-badge" title="Transferred to Warehouse at ${escapeHtml(truck.doc_transfer_to_warehouse)}">🏭 Transferred ✓</span>`);
+        steps.push(`<span class="sap-done-badge" title="SAP docs ready at ${escapeHtml(truck.doc_transfer_to_warehouse)} — Awaiting runner pickup from warehouse">📋 Docs Ready — Awaiting Runner</span>`);
     }
 
     return `<div class="sap-actions-wrap">${steps.join('')}</div>`;
@@ -860,7 +860,7 @@ function buildAdminCompletedButtons(truck) {
     if (!truck.doc_transfer_to_warehouse) {
         steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapTransferWarehouseModal(${truck.id})" title="Transfer processed documents back to Warehouse">🏭 Transfer</button>`);
     } else {
-        steps.push(`<span class="sap-done-badge">🏭 Transferred ✓</span>`);
+        steps.push(`<span class="sap-done-badge">📋 Docs Ready — Awaiting Runner</span>`);
     }
 
     // Dispatcher / Admin: Depart Plant

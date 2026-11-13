@@ -191,44 +191,36 @@ function renderReportTable(trucks) {
     }).join('');
 }
 
-// Export to CSV
-function exportCSV() {
+// ── Export to Excel (.xlsx) — Styled with company header ──────────────────
+function exportExcel() {
     if (reportTrucks.length === 0) {
         alert('No records available to export.');
         return;
     }
 
+    const wb = XLSX.utils.book_new();
+
+    // ── Column headers (Row 4 — rows 1-3 are company header) ──
     const headers = [
-        "Queue Number",
-        "Date",
-        "Truck / Plate Number",
-        "Driver Name",
-        "Warehouse Recorder",
-        "Company / Hauler",
-        "Contact Number",
-        "Product / Load",
-        "Destination",
-        "Reference / FO / SO",
-        "Priority Category",
-        "Loading Door",
-        "Arrival Time",
-        "Called Time",
-        "Times Called",
-        "Loading Time",
-        "Completed Time",
-        "Doc Transfer to SAP",
-        "Doc Received from Warehouse",
-        "SAP Analyst / OTC",
-        "SAP Doc Start",
-        "SAP Doc End",
-        "Remarks",
-        "Doc Transfer to Warehouse",
-        "Departed Time",
-        "Current Status",
-        "Cancellation Reason"
+        "Queue No.", "Date", "Truck / Plate No.", "Driver Name",
+        "Warehouse Recorder", "Company / Hauler", "Contact No.",
+        "Product / Load", "Destination", "Ref / FO / SO",
+        "Priority", "Loading Door", "Arrival Time", "Called Time",
+        "Times Called", "Loading Time", "Completed Time",
+        "Doc Transfer to SAP", "Doc Received from WH",
+        "SAP Analyst / OTC", "SAP Doc Start", "SAP Doc End",
+        "Remarks", "Doc Transfer to WH", "Departed Time",
+        "Status", "Cancellation Reason"
     ];
 
-    const rows = reportTrucks.map(t => [
+    const colWidths = [
+        10, 12, 16, 20, 18, 20, 14, 18, 16, 16,
+        12, 12, 12, 12, 10, 12, 14, 18, 18,
+        18, 12, 12, 24, 16, 14, 12, 22
+    ];
+
+    // ── Data rows ──
+    const dataRows = reportTrucks.map(t => [
         t.queue,
         t.date,
         t.truck_number,
@@ -258,8 +250,165 @@ function exportCSV() {
         t.cancellation_reason || ''
     ]);
 
-    const escapeCsv = (val) => '"' + String(val ?? '').replace(/"/g, '""') + '"';
+    // ── Build sheet array: 3 header rows + column header + data ──
+    const sheetData = [
+        // Row 1: Company Name
+        ['MAY HARVEST CORPORATION', ...Array(headers.length - 1).fill('')],
+        // Row 2: System Name
+        ['Dispatch Queuing System — Official Report', ...Array(headers.length - 1).fill('')],
+        // Row 3: Generated info
+        [`Generated: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}   |   Filter: ${currentFilterDesc.replace(/_/g,' ')}`, ...Array(headers.length - 1).fill('')],
+        // Row 4: Blank spacer
+        Array(headers.length).fill(''),
+        // Row 5: Column headers
+        headers,
+        // Rows 6+: Data
+        ...dataRows
+    ];
 
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    // ── Column widths ──
+    ws['!cols'] = colWidths.map(w => ({ wch: w }));
+
+    // ── Merge cells for company header rows ──
+    const lastColIdx = headers.length - 1;
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: lastColIdx } }, // Row 1
+        { s: { r: 1, c: 0 }, e: { r: 1, c: lastColIdx } }, // Row 2
+        { s: { r: 2, c: 0 }, e: { r: 2, c: lastColIdx } }, // Row 3
+    ];
+
+    // ── Cell styles ──
+    const styleCompanyName = {
+        font: { name: 'Calibri', sz: 18, bold: true, color: { rgb: '1A5276' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        fill: { fgColor: { rgb: 'D6EAF8' }, patternType: 'solid' }
+    };
+    const styleSubtitle = {
+        font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '2C3E50' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        fill: { fgColor: { rgb: 'EAF2FB' }, patternType: 'solid' }
+    };
+    const styleMeta = {
+        font: { name: 'Calibri', sz: 10, italic: true, color: { rgb: '7F8C8D' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        fill: { fgColor: { rgb: 'F4F6F7' }, patternType: 'solid' }
+    };
+    const styleHeaderCol = {
+        font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        fill: { fgColor: { rgb: '1A5276' }, patternType: 'solid' },
+        border: {
+            top:    { style: 'thin', color: { rgb: '154360' } },
+            bottom: { style: 'thin', color: { rgb: '154360' } },
+            left:   { style: 'thin', color: { rgb: '154360' } },
+            right:  { style: 'thin', color: { rgb: '154360' } }
+        }
+    };
+    const styleDataEven = {
+        font: { name: 'Calibri', sz: 10 },
+        alignment: { vertical: 'center', wrapText: false },
+        border: {
+            top:    { style: 'hair', color: { rgb: 'D5D8DC' } },
+            bottom: { style: 'hair', color: { rgb: 'D5D8DC' } },
+            left:   { style: 'hair', color: { rgb: 'D5D8DC' } },
+            right:  { style: 'hair', color: { rgb: 'D5D8DC' } }
+        }
+    };
+    const styleDataOdd = {
+        ...styleDataEven,
+        fill: { fgColor: { rgb: 'EBF5FB' }, patternType: 'solid' }
+    };
+    const styleStatusDepart = { font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '155724' } }, fill: { fgColor: { rgb: 'D4EDDA' }, patternType: 'solid' }, alignment: { horizontal: 'center', vertical: 'center' } };
+    const styleStatusComplete = { font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0C4A6E' } }, fill: { fgColor: { rgb: 'DBEAFE' }, patternType: 'solid' }, alignment: { horizontal: 'center', vertical: 'center' } };
+    const styleStatusCancel = { font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '7F1D1D' } }, fill: { fgColor: { rgb: 'FEE2E2' }, patternType: 'solid' }, alignment: { horizontal: 'center', vertical: 'center' } };
+
+    // Helper to get cell address
+    function cellAddr(r, c) {
+        return XLSX.utils.encode_cell({ r, c });
+    }
+
+    // Apply company header styles
+    ws[cellAddr(0, 0)] = { ...(ws[cellAddr(0, 0)] || {}), s: styleCompanyName };
+    ws[cellAddr(1, 0)] = { ...(ws[cellAddr(1, 0)] || {}), s: styleSubtitle };
+    ws[cellAddr(2, 0)] = { ...(ws[cellAddr(2, 0)] || {}), s: styleMeta };
+
+    // Row heights
+    ws['!rows'] = [
+        { hpt: 32 }, // Row 1: Company name
+        { hpt: 20 }, // Row 2: System subtitle
+        { hpt: 16 }, // Row 3: Meta/date
+        { hpt: 6  }, // Row 4: Spacer
+        { hpt: 28 }, // Row 5: Column headers
+    ];
+
+    // Apply column header styles (row index 4)
+    headers.forEach((_, c) => {
+        const addr = cellAddr(4, c);
+        if (ws[addr]) ws[addr].s = styleHeaderCol;
+    });
+
+    // Apply alternating row styles + status coloring (data starts at row index 5)
+    dataRows.forEach((row, rowIdx) => {
+        const excelRow = 5 + rowIdx;
+        const baseStyle = rowIdx % 2 === 0 ? styleDataEven : styleDataOdd;
+        row.forEach((_, c) => {
+            const addr = cellAddr(excelRow, c);
+            if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+            // Status column = index 25
+            if (c === 25) {
+                const status = row[25];
+                if (status === 'Departed') ws[addr].s = styleStatusDepart;
+                else if (status === 'Completed') ws[addr].s = styleStatusComplete;
+                else if (status === 'Cancelled') ws[addr].s = styleStatusCancel;
+                else ws[addr].s = { ...baseStyle, alignment: { horizontal: 'center', vertical: 'center' } };
+            } else {
+                ws[addr].s = baseStyle;
+            }
+        });
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Dispatch Report');
+
+    const filename = `MHC_Dispatch_Report_${currentFilterDesc.replace(/ /g,'_')}.xlsx`;
+    XLSX.writeFile(wb, filename);
+}
+
+// Export to CSV (kept as fallback)
+function exportCSV() {
+    if (reportTrucks.length === 0) {
+        alert('No records available to export.');
+        return;
+    }
+
+    const headers = [
+        "Queue Number", "Date", "Truck / Plate Number", "Driver Name",
+        "Warehouse Recorder", "Company / Hauler", "Contact Number",
+        "Product / Load", "Destination", "Reference / FO / SO",
+        "Priority Category", "Loading Door", "Arrival Time", "Called Time",
+        "Times Called", "Loading Time", "Completed Time",
+        "Doc Transfer to SAP", "Doc Received from Warehouse",
+        "SAP Analyst / OTC", "SAP Doc Start", "SAP Doc End",
+        "Remarks", "Doc Transfer to Warehouse", "Departed Time",
+        "Current Status", "Cancellation Reason"
+    ];
+
+    const rows = reportTrucks.map(t => [
+        t.queue, t.date, t.truck_number, t.driver_name,
+        t.warehouse_recorder || '', t.company || '', t.contact || '',
+        t.load_type, t.destination, t.reference || '',
+        t.priority, t.loading_door ? `Door ${t.loading_door}` : '',
+        t.arrival_time || '', t.called_time || '',
+        t.call_count ? `${t.call_count}x` : '1x',
+        t.loading_time || '', t.completed_time || '',
+        t.doc_transfer_to_sap || '', t.doc_received_from_warehouse || '',
+        t.sap_analyst || '', t.sap_doc_start || '', t.sap_doc_end || '',
+        t.remarks || '', t.doc_transfer_to_warehouse || '',
+        t.departed_time || '', t.status, t.cancellation_reason || ''
+    ]);
+
+    const escapeCsv = (val) => '"' + String(val ?? '').replace(/"/g, '""') + '"';
     const csvContent = [
         headers.map(escapeCsv).join(','),
         ...rows.map(r => r.map(escapeCsv).join(','))
@@ -268,9 +417,8 @@ function exportCSV() {
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-
     link.href = url;
-    link.download = `May_Harvest_Dispatch_Report_${currentFilterDesc}.csv`;
+    link.download = `MHC_Dispatch_Report_${currentFilterDesc}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();
