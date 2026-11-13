@@ -689,6 +689,14 @@ app.post('/api/trucks/:id/depart', requirePermission('trucks:depart'), async (re
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
 
+        // Dispatcher role cannot depart until SAP Transfer to Warehouse is completed
+        if (req.user && req.user.role === 'dispatcher' && !truck.doc_transfer_to_warehouse) {
+            return res.status(400).json({
+                success: false,
+                error: 'SOP Enforcement: Truck cannot depart until SAP team transfers documents back to Warehouse.'
+            });
+        }
+
         const now = new Date();
         const departedTime = getTimeString();
         const departedTimestamp = now.toISOString();
