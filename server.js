@@ -55,8 +55,8 @@ const PERMISSIONS = {
     'trucks:loading':   ['admin', 'dispatcher'],          // start loading + complete loading
     'trucks:depart':    ['admin', 'dispatcher'],
     'trucks:cancel':    ['admin', 'dispatcher'],
-    // SAP OTC flow — dispatcher can set doc_transfer_to_sap; sapanalyst does the rest; admin does all
-    'trucks:sap_flow':  ['admin', 'sapanalyst', 'dispatcher'],
+    // SAP OTC flow & Warehouse runner flow — dispatcher, sapanalyst, warehouse, and admin
+    'trucks:sap_flow':  ['admin', 'sapanalyst', 'dispatcher', 'warehouse'],
     // Reports
     'reports:view':     ['admin', 'sapanalyst', 'warehouse'],
     // Admin only
@@ -692,11 +692,12 @@ app.post('/api/trucks/:id/depart', requirePermission('trucks:depart'), async (re
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });
 
-        // Dispatcher role cannot depart until SAP Transfer to Warehouse is completed
-        if (req.user && req.user.role === 'dispatcher' && !truck.doc_transfer_to_warehouse) {
+        // Dispatcher role cannot depart until physical document receipt or SAP transfer is completed
+        const isDocReturned = !!(truck.doc_runner_received || truck.doc_transfer_to_warehouse);
+        if (req.user && req.user.role === 'dispatcher' && !isDocReturned) {
             return res.status(400).json({
                 success: false,
-                error: 'SOP Enforcement: Truck cannot depart until SAP team transfers documents back to Warehouse.'
+                error: 'SOP Enforcement: Truck cannot depart until documents are physically received from the runner.'
             });
         }
 
@@ -758,7 +759,9 @@ app.post('/api/trucks/:id/sap-flow', requirePermission('trucks:sap_flow'), async
             sap_doc_start,
             sap_doc_end,
             remarks,
-            doc_transfer_to_warehouse
+            doc_transfer_to_warehouse,
+            doc_runner_dispatched,
+            doc_runner_received
         } = req.body || {};
 
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
@@ -775,6 +778,8 @@ app.post('/api/trucks/:id/sap-flow', requirePermission('trucks:sap_flow'), async
         if (sap_doc_end !== undefined)               { fields.push('sap_doc_end = ?');               values.push(sap_doc_end); }
         if (remarks !== undefined)                   { fields.push('remarks = ?');                   values.push(remarks); }
         if (doc_transfer_to_warehouse !== undefined) { fields.push('doc_transfer_to_warehouse = ?'); values.push(doc_transfer_to_warehouse); }
+        if (doc_runner_dispatched !== undefined)     { fields.push('doc_runner_dispatched = ?');     values.push(doc_runner_dispatched); }
+        if (doc_runner_received !== undefined)       { fields.push('doc_runner_received = ?');       values.push(doc_runner_received); }
 
         if (fields.length === 0) {
             return res.status(400).json({ success: false, error: 'No SAP fields provided.' });

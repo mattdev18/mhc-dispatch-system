@@ -101,6 +101,8 @@ async function initDB() {
             sap_doc_end TEXT,
             remarks TEXT,
             doc_transfer_to_warehouse TEXT,
+            doc_runner_dispatched TEXT,
+            doc_runner_received TEXT,
             warehouse_recorder TEXT,
             departed_time TEXT,
             departed_timestamp TEXT,
@@ -137,6 +139,8 @@ async function initDB() {
         'sap_doc_end',
         'remarks',
         'doc_transfer_to_warehouse',
+        'doc_runner_dispatched',
+        'doc_runner_received',
         'warehouse_recorder'
     ];
 
