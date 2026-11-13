@@ -62,6 +62,18 @@ socket.on('truck_called', (truck) => {
     loadTodayData();
 });
 
+socket.on('truck_status_changed', (truck) => {
+    loadTodayData();
+    // Dispatcher / Admin Notification: When SAP completes Transfer to Warehouse
+    if (truck && truck.doc_transfer_to_warehouse && truck.status === 'Completed' && !truck.departed_time) {
+        const user = window.currentUser || getAuthUser();
+        if (user && ['dispatcher', 'admin'].includes(user.role)) {
+            showDepartReadyToast(truck);
+            playDepartReadyAlarm();
+        }
+    }
+});
+
 // Load Data from Server
 async function loadTodayData() {
     try {
@@ -1359,6 +1371,41 @@ function dismissAdminToast() {
 function openAdminModalFromToast() {
     dismissAdminToast();
     openAdminResetQueueModal();
+}
+
+// Floating Toast helpers for Dispatcher (Ready to Depart)
+let departToastDismissTimer = null;
+
+function showDepartReadyToast(truck) {
+    const banner = document.getElementById('dispatcherDepartToastBanner');
+    const msg = document.getElementById('dispatcherDepartToastMessage');
+    const actionBtn = document.getElementById('dispatcherDepartToastActionBtn');
+    if (!banner || !msg) return;
+
+    msg.innerHTML = `
+        <strong>${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)}</strong> (${escapeHtml(truck.driver_name || 'Driver')})<br>
+        SAP OTC completed Document Transfer to Warehouse at <strong>${escapeHtml(truck.doc_transfer_to_warehouse || '')}</strong>.<br>
+        <span style="color:#86efac;font-size:12px;font-weight:700;">The "Depart Plant" button is now unlocked!</span>
+    `;
+
+    if (actionBtn) {
+        actionBtn.onclick = () => {
+            dismissDepartToast();
+            departTruck(truck.id);
+        };
+    }
+
+    banner.style.display = 'block';
+
+    if (departToastDismissTimer) clearTimeout(departToastDismissTimer);
+    departToastDismissTimer = setTimeout(() => {
+        dismissDepartToast();
+    }, 20000);
+}
+
+function dismissDepartToast() {
+    const banner = document.getElementById('dispatcherDepartToastBanner');
+    if (banner) banner.style.display = 'none';
 }
 
 function playNotificationBeep() {
