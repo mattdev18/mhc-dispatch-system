@@ -280,8 +280,8 @@ app.get('/api/trucks/today', async (req, res) => {
             query = `SELECT * FROM trucks WHERE date = ? OR status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
             params = [today];
         } else if (scope === 'active_only') {
-            // Strictly active trucks only
-            query = `SELECT * FROM trucks WHERE status IN ('Waiting', 'Called', 'Loading') ORDER BY id ASC`;
+            // Active trucks + Completed (pending Depart Plant)
+            query = `SELECT * FROM trucks WHERE status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
             params = [];
         } else {
             // Default 7 days (1 week) PLUS any active or Completed (pending Depart Plant) trucks
