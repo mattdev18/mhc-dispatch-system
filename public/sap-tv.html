@@ -184,7 +184,7 @@
             <div class="num" id="kpiDocsFinished">0</div>
         </div>
         <div class="sap-kpi-card purple">
-            <h3>Returned to Warehouse</h3>
+            <h3>Docs Ready for WH</h3>
             <div class="num" id="kpiTransferredWh">0</div>
         </div>
     </section>
@@ -214,6 +214,7 @@
                             <th>Cargo</th>
                             <th class="highlight">Transfer to SAP</th>
                             <th class="highlight">Doc Received</th>
+                            <th class="highlight">SAP Analyst</th>
                             <th class="highlight">Doc Start</th>
                             <th class="highlight">Doc End</th>
                             <th class="highlight">Remarks</th>
@@ -223,7 +224,7 @@
                     </thead>
                     <tbody id="sapTableBody">
                         <tr>
-                            <td colspan="13" style="text-align: center; padding: 40px; color: #64748b;">
+                            <td colspan="14" style="text-align: center; padding: 40px; color: #64748b;">
                                 Loading real-time SAP Documentation records...
                             </td>
                         </tr>
@@ -266,7 +267,7 @@
 
         async function fetchSapQueue() {
             try {
-                const res = await fetch('/api/trucks');
+                const res = await fetch('/api/trucks/today?scope=7days');
                 const data = await res.json();
                 if (!data.success) return;
 
@@ -416,6 +417,10 @@
                     ? `<span class="badge-otc-status status-received">📦 ${escapeHtml(t.doc_received_from_warehouse)}</span>`
                     : '<span style="color:#64748b;">—</span>';
 
+                const analystHtml = t.sap_analyst
+                    ? `<span style="font-weight:700;color:#38bdf8;background:#0c1e38;border:1px solid #1e3a5f;padding:3px 8px;border-radius:6px;font-size:12px;">👤 ${escapeHtml(t.sap_analyst)}</span>`
+                    : '<span style="color:#64748b;">—</span>';
+
                 const docStartHtml = t.sap_doc_start
                     ? `<span class="badge-otc-status status-in-progress">▶ ${escapeHtml(t.sap_doc_start)}</span>`
                     : '<span style="color:#64748b;">—</span>';
@@ -429,7 +434,7 @@
                     : '<span style="color:#64748b;">—</span>';
 
                 const transferWhHtml = t.doc_transfer_to_warehouse
-                    ? `<span class="badge-otc-status status-transferred">🏭 ${escapeHtml(t.doc_transfer_to_warehouse)}</span>`
+                    ? `<span class="badge-otc-status status-transferred">📋 Docs Ready (${escapeHtml(t.doc_transfer_to_warehouse)})</span>`
                     : '<span style="color:#64748b;">—</span>';
 
                 const statusBadge = `<span style="padding:4px 9px;border-radius:6px;font-size:11px;font-weight:800;background:#1e293b;color:#94a3b8;">${escapeHtml(t.status)}</span>`;
@@ -444,6 +449,7 @@
                         <td>${escapeHtml(t.load_type || '—')}</td>
                         <td>${transferSapHtml}</td>
                         <td>${receivedHtml}</td>
+                        <td>${analystHtml}</td>
                         <td>${docStartHtml}</td>
                         <td>${docEndHtml}</td>
                         <td>${remarksHtml}</td>
@@ -454,11 +460,16 @@
             }).join('');
         }
 
+        socket.on('connect', () => {
+            fetchSapQueue();
+        });
         socket.on('queue_updated', fetchSapQueue);
         socket.on('truck_status_changed', fetchSapQueue);
+        socket.on('truck_registered', fetchSapQueue);
+        socket.on('truck_called', fetchSapQueue);
 
         fetchSapQueue();
-        setInterval(fetchSapQueue, 15000); // 15s polling fallback
+        setInterval(fetchSapQueue, 10000); // 10s auto-refresh fallback
     </script>
 </body>
 </html>

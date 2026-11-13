@@ -1502,6 +1502,11 @@ function isCurrentUserAdmin() {
     return user && user.role === 'admin';
 }
 
+function canToggleAlarm() {
+    const user = window.currentUser || getAuthUser();
+    return user && (user.role === 'admin' || user.role === 'sapanalyst');
+}
+
 let isAlarmMuted = localStorage.getItem('mhc_sound_alarm_muted') === 'true';
 let lastAlarmPlayTime = 0;
 
@@ -1511,9 +1516,9 @@ function updateAlarmToggleButton() {
     const btn = document.getElementById('btnSoundAlarmToggle');
     if (!icon || !text || !btn) return;
 
-    const isAdmin = isCurrentUserAdmin();
+    const canMute = canToggleAlarm();
 
-    if (!isAdmin) {
+    if (!canMute) {
         // Dispatcher 1 & Dispatcher 2: ALARM CANNOT BE TURNED OFF (MANDATORY)
         isAlarmMuted = false;
         icon.textContent = '🔔';
@@ -1522,15 +1527,17 @@ function updateAlarmToggleButton() {
         btn.style.borderColor = '#86efac';
         btn.style.background = '#f0fdf4';
         btn.style.cursor = 'default';
-        btn.style.pointerEvents = 'none'; // Disables click toggle for non-admin
+        btn.style.pointerEvents = 'none';
         btn.title = 'Overdue Alert Alarm is mandatory for dispatchers';
         return;
     }
 
-    // Admin User: Can toggle mute if doing administrative reviews
+    // Admin & SAP Analyst: Can toggle mute
     btn.style.cursor = 'pointer';
     btn.style.pointerEvents = 'auto';
-    btn.title = 'Admin: Toggle Stale Truck Overdue Sound Alarm';
+    btn.title = isCurrentUserAdmin()
+        ? 'Admin: Toggle Stale Truck Overdue Sound Alarm'
+        : 'SAP Analyst: Toggle Sound Alarm';
 
     if (isAlarmMuted) {
         icon.textContent = '🔇';
@@ -1548,8 +1555,8 @@ function updateAlarmToggleButton() {
 }
 
 function toggleSoundAlarm() {
-    // Only Admin is authorized to mute the sound alarm
-    if (!isCurrentUserAdmin()) {
+    // Only Admin and SAP Analyst are authorized to mute/unmute the sound alarm
+    if (!canToggleAlarm()) {
         return;
     }
 
@@ -1563,8 +1570,8 @@ function toggleSoundAlarm() {
 
 // ⚡ Sound 2: High-Pitch Staccato Pulses (8 rapid beeps at 950Hz)
 function playStaccatoAlarm() {
-    // Dispatchers can NEVER mute the alarm
-    if (!isCurrentUserAdmin()) {
+    // Dispatchers can NEVER mute the alarm; Admin and SAP Analyst can mute
+    if (!canToggleAlarm()) {
         isAlarmMuted = false;
     } else if (isAlarmMuted) {
         return;
@@ -1640,8 +1647,10 @@ function playDepartReadyAlarm() {
 }
 
 function checkAndTriggerDepartAlarm() {
+    // If user is Admin/SAP Analyst and has muted alarms, respect mute
+    if (canToggleAlarm() && isAlarmMuted) return;
     const now = Date.now();
-    // Fire once every 3 minutes if depart-ready trucks exist (cannot be muted by anyone)
+    // Fire once every 3 minutes if depart-ready trucks exist
     if (now - lastDepartAlarmPlayTime > 3 * 60 * 1000) {
         lastDepartAlarmPlayTime = now;
         playDepartReadyAlarm();

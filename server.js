@@ -265,7 +265,7 @@ async function getAvailableDoor() {
 // -------------------------------------------------------------
 
 // API: Get trucks (Defaults to past 7 days + all currently active trucks)
-app.get('/api/trucks/today', async (req, res) => {
+async function handleGetTrucks(req, res) {
     try {
         const today = getTodayString();
         const scope = req.query.scope || '7days';
@@ -294,7 +294,10 @@ app.get('/api/trucks/today', async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
-});
+}
+
+app.get('/api/trucks/today', handleGetTrucks);
+app.get('/api/trucks', handleGetTrucks);
 
 // API: Get stats (Active counts across all active trucks + 7-day stats)
 app.get('/api/stats/today', async (req, res) => {
