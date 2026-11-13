@@ -276,7 +276,7 @@ app.get('/api/trucks/today', async (req, res) => {
         let params = [];
 
         if (scope === 'today_only' || days === 1) {
-            // Today's trucks PLUS any currently active trucks (Waiting, Called, Loading)
+            // Today's trucks (all statuses including Departed) PLUS any currently active trucks
             query = `SELECT * FROM trucks WHERE date = ? OR status IN ('Waiting', 'Called', 'Loading') ORDER BY id ASC`;
             params = [today];
         } else if (scope === 'active_only') {

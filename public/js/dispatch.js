@@ -126,6 +126,8 @@ function renderStats() {
     document.getElementById('statCalled').textContent = todayStats.Called || 0;
     document.getElementById('statLoading').textContent = todayStats.Loading || 0;
     document.getElementById('statCompleted').textContent = todayStats.Completed || 0;
+    const departedEl = document.getElementById('statDeparted');
+    if (departedEl) departedEl.textContent = todayStats.Departed || 0;
     document.getElementById('statTotal').textContent = todayStats.Total || 0;
 }
 
@@ -349,8 +351,9 @@ function renderTable() {
             : `<span style="display: inline-block; font-size: 11px; padding: 2px 7px; background: #f1f5f9; color: #475569; font-weight: 600; border-radius: 4px;">${escapeHtml(truck.date || '—')}</span>`;
 
         const isRecorderLocked = ['Completed', 'Departed', 'Cancelled'].includes(truck.status);
+        const isRecorderReadOnly = isRecorderLocked || (role === 'sapanalyst');
         let recorderHtml;
-        if (isRecorderLocked) {
+        if (isRecorderReadOnly) {
             recorderHtml = truck.warehouse_recorder
                 ? `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; color: #0369a1; background: #f0f9ff; border: 1px solid #bae6fd; padding: 4px 8px; border-radius: 6px;">👷 ${escapeHtml(truck.warehouse_recorder)}</span>`
                 : `<span style="color: #94a3b8; font-size: 12px;">—</span>`;
@@ -1109,6 +1112,12 @@ let pendingRecorderTruckId = null;
 function openRecorderModal(id) {
     const truck = todayTrucks.find(t => t.id === id);
     if (!truck) return;
+
+    // SAP Analyst cannot assign or edit Warehouse Recorder
+    if (currentUser && currentUser.role === 'sapanalyst') {
+        alert('Access Restricted: SAP Analysts are not authorized to assign or edit the Warehouse Recorder.\n\nPlease contact the Dispatcher or Admin.');
+        return;
+    }
 
     if (['Completed', 'Departed', 'Cancelled'].includes(truck.status)) {
         alert(`Cannot edit Warehouse Recorder: Truck ${truck.truck_number} (${truck.queue}) is already ${truck.status}.`);
