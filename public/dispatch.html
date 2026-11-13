@@ -573,8 +573,8 @@
             Ready na ang dokumento, pakipadala ang runner sa Admin/SAP.
         </p>
         <div style="display: flex; justify-content: flex-end; gap: 8px;">
-            <button class="btn btn-secondary" onclick="dismissRunnerToast()" style="padding: 6px 12px; font-size: 12px;">Dismiss</button>
-            <button id="warehouseRunnerToastActionBtn" class="btn btn-success" style="padding: 6px 14px; font-size: 12px; background: #16a34a; border-color: #22c55e; font-weight: 700;">
+            <button onclick="dismissRunnerToast()" style="padding: 6px 12px; font-size: 12px; background: rgba(255,255,255,0.12); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; cursor: pointer; font-weight: 600;">Dismiss</button>
+            <button id="warehouseRunnerToastActionBtn" class="btn btn-runner-dispatch" style="padding: 6px 14px; font-size: 12px;">
                 🏃 Dispatch Runner Now
             </button>
         </div>
@@ -593,8 +593,8 @@
             SAP documents have been returned. Depart Plant lock is now released!
         </p>
         <div style="display: flex; justify-content: flex-end; gap: 8px;">
-            <button class="btn btn-secondary" onclick="dismissDepartToast()" style="padding: 6px 12px; font-size: 12px;">Dismiss</button>
-            <button id="dispatcherDepartToastActionBtn" class="btn btn-success" style="padding: 6px 14px; font-size: 12px; background: #16a34a; border-color: #22c55e; font-weight: 700;">
+            <button onclick="dismissDepartToast()" style="padding: 6px 12px; font-size: 12px; background: rgba(255,255,255,0.12); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; cursor: pointer; font-weight: 600;">Dismiss</button>
+            <button id="dispatcherDepartToastActionBtn" class="btn btn-depart-active" style="padding: 6px 14px; font-size: 12px;">
                 🚛 Depart Plant Now
             </button>
         </div>

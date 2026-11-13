@@ -55,8 +55,8 @@ const PERMISSIONS = {
     'trucks:loading':   ['admin', 'dispatcher'],          // start loading + complete loading
     'trucks:depart':    ['admin', 'dispatcher'],
     'trucks:cancel':    ['admin', 'dispatcher'],
-    // SAP OTC flow & Warehouse runner flow — dispatcher, sapanalyst, warehouse, and admin
-    'trucks:sap_flow':  ['admin', 'sapanalyst', 'dispatcher', 'warehouse'],
+    // SAP OTC flow & Warehouse runner flow — dispatcher, sapanalyst, and admin
+    'trucks:sap_flow':  ['admin', 'sapanalyst', 'dispatcher'],
     // Reports
     'reports:view':     ['admin', 'sapanalyst', 'warehouse'],
     // Admin only
@@ -763,6 +763,14 @@ app.post('/api/trucks/:id/sap-flow', requirePermission('trucks:sap_flow'), async
             doc_runner_dispatched,
             doc_runner_received
         } = req.body || {};
+
+        // Restrict runner movements exclusively to Dispatcher 1 & 2 and Admin
+        if ((doc_runner_dispatched !== undefined || doc_runner_received !== undefined) && !['admin', 'dispatcher'].includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access Denied: Only Dispatcher 1 & 2 and Admin are authorized to record runner movements.'
+            });
+        }
 
         const truck = await get(`SELECT * FROM trucks WHERE id = ?`, [id]);
         if (!truck) return res.status(404).json({ success: false, error: 'Truck not found.' });

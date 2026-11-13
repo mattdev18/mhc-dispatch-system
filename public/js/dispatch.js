@@ -69,9 +69,9 @@ socket.on('truck_status_changed', (truck) => {
     const user = window.currentUser || getAuthUser();
     const userRole = user ? user.role : '';
 
-    // 1. Warehouse 1 & 2 Notification: When SAP completes Transfer to Warehouse
+    // 1. Warehouse & Dispatcher Notification: When SAP completes Transfer to Warehouse
     if (truck.doc_transfer_to_warehouse && !truck.doc_runner_dispatched && !truck.doc_runner_received) {
-        if (['warehouse', 'admin'].includes(userRole)) {
+        if (['warehouse', 'dispatcher', 'admin'].includes(userRole)) {
             showWarehouseRunnerToast(truck);
         }
     }
@@ -267,26 +267,23 @@ function renderTable() {
         let actionButtons = '';
         const role = currentUser ? currentUser.role : null;
 
-        // ── WAREHOUSE: 2-step Runner tracking on Completed trucks ────────
+        // ── WAREHOUSE (Warehouse 1 & 2): Viewing Only for Runner tracking ────────
         if (role === 'warehouse') {
             if (truck.status === 'Completed') {
                 if (!truck.doc_transfer_to_warehouse) {
-                    actionButtons = `<span style="color:#94a3b8;font-size:11px;">⏳ Awaiting SAP Release</span>`;
+                    actionButtons = `<span class="badge" style="background:#f8fafc;color:#64748b;border:1px solid #cbd5e1;font-weight:600;font-size:10.5px;padding:3px 7px;">⏳ Awaiting SAP</span>`;
                 } else if (!truck.doc_runner_dispatched) {
-                    actionButtons = `<button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px; background:#059669; border-color:#059669; font-weight:700;" onclick="dispatchRunner(${truck.id})" title="Click when runner is sent to collect papers from SAP/Admin">🏃 Dispatch Runner</button>`;
+                    actionButtons = `<span class="badge" style="background:#ecfdf5;color:#047857;border:1.5px solid #10b981;font-weight:800;font-size:10.5px;padding:4px 8px;border-radius:6px;box-shadow:0 0 8px rgba(16,185,129,0.25);">📄 Docs Ready (SAP)</span>`;
                 } else if (!truck.doc_runner_received) {
-                    actionButtons = `
-                        <div style="font-size:10.5px;color:#d97706;font-weight:700;margin-bottom:3px;">Out: ${escapeHtml(truck.doc_runner_dispatched)}</div>
-                        <button class="btn btn-primary" style="font-size: 11px; padding: 6px 10px; background:#0284c7; border-color:#0284c7; font-weight:700;" onclick="receiveRunnerDocs(${truck.id})" title="Click when runner returns with physical documents">✅ Docs Received</button>
-                    `;
+                    actionButtons = `<span class="badge" style="background:#fffbeb;color:#92400e;border:1.5px solid #f59e0b;font-weight:800;font-size:10.5px;padding:4px 8px;border-radius:6px;box-shadow:0 0 8px rgba(245,158,11,0.2);">🏃 Runner Out (${escapeHtml(truck.doc_runner_dispatched)})</span>`;
                 } else {
-                    actionButtons = `<span style="color:#059669;font-weight:700;font-size:11.5px;">✅ Received (${escapeHtml(truck.doc_runner_received)})</span>`;
+                    actionButtons = `<span class="badge" style="background:#f0fdf4;color:#15803d;border:1.5px solid #22c55e;font-weight:800;font-size:10.5px;padding:4px 8px;border-radius:6px;">✅ Docs Received (${escapeHtml(truck.doc_runner_received)})</span>`;
                 }
             } else {
                 actionButtons = `<span style="color:#94a3b8;font-size:12px;">View Only</span>`;
             }
 
-        // ── DISPATCHER: Call+Cancel / Recall+Load+Cancel / Complete / DocTransferSAP+Depart ──
+        // ── DISPATCHER: Call+Cancel / Recall+Load+Cancel / Complete / DocTransferSAP + 2-Step Runner + Depart ──
         } else if (role === 'dispatcher') {
             if (truck.status === 'Waiting') {
                 actionButtons = `
@@ -307,21 +304,26 @@ function renderTable() {
                     ? `<span class="sap-done-badge" title="Transferred to SAP at ${escapeHtml(truck.doc_transfer_to_sap)}">📄 SAP ✓</span>`
                     : `<button class="btn btn-primary sap-btn" onclick="openSapTransferToSapModal(${truck.id})" title="Transfer documents to SAP OTC">📄 Transfer to SAP</button>`;
 
-                const isRunnerReceived = !!truck.doc_runner_received;
+                let runnerBtn = '';
                 let departBtn = '';
-                if (isRunnerReceived) {
-                    departBtn = `<button class="btn btn-secondary sap-btn btn-depart-active" style="background:#059669;border-color:#059669;color:#fff;font-weight:700;" onclick="departTruck(${truck.id})" title="Documents physically received by Warehouse (${escapeHtml(truck.doc_runner_received)}) — Ready for Plant Departure">🚛 Depart Plant</button>`;
-                } else if (truck.doc_runner_dispatched) {
-                    departBtn = `<button class="btn btn-secondary sap-btn btn-depart-locked" disabled style="opacity:0.5;cursor:not-allowed;background:#64748b;color:#f8fafc;border-color:#64748b;" title="Locked: Runner dispatched at ${escapeHtml(truck.doc_runner_dispatched)}. Awaiting physical document receipt by Warehouse">🔒 Runner En Route</button>`;
-                } else if (truck.doc_transfer_to_warehouse) {
-                    departBtn = `<button class="btn btn-secondary sap-btn btn-depart-locked" disabled style="opacity:0.5;cursor:not-allowed;background:#64748b;color:#f8fafc;border-color:#64748b;" title="Locked: SAP transferred at ${escapeHtml(truck.doc_transfer_to_warehouse)}. Awaiting Warehouse runner pickup and document receipt">🔒 Awaiting Docs (Runner)</button>`;
+
+                if (!truck.doc_transfer_to_warehouse) {
+                    departBtn = `<button class="btn btn-depart-locked" disabled title="Locked: Awaiting SAP document processing and release">🔒 In SAP Process</button>`;
+                } else if (!truck.doc_runner_dispatched) {
+                    runnerBtn = `<button class="btn btn-runner-dispatch" onclick="dispatchRunner(${truck.id})" title="Click when runner is sent to collect papers from SAP/Admin">🏃 Dispatch Runner</button>`;
+                    departBtn = `<button class="btn btn-depart-locked" disabled title="Locked: Documents ready at SAP. Awaiting runner dispatch">🔒 Awaiting Runner</button>`;
+                } else if (!truck.doc_runner_received) {
+                    runnerBtn = `<button class="btn btn-runner-receive" onclick="receiveRunnerDocs(${truck.id})" title="Click when runner returns with physical documents">✅ Docs Received</button>`;
+                    departBtn = `<button class="btn btn-depart-locked en-route" disabled title="Locked: Runner dispatched at ${escapeHtml(truck.doc_runner_dispatched)}. Awaiting document receipt">⏳ Runner Out</button>`;
                 } else {
-                    departBtn = `<button class="btn btn-secondary sap-btn btn-depart-locked" disabled style="opacity:0.5;cursor:not-allowed;background:#64748b;color:#f8fafc;border-color:#64748b;" title="Locked: Awaiting SAP document transfer back to Warehouse before plant departure">🔒 Depart Plant</button>`;
+                    runnerBtn = `<span class="sap-done-badge" style="background:#f0fdf4;color:#166534;border:1.5px solid #86efac;font-weight:800;" title="Documents physically received at ${escapeHtml(truck.doc_runner_received)}">✅ Docs OK</span>`;
+                    departBtn = `<button class="btn btn-depart-active" onclick="departTruck(${truck.id})" title="Documents physically received (${escapeHtml(truck.doc_runner_received)}) — Ready for Plant Departure">🚛 Depart Plant</button>`;
                 }
 
                 actionButtons = `
                     <div class="sap-actions-wrap">
                         ${sapDone}
+                        ${runnerBtn}
                         ${departBtn}
                     </div>
                 `;
@@ -922,22 +924,24 @@ function buildAdminCompletedButtons(truck) {
         steps.push(`<span class="sap-done-badge">📋 Docs Ready</span>`);
     }
 
-    // Warehouse Runner Status (Admin can trigger or view)
+    // Warehouse Runner Status & Tracking (Admin & Dispatcher exclusive)
     if (truck.doc_transfer_to_warehouse) {
         if (!truck.doc_runner_dispatched) {
-            steps.push(`<button class="btn btn-primary sap-btn" style="background:#059669;border-color:#059669;" onclick="dispatchRunner(${truck.id})" title="Dispatch runner from warehouse">🏃 Runner Out</button>`);
+            steps.push(`<button class="btn btn-runner-dispatch" onclick="dispatchRunner(${truck.id})" title="Dispatch runner from warehouse to collect papers">🏃 Dispatch Runner</button>`);
         } else if (!truck.doc_runner_received) {
-            steps.push(`<button class="btn btn-primary sap-btn" style="background:#0284c7;border-color:#0284c7;" onclick="receiveRunnerDocs(${truck.id})" title="Confirm physical receipt of papers at warehouse">✅ Docs Received</button>`);
+            steps.push(`<button class="btn btn-runner-receive" onclick="receiveRunnerDocs(${truck.id})" title="Confirm physical receipt of papers at warehouse">✅ Docs Received</button>`);
         } else {
-            steps.push(`<span class="sap-done-badge" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd;">✅ WH Received ✓</span>`);
+            steps.push(`<span class="sap-done-badge" style="background:#f0fdf4;color:#166534;border:1.5px solid #86efac;font-weight:800;">✅ Docs OK</span>`);
         }
     }
 
     // Dispatcher / Admin: Depart Plant
-    if (truck.doc_runner_received || truck.doc_transfer_to_warehouse) {
-        steps.push(`<button class="btn btn-secondary sap-btn" style="background:#059669;border-color:#059669;color:#fff;font-weight:700;" onclick="departTruck(${truck.id})" title="Ready for Plant Departure">🚛 Depart Plant</button>`);
+    if (truck.doc_runner_received) {
+        steps.push(`<button class="btn btn-depart-active" onclick="departTruck(${truck.id})" title="Documents physically received — Ready for Plant Departure">🚛 Depart Plant</button>`);
+    } else if (truck.doc_transfer_to_warehouse) {
+        steps.push(`<button class="btn btn-depart-locked" onclick="departTruck(${truck.id})" style="border:1.5px dashed #f59e0b;color:#b45309;background:#fffbeb;cursor:pointer;" title="Admin Override: Documents pending physical receipt. Click to force depart if needed">⚠️ Depart Plant (Override)</button>`);
     } else {
-        steps.push(`<button class="btn btn-secondary sap-btn" style="background:#475569;border-color:#475569;color:#cbd5e1;opacity:0.85;" onclick="departTruck(${truck.id})" title="Admin Override: Documents pending return from SAP team">🔒 Depart Plant (Override)</button>`);
+        steps.push(`<button class="btn btn-depart-locked" disabled title="Locked: Awaiting SAP document return">🔒 In SAP Process</button>`);
     }
 
     return `<div class="sap-actions-wrap">${steps.join('')}</div>`;
@@ -1465,6 +1469,11 @@ function dismissDepartToast() {
 
 // ── Warehouse Runner 2-Step Workflow & Notifications ────────
 async function dispatchRunner(id) {
+    const user = window.currentUser || getAuthUser();
+    if (!user || !['dispatcher', 'admin'].includes(user.role)) {
+        alert('Access Restricted: Only Lead Dispatcher (Dispatcher 1 & 2) and Plant Admin are authorized to dispatch runners.');
+        return;
+    }
     const truck = getTruckFromCache(id);
     const label = truck ? `${truck.queue} (${truck.truck_number})` : `Truck #${id}`;
     if (!confirm(`🏃 Dispatch Runner Confirmation:\n\nAre you sure you want to log that a Runner has been dispatched to collect physical documents for ${label}?`)) {
@@ -1475,6 +1484,11 @@ async function dispatchRunner(id) {
 }
 
 async function receiveRunnerDocs(id) {
+    const user = window.currentUser || getAuthUser();
+    if (!user || !['dispatcher', 'admin'].includes(user.role)) {
+        alert('Access Restricted: Only Lead Dispatcher (Dispatcher 1 & 2) and Plant Admin are authorized to confirm document receipt.');
+        return;
+    }
     const truck = getTruckFromCache(id);
     const label = truck ? `${truck.queue} (${truck.truck_number})` : `Truck #${id}`;
     if (!confirm(`✅ Documents Received Confirmation:\n\nDo you confirm that the physical documents for ${label} have been received at the Warehouse?\n\nThis will UNLOCK the "Depart Plant" action for the Dispatcher!`)) {
@@ -1493,16 +1507,26 @@ function showWarehouseRunnerToast(truck) {
     const actionBtn = document.getElementById('warehouseRunnerToastActionBtn');
     if (!banner || !msg) return;
 
+    const user = window.currentUser || getAuthUser();
+    const canAction = user && ['dispatcher', 'admin'].includes(user.role);
+
     msg.innerHTML = `
         <strong>${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)}</strong> (${escapeHtml(truck.driver_name || 'Driver')})<br>
         Ready na ang SAP documents sa Admin (${escapeHtml(truck.doc_transfer_to_warehouse || '')}). Pakipadala ang runner para kunin ang dokumento.
     `;
 
     if (actionBtn) {
-        actionBtn.onclick = () => {
-            dismissRunnerToast();
-            dispatchRunner(truck.id);
-        };
+        if (canAction) {
+            actionBtn.style.display = 'inline-block';
+            actionBtn.className = 'btn btn-runner-dispatch';
+            actionBtn.innerHTML = '🏃 Dispatch Runner Now';
+            actionBtn.onclick = () => {
+                dismissRunnerToast();
+                dispatchRunner(truck.id);
+            };
+        } else {
+            actionBtn.style.display = 'none';
+        }
     }
 
     banner.style.display = 'block';
@@ -1558,6 +1582,9 @@ function updateHeaderNotifBadge() {
     const list = document.getElementById('headerNotifList');
     if (!badge || !list) return;
 
+    const user = window.currentUser || getAuthUser();
+    const canAction = user && ['dispatcher', 'admin'].includes(user.role);
+
     if (pendingPickups.length > 0) {
         badge.textContent = pendingPickups.length;
         badge.style.display = 'inline-block';
@@ -1565,6 +1592,17 @@ function updateHeaderNotifBadge() {
             const runnerStatus = t.doc_runner_dispatched 
                 ? `<span style="color:#f59e0b;font-weight:700;">🏃 Runner out at ${escapeHtml(t.doc_runner_dispatched)}</span>`
                 : `<span style="color:#22c55e;font-weight:700;">📄 Docs Ready — Send Runner</span>`;
+
+            let actionHtml = '';
+            if (canAction) {
+                actionHtml = !t.doc_runner_dispatched ? `
+                    <button type="button" class="btn btn-runner-dispatch" style="font-size: 10px; padding: 4px 8px;" onclick="dispatchRunner(${t.id})">🏃 Dispatch</button>
+                ` : `
+                    <button type="button" class="btn btn-runner-receive" style="font-size: 10px; padding: 4px 8px;" onclick="receiveRunnerDocs(${t.id})">✅ Received</button>
+                `;
+            } else {
+                actionHtml = `<span style="font-size: 10px; color: #94a3b8; font-weight: 600; padding: 3px 6px; background: rgba(255,255,255,0.06); border-radius: 4px;">👁️ View Only</span>`;
+            }
 
             return `
                 <div style="padding: 10px 14px; border-bottom: 1px solid #1e293b; background: #0f1c2e; margin-bottom: 4px; border-radius: 6px;">
@@ -1577,11 +1615,7 @@ function updateHeaderNotifBadge() {
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 11px;">${runnerStatus}</span>
-                        ${!t.doc_runner_dispatched ? `
-                            <button type="button" class="btn btn-primary" style="font-size: 10.5px; padding: 4px 8px; background: #059669; border: none; border-radius: 4px;" onclick="dispatchRunner(${t.id})">🏃 Dispatch</button>
-                        ` : `
-                            <button type="button" class="btn btn-primary" style="font-size: 10.5px; padding: 4px 8px; background: #0284c7; border: none; border-radius: 4px;" onclick="receiveRunnerDocs(${t.id})">✅ Received</button>
-                        `}
+                        ${actionHtml}
                     </div>
                 </div>
             `;
