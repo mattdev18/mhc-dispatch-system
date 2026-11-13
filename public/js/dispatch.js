@@ -225,6 +225,7 @@ function renderTable() {
 
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
     let hasCriticalOverdue = false;
+    let hasDepartReady = false;
 
     if (list.length === 0) {
         tbody.innerHTML = `
@@ -399,6 +400,13 @@ function renderTable() {
             actionButtons += '<button type="button" class="btn btn-admin-quick-depart" onclick="openQuickDepartModal(' + truck.id + ')" title="Plant Admin Only: Clear stale truck waiting over 12 hours that physically left earlier"><span>⚡ Quick Depart</span></button>';
         }
 
+        // 🚛 Depart-Ready detection: Completed + docs returned from SAP, but not yet departed
+        let departReadyBadge = '';
+        if (truck.status === 'Completed' && truck.doc_transfer_to_warehouse && !truck.departed_time) {
+            hasDepartReady = true;
+            departReadyBadge = '<div style="font-size:11px;font-weight:700;color:#059669;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;margin-top:3px;">🚛 Ready to Depart</div>';
+        }
+
         return `
             <tr class="${rowClass}">
                 <td><strong>${escapeHtml(truck.queue)}</strong></td>
@@ -412,6 +420,7 @@ function renderTable() {
                 <td>
                     <div>${escapeHtml(truck.arrival_time)}</div>
                     ${elapsedBadge}
+                    ${departReadyBadge}
                 </td>
                 <td>${priorityHtml}</td>
                 <td><span class="badge badge-${truck.status.toLowerCase()}">${escapeHtml(truck.status)}${truck.status === 'Called' && Number(truck.call_count) > 1 ? ` (${truck.call_count}x)` : ''}</span></td>
@@ -423,6 +432,9 @@ function renderTable() {
 
     if (hasCriticalOverdue) {
         checkAndTriggerAlarmSound();
+    }
+    if (hasDepartReady) {
+        checkAndTriggerDepartAlarm();
     }
 }
 
@@ -927,8 +939,17 @@ let pendingSapDocStartId = null;
 function openSapDocStartModal(id) {
     pendingSapDocStartId = id;
     const truck = getTruckFromCache(id);
-    document.getElementById('sapDocStartTruckInfo').textContent = truckLabel(truck);
-    document.getElementById('sapDocStartModal').classList.add('show');
+    if (!truck) return;
+    const infoEl = document.getElementById('sapDocStartTruckInfo');
+    if (infoEl) {
+        infoEl.innerHTML = `
+            <div style="font-size: 15px; font-weight: 800; color: #92400e;">${escapeHtml(truck.queue)} &bull; ${escapeHtml(truck.truck_number)}</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #78350f; margin-top: 4px;">Driver: ${escapeHtml(truck.driver_name)} &bull; Hauler: ${escapeHtml(truck.company || '—')}</div>
+            <div style="font-size: 12px; color: #a16207; margin-top: 2px;">Load: ${escapeHtml(truck.load_type)} &rarr; ${escapeHtml(truck.destination)}</div>
+        `;
+    }
+    const modal = document.getElementById('sapDocStartModal');
+    if (modal) modal.classList.add('show');
 }
 function closeSapDocStartModal() {
     pendingSapDocStartId = null;
@@ -946,13 +967,25 @@ let pendingSapDocEndId = null;
 function openSapDocEndModal(id) {
     pendingSapDocEndId = id;
     const truck = getTruckFromCache(id);
-    document.getElementById('sapDocEndTruckInfo').textContent = truckLabel(truck);
-    document.getElementById('sapDocEndStep2Info').textContent = truckLabel(truck);
+    if (!truck) return;
+    const infoEl = document.getElementById('sapDocEndTruckInfo');
+    if (infoEl) {
+        infoEl.innerHTML = `
+            <div style="font-size: 15px; font-weight: 800; color: #166534;">${escapeHtml(truck.queue)} &bull; ${escapeHtml(truck.truck_number)}</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #14532d; margin-top: 4px;">Driver: ${escapeHtml(truck.driver_name)} &bull; Hauler: ${escapeHtml(truck.company || '—')}</div>
+            <div style="font-size: 12px; color: #15803d; margin-top: 2px;">Load: ${escapeHtml(truck.load_type)} &rarr; ${escapeHtml(truck.destination)}</div>
+        `;
+    }
+    const step2El = document.getElementById('sapDocEndStep2Info');
+    if (step2El) {
+        step2El.textContent = truckLabel(truck);
+    }
     document.getElementById('sapRemarksInput').value = '';
     document.getElementById('sapRemarksConfirmBtn').disabled = true;
     document.getElementById('sapDocEndStep1').style.display = '';
     document.getElementById('sapDocEndStep2').style.display = 'none';
-    document.getElementById('sapDocEndModal').classList.add('show');
+    const modal = document.getElementById('sapDocEndModal');
+    if (modal) modal.classList.add('show');
 }
 function closeSapDocEndModal() {
     pendingSapDocEndId = null;
@@ -991,8 +1024,17 @@ let pendingSapTransferToSapId = null;
 function openSapTransferToSapModal(id) {
     pendingSapTransferToSapId = id;
     const truck = getTruckFromCache(id);
-    document.getElementById('sapTransferToSapTruckInfo').textContent = truckLabel(truck);
-    document.getElementById('sapTransferToSapModal').classList.add('show');
+    if (!truck) return;
+    const infoEl = document.getElementById('sapTransferToSapTruckInfo');
+    if (infoEl) {
+        infoEl.innerHTML = `
+            <div style="font-size: 15px; font-weight: 800; color: #1e40af;">${escapeHtml(truck.queue)} &bull; ${escapeHtml(truck.truck_number)}</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #475569; margin-top: 4px;">Driver: ${escapeHtml(truck.driver_name)} &bull; Hauler: ${escapeHtml(truck.company || '—')}</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Load: ${escapeHtml(truck.load_type)} &rarr; ${escapeHtml(truck.destination)}</div>
+        `;
+    }
+    const modal = document.getElementById('sapTransferToSapModal');
+    if (modal) modal.classList.add('show');
 }
 function closeSapTransferToSapModal() {
     pendingSapTransferToSapId = null;
@@ -1010,8 +1052,17 @@ let pendingSapTransferWarehouseId = null;
 function openSapTransferWarehouseModal(id) {
     pendingSapTransferWarehouseId = id;
     const truck = getTruckFromCache(id);
-    document.getElementById('sapTransferWarehouseTruckInfo').textContent = truckLabel(truck);
-    document.getElementById('sapTransferWarehouseModal').classList.add('show');
+    if (!truck) return;
+    const infoEl = document.getElementById('sapTransferWarehouseTruckInfo');
+    if (infoEl) {
+        infoEl.innerHTML = `
+            <div style="font-size: 15px; font-weight: 800; color: #1e40af;">${escapeHtml(truck.queue)} &bull; ${escapeHtml(truck.truck_number)}</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #475569; margin-top: 4px;">Driver: ${escapeHtml(truck.driver_name)} &bull; Hauler: ${escapeHtml(truck.company || '—')}</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Load: ${escapeHtml(truck.load_type)} &rarr; ${escapeHtml(truck.destination)}</div>
+        `;
+    }
+    const modal = document.getElementById('sapTransferWarehouseModal');
+    if (modal) modal.classList.add('show');
 }
 function closeSapTransferWarehouseModal() {
     pendingSapTransferWarehouseId = null;
@@ -1546,6 +1597,48 @@ function checkAndTriggerAlarmSound() {
     }
 }
 
+// 🚛 Sound 3: Depart-Ready Alert — 3 descending double-beeps (600→450Hz, sine wave)
+// Distinct from Sound 2 (950Hz square staccato). Signals: documents back, truck must depart.
+let lastDepartAlarmPlayTime = 0;
+
+function playDepartReadyAlarm() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+        // 3 pairs of descending tones: high (600Hz) + low (450Hz)
+        const pattern = [
+            { freq: 600, t: 0.00 }, { freq: 450, t: 0.14 },
+            { freq: 600, t: 0.35 }, { freq: 450, t: 0.49 },
+            { freq: 600, t: 0.70 }, { freq: 450, t: 0.84 },
+        ];
+        pattern.forEach(({ freq, t }) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + t);
+            gain.gain.setValueAtTime(0.28, now + t);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.12);
+            osc.start(now + t);
+            osc.stop(now + t + 0.12);
+        });
+    } catch (e) {
+        console.warn('Depart-ready alarm audio error:', e);
+    }
+}
+
+function checkAndTriggerDepartAlarm() {
+    const now = Date.now();
+    // Fire once every 3 minutes if depart-ready trucks exist (cannot be muted by anyone)
+    if (now - lastDepartAlarmPlayTime > 3 * 60 * 1000) {
+        lastDepartAlarmPlayTime = now;
+        playDepartReadyAlarm();
+    }
+}
+
 // Initial button state sync on page load
 document.addEventListener('DOMContentLoaded', () => {
     updateAlarmToggleButton();
@@ -1563,6 +1656,14 @@ setInterval(() => {
 
     if (hasCritical) {
         checkAndTriggerAlarmSound();
+    }
+
+    // Check for depart-ready trucks (Completed + docs returned, not yet departed)
+    const hasDepartReadyPeriodic = (todayTrucks || []).some(t =>
+        t.status === 'Completed' && t.doc_transfer_to_warehouse && !t.departed_time
+    );
+    if (hasDepartReadyPeriodic) {
+        checkAndTriggerDepartAlarm();
     }
 }, 60000);
 
