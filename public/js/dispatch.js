@@ -62,12 +62,13 @@ socket.on('truck_called', (truck) => {
     loadTodayData();
 });
 
-// Dedicated Real-time Event: When SAP completes Transfer to Warehouse
+// Dedicated Real-time Event: When SAP completes Transfer to Warehouse (ONLY Warehouse 1 & 2 receive toast, NOT admin)
 socket.on('sap_docs_transferred_to_warehouse', (truck) => {
     loadTodayData();
     const user = window.currentUser || getAuthUser();
     const userRole = user ? user.role : '';
-    if (['warehouse', 'dispatcher', 'admin'].includes(userRole)) {
+    // Only Warehouse 1 and 2 screens will show the pop-up notification
+    if (userRole === 'warehouse') {
         if (truck && truck.id) {
             lastRunnerReminderTime[truck.id] = Date.now();
         }
@@ -96,9 +97,9 @@ socket.on('truck_status_changed', (truck) => {
     const user = window.currentUser || getAuthUser();
     const userRole = user ? user.role : '';
 
-    // 1. Warehouse & Dispatcher Notification: When SAP completes Transfer to Warehouse
+    // 1. Warehouse Notification: When SAP completes Transfer to Warehouse (ONLY Warehouse 1 & 2, NOT Admin)
     if (truck.doc_transfer_to_warehouse && !truck.doc_runner_received) {
-        if (['warehouse', 'dispatcher', 'admin'].includes(userRole)) {
+        if (userRole === 'warehouse') {
             const lastTime = lastRunnerReminderTime[truck.id] || 0;
             // Only fire if not fired in the last 60 seconds
             if (Date.now() - lastTime > 60 * 1000) {
@@ -1724,7 +1725,8 @@ document.addEventListener('click', (e) => {
 // 🔔 Periodic 10-Minute Recurring Reminder: Checks pending unresponded runner pickups
 function checkPendingRunnerReminders() {
     const user = window.currentUser || getAuthUser();
-    if (!user || !['warehouse', 'dispatcher', 'admin'].includes(user.role)) return;
+    // Only Warehouse 1 & 2 screens receive the recurring 10-minute reminder pop-up (NOT admin, NOT dispatcher)
+    if (!user || user.role !== 'warehouse') return;
 
     const now = Date.now();
     const pendingPickups = (todayTrucks || []).filter(t =>
