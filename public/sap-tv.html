@@ -4,420 +4,672 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live TV SAP Documentation &amp; OTC Board - May Harvest Corporation</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/display.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* ── 100vh Zero-Scroll TV Viewport Guarantee ── */
-        html, body.display-screen {
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #070d14;
+            --card: #0c1420;
+            --card-hdr: #0a1018;
+            --lime: #84cc16;
+            --amber: #f59e0b;
+            --orange: #f97316;
+            --sky: #38bdf8;
+            --green: #22c55e;
+            --purple: #a855f7;
+            --blue: #3b82f6;
+            --red: #ef4444;
+            --white: #f8fafc;
+            --gray: #94a3b8;
+            --dim: #475569;
+            --border: #1a2838;
+        }
+
+        html, body {
             height: 100vh !important;
             max-height: 100vh !important;
             overflow: hidden !important;
             margin: 0;
             padding: 0;
-            background: #070e18;
-            color: #f8fafc;
+            background: var(--bg);
+            color: var(--white);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
             flex-direction: column;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
-        /* ── TV Header (Compact 56px) ── */
-        .tv-header-sap {
-            height: 56px;
-            min-height: 56px;
-            background: linear-gradient(90deg, #042e1a 0%, #0d1e33 60%, #09131f 100%);
-            border-bottom: 3px solid #22c55e;
-            padding: 0 24px;
+        /* Industrial Grid Background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(132,204,22,.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(132,204,22,.03) 1px, transparent 1px);
+            background-size: 36px 36px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body > * { position: relative; z-index: 1; }
+
+        /* CRT Scanline Effect */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(180deg, rgba(132,204,22,.07), transparent);
+            animation: scanDown 2.6s linear infinite;
+            pointer-events: none;
+            z-index: 999;
+        }
+        @keyframes scanDown {
+            0% { top: -4px; }
+            100% { top: 100vh; }
+        }
+
+        /* ── 1. TV Header (Compact 52px) ── */
+        .hdr {
+            height: 52px;
+            min-height: 52px;
+            background: #090f18;
+            border-left: 5px solid var(--lime);
+            border-bottom: 2px solid rgba(132,204,22,.25);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-sizing: border-box;
+            justify-content: space-between;
+            padding: 0 20px;
             flex-shrink: 0;
         }
-
-        .tv-brand-sap {
+        .hdr-left {
             display: flex;
             align-items: center;
             gap: 14px;
         }
-
-        .tv-logo-box-sap {
-            width: 42px;
-            height: 42px;
+        .hdr-logo {
+            width: 36px;
+            height: 36px;
             background: #ffffff;
-            border-radius: 10px;
-            padding: 3px;
+            border-radius: 8px;
+            padding: 2px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
-
-        .tv-logo-box-sap img {
+        .hdr-logo img {
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
-
-        .tv-title-sap h1 {
-            font-size: 17px;
+        .hdr-title h1 {
+            font-size: 16px;
             font-weight: 900;
-            letter-spacing: 0.8px;
-            color: #ffffff;
-            margin: 0;
-            line-height: 1.15;
+            letter-spacing: 1.2px;
+            color: #fff;
+            line-height: 1.1;
         }
-
-        .tv-title-sap h2 {
-            font-size: 11px;
-            font-weight: 800;
-            color: #4ade80;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            margin: 0;
-        }
-
-        .tv-clock-box-sap {
-            text-align: right;
+        .hdr-live {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 6px;
+            background: rgba(132,204,22,.12);
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(132,204,22,.3);
+            margin-left: 8px;
         }
-
-        .tv-clock-sap {
-            font-size: 22px;
-            font-weight: 900;
-            color: #86efac;
-            font-family: "Courier New", Courier, monospace;
-            letter-spacing: 1px;
-        }
-
-        .tv-date-sap {
-            font-size: 12px;
-            font-weight: 700;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-        }
-
-        /* ── Compact 5-Metric Strip (Height: 44px) ── */
-        .sap-tv-kpis {
-            height: 44px;
-            min-height: 44px;
-            display: flex;
-            gap: 10px;
-            padding: 5px 20px;
-            box-sizing: border-box;
-            flex-shrink: 0;
-            background: #091424;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .sap-kpi-chip {
-            flex: 1;
-            background: #0f1c2e;
-            border-radius: 8px;
-            padding: 4px 14px;
-            border-left: 4px solid #3b82f6;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-        }
-
-        .sap-kpi-chip.blue   { border-color: #3b82f6; }
-        .sap-kpi-chip.yellow { border-color: #eab308; }
-        .sap-kpi-chip.orange { border-color: #f97316; }
-        .sap-kpi-chip.green  { border-color: #22c55e; }
-        .sap-kpi-chip.purple { border-color: #a855f7; }
-
-        .sap-kpi-chip .title {
-            font-size: 10px;
-            font-weight: 800;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .sap-kpi-chip .num {
-            font-size: 20px;
-            font-weight: 900;
-            color: #ffffff;
-            line-height: 1;
-        }
-
-        /* ── Main Board Container (Expands to fill 100% of middle space) ── */
-        .sap-tv-container {
-            flex: 1;
-            min-height: 0;
-            padding: 8px 20px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-sizing: border-box;
-        }
-
-        .sap-board-card {
-            flex: 1;
-            min-height: 0;
-            background: #0d1829;
-            border-radius: 12px;
-            border: 1px solid #1e2e46;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .sap-board-header {
-            height: 36px;
-            min-height: 36px;
-            background: linear-gradient(90deg, #16263d 0%, #0d1829 100%);
-            padding: 0 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #1e2e46;
-            flex-shrink: 0;
-        }
-
-        .sap-board-header h2 {
-            font-size: 12px;
-            font-weight: 800;
-            color: #f8fafc;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 0;
-            letter-spacing: 0.4px;
-        }
-
-        .pulse-dot {
+        .hdr-live .dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #22c55e;
-            display: inline-block;
-            box-shadow: 0 0 8px #22c55e;
-            animation: pulse 1.6s infinite;
+            background: var(--lime);
+            animation: pulseDot 1s infinite;
+        }
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .3; transform: scale(1.2); }
+        }
+        .hdr-live span {
+            font-size: 10.5px;
+            font-weight: 900;
+            color: var(--lime);
+            letter-spacing: 1px;
+        }
+        .hdr-right { text-align: right; }
+        .hdr-right .time {
+            font-family: 'Courier Prime', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--lime);
+            letter-spacing: 1.5px;
+            line-height: 1;
+        }
+        .hdr-right .date {
+            font-size: 9.5px;
+            color: var(--gray);
+            letter-spacing: .5px;
+            margin-top: 2px;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(0.95); opacity: 0.7; }
-            50% { transform: scale(1.3); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.7; }
+        /* ── 2. Top KPI Metric Strip (42px) ── */
+        .kpi-strip {
+            height: 42px;
+            min-height: 42px;
+            display: flex;
+            gap: 6px;
+            padding: 3px 14px;
+            background: #050910;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .kpi-chip {
+            flex: 1;
+            background: var(--card);
+            border-top: 3px solid var(--blue);
+            border-radius: 0 0 5px 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 10px;
+        }
+        .kpi-chip.k1 { border-color: var(--blue); }
+        .kpi-chip.k2 { border-color: var(--amber); }
+        .kpi-chip.k3 { border-color: var(--orange); }
+        .kpi-chip.k4 { border-color: var(--green); }
+        .kpi-chip.k5 { border-color: var(--purple); }
+        .kpi-chip.k6 { border-color: var(--sky); }
+        .kpi-chip .lbl {
+            font-size: 8.5px;
+            font-weight: 800;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+        .kpi-chip .val {
+            font-size: 18px;
+            font-weight: 900;
+            color: #fff;
         }
 
-        /* ── Zero-Horizontal-Scroll Fit Table ── */
-        .sap-table-wrap {
+        /* ── 3. Three SAP Analyst Pods (Taking 44% of Board Height) ── */
+        .analyst-zone {
+            height: 44%;
+            min-height: 0;
+            display: flex;
+            gap: 10px;
+            padding: 8px 14px;
+            flex-shrink: 0;
+        }
+        .pod-card {
+            flex: 1;
+            background: #0a1018;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .pod-card.active {
+            border-color: var(--orange);
+            box-shadow: inset 0 0 24px rgba(249,115,22,.06);
+        }
+        .pod-card.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--orange);
+            animation: podGlow 1.5s infinite;
+        }
+        @keyframes podGlow {
+            0%, 100% { opacity: .4; box-shadow: 0 0 4px var(--orange); }
+            50% { opacity: 1; box-shadow: 0 0 14px var(--orange); }
+        }
+
+        .pod-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 12px;
+            background: var(--card-hdr);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .pod-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .station-tag {
+            background: #111e2e;
+            color: var(--sky);
+            font-family: 'Courier Prime', monospace;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(56,189,248,.3);
+        }
+        .station-title {
+            font-size: 13px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: .6px;
+        }
+        .pod-status {
+            font-size: 9.5px;
+            font-weight: 900;
+            padding: 3px 9px;
+            border-radius: 4px;
+            letter-spacing: .4px;
+        }
+        .pod-status.act {
+            background: rgba(249,115,22,.2);
+            color: #fdba74;
+            border: 1px solid var(--orange);
+        }
+        .pod-status.idle {
+            background: #1e293b;
+            color: var(--dim);
+            border: 1px solid #334155;
+        }
+
+        /* Active Truck Inside Pod */
+        .pod-body {
+            flex: 1;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-height: 0;
+        }
+        .active-pod-truck {
+            background: #060b12;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            justify-content: center;
+        }
+        .active-pod-truck .tagline {
+            font-size: 8.5px;
+            font-weight: 800;
+            color: var(--lime);
+            letter-spacing: .8px;
+            text-transform: uppercase;
+        }
+        .active-pod-truck .big-plate {
+            font-family: 'Courier Prime', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--lime);
+            letter-spacing: 2.5px;
+            line-height: 1.1;
+        }
+        .active-pod-truck .q-door {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--sky);
+        }
+        .active-pod-truck .meta-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10.5px;
+            margin-top: 1px;
+        }
+        .active-pod-truck .meta-row .k { color: var(--dim); }
+        .active-pod-truck .meta-row .v { font-weight: 700; color: #e2e8f0; }
+
+        /* Standby State */
+        .pod-standby {
+            background: #050910;
+            border: 1px dashed #1c2b3e;
+            border-radius: 6px;
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 4px;
+        }
+        .pod-standby .icon { font-size: 24px; opacity: 0.5; }
+        .pod-standby .title { font-size: 12px; font-weight: 900; color: #94a3b8; letter-spacing: 1px; }
+        .pod-standby .sub { font-size: 9.5px; color: #475569; }
+
+        /* 5-Segment LED Bar */
+        .led-pipeline {
+            display: flex;
+            gap: 3px;
+            margin-top: 5px;
+        }
+        .led-step {
+            flex: 1;
+            height: 7px;
+            border-radius: 3px;
+            background: #152232;
+        }
+        .led-step.done { background: var(--green); }
+        .led-step.active { background: var(--orange); animation: pulseDot 1s infinite; }
+        .led-step.pending { background: #152232; }
+
+        /* Station's Queued Next */
+        .pod-queue {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 4px;
+        }
+        .pod-queue .q-hdr {
+            font-size: 8.5px;
+            font-weight: 800;
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 2px;
+        }
+        .pod-q-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 0;
+            font-size: 10px;
+        }
+        .pod-q-item .qq { font-family: 'Courier Prime', monospace; font-weight: 700; color: var(--sky); min-width: 38px; }
+        .pod-q-item .qp { font-family: 'Courier Prime', monospace; font-weight: 600; color: #cbd5e1; }
+        .pod-q-item .qs { color: var(--dim); margin-left: auto; font-size: 8.5px; font-weight: 800; }
+
+        /* ── 4. Compact Master Queue Table (Middle remaining space) ── */
+        .table-zone {
             flex: 1;
             min-height: 0;
-            overflow-y: hidden; /* NO SCROLL — table auto-scales to fit */
-            overflow-x: hidden; /* NO HORIZONTAL SCROLL */
+            padding: 2px 14px 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-
-        .sap-table-wrap::-webkit-scrollbar {
-            width: 0;
+        .th-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 10px;
+            background: var(--card-hdr);
+            border-radius: 6px 6px 0 0;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            flex-shrink: 0;
         }
-
-        .sap-table {
+        .th-bar h3 {
+            font-size: 10.5px;
+            font-weight: 900;
+            color: var(--lime);
+            letter-spacing: .6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .th-bar .cnt {
+            font-size: 9.5px;
+            color: var(--dim);
+        }
+        .tw {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            background: #060a10;
+            border: 1px solid var(--border);
+            border-radius: 0 0 6px 6px;
+        }
+        table.qtab {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
-            table-layout: fixed; /* Strict column control so it fits single screen */
+            table-layout: fixed;
+            font-size: 11px;
         }
-
-        .sap-table th {
-            background: #09121f;
-            color: #94a3b8;
-            padding: 7px 8px;
-            font-size: 10px;
-            font-weight: 800;
+        table.qtab th {
+            background: #05080e;
+            color: var(--gray);
+            padding: 5px 6px;
+            font-size: 8.5px;
+            font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid #1e2e46;
+            letter-spacing: .5px;
+            border-bottom: 1px solid var(--border);
             text-align: left;
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 5;
         }
-
-        .sap-table th.highlight {
-            color: #60a5fa;
-            background: #0c1a2e;
-        }
-
-        .sap-table td {
-            padding: 6px 8px;
-            border-bottom: 1px solid #152238;
+        table.qtab td {
+            padding: 4.5px 6px;
+            border-bottom: 1px solid #0d1622;
             color: #e2e8f0;
-            vertical-align: middle;
-            overflow: hidden;
-            text-overflow: ellipsis;
             white-space: nowrap;
-        }
-
-        .sap-table tr:hover {
-            background: rgba(30, 58, 95, 0.28);
-        }
-
-        /* Clean Status Badges */
-        .badge-otc-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.2px;
-            max-width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        table.qtab tr:nth-child(even) { background: rgba(132,204,22,.015); }
+        table.qtab tr.active-row { background: rgba(249,115,22,.08); }
 
-        .status-transfer-sap { background: rgba(59, 130, 246, 0.18); color: #93c5fd; border: 1px solid #3b82f6; }
-        .status-received     { background: rgba(234, 179, 8, 0.18); color: #fde047; border: 1px solid #eab308; }
-        .status-in-progress  { background: rgba(249, 115, 22, 0.22); color: #fdba74; border: 1px solid #f97316; }
-        .status-completed    { background: rgba(34, 197, 94, 0.18); color: #86efac; border: 1px solid #22c55e; }
-        .status-transferred  { background: rgba(168, 85, 247, 0.18); color: #d8b4fe; border: 1px solid #a855f7; }
-
-        /* ── Bottom Live Ticker (Height: 32px, Matches display.html) ── */
-        .tv-ticker {
-            height: 32px;
-            min-height: 32px;
-            background: #040912;
-            border-top: 2px solid #1e293b;
+        .mini-pipe {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+        }
+        .mp-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            padding: 0 16px;
+            justify-content: center;
+            font-size: 7px;
+            font-weight: 900;
+        }
+        .mp-done { background: var(--green); color: #fff; }
+        .mp-act  { background: var(--orange); color: #fff; animation: pulseDot 1s infinite; }
+        .mp-pend { background: #152232; border: 1px solid #23364d; }
+        .mp-arr  { color: #23364d; font-size: 8px; }
+
+        .stb {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8.5px;
+            font-weight: 900;
+        }
+        .stb-a   { background: #1e3a5f; color: #93c5fd; }
+        .stb-t   { background: #422006; color: #fde047; }
+        .stb-p   { background: #431407; color: #fdba74; }
+        .stb-d   { background: #052e16; color: #86efac; }
+        .stb-r   { background: #2e1065; color: #d8b4fe; }
+        .stb-dep { background: #0c2e4e; color: #38bdf8; }
+
+        /* ── 5. Fixed Seamless Bottom Ticker (No Overlap Guarantee) ── */
+        .tv-ticker {
+            height: 36px;
+            min-height: 36px;
+            background: #04070c;
+            border-top: 2px solid rgba(132,204,22,.25);
+            display: flex;
+            align-items: center;
+            padding: 0;
             overflow: hidden;
             box-sizing: border-box;
             flex-shrink: 0;
+            position: relative;
         }
-
-        .tv-ticker-label {
-            font-size: 11.5px;
-            font-weight: 800;
-            color: #60a5fa;
-            background: #112338;
-            padding: 3px 10px;
-            border-radius: 6px;
-            margin-right: 14px;
+        .ticker-badge {
+            position: relative;
+            z-index: 10;
+            font-size: 10.5px;
+            font-weight: 900;
+            color: var(--lime);
+            background: #09120a;
+            border-right: 2px solid rgba(132,204,22,.35);
+            padding: 0 16px;
+            height: 100%;
             white-space: nowrap;
-            letter-spacing: 0.5px;
+            letter-spacing: .8px;
             flex-shrink: 0;
-        }
-
-        .tv-ticker-list {
             display: flex;
-            gap: 28px;
+            align-items: center;
+            gap: 7px;
+            box-shadow: 8px 0 16px rgba(4,7,12,0.95);
+        }
+        .ticker-badge .p-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--lime);
+            animation: pulseDot 1s infinite;
+        }
+        .ticker-track {
+            flex: 1;
+            min-width: 0;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            mask-image: linear-gradient(90deg, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%);
+            -webkit-mask-image: linear-gradient(90deg, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%);
+        }
+        .ticker-content {
+            display: flex;
+            gap: 36px;
             white-space: nowrap;
-            animation: tickerScroll 30s linear infinite;
+            animation: tickerScroll 32s linear infinite;
+            will-change: transform;
         }
-
         @keyframes tickerScroll {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
         }
-
-        .tv-ticker-item {
-            font-size: 12px;
+        .ticker-item {
+            font-size: 11.5px;
             color: #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
+        .ticker-item strong {
+            color: #fff;
+            font-family: 'Courier Prime', monospace;
+        }
+        .ticker-item .action-tag {
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        .tag-urgent { background: rgba(239,68,68,.2); color: #fca5a5; border: 1px solid var(--red); }
+        .tag-ready  { background: rgba(168,85,247,.2); color: #d8b4fe; border: 1px solid var(--purple); }
+        .tag-wait   { background: rgba(234,179,8,.2); color: #fde047; border: 1px solid var(--amber); }
     </style>
 </head>
-<body class="display-screen">
+<body>
 
-    <!-- 1. TV Header (Fixed top, 64px) -->
-    <header class="tv-header-sap">
-        <div class="tv-brand-sap">
-            <div class="tv-logo-box-sap">
+    <!-- 1. TV Header -->
+    <header class="hdr">
+        <div class="hdr-left">
+            <div class="hdr-logo">
                 <img src="/images/mhc-logo.png" alt="May Harvest Corporation">
             </div>
-            <div class="tv-title-sap">
-                <h1>MAY HARVEST CORPORATION</h1>
-                <h2>LIVE SAP OTC DOCUMENTATION BOARD</h2>
+            <div class="hdr-title">
+                <h1>MAY HARVEST CORP</h1>
+            </div>
+            <div class="hdr-live">
+                <span class="dot"></span>
+                <span>LIVE SAP OTC BOARD</span>
             </div>
         </div>
-        <div class="tv-clock-box-sap">
-            <div class="tv-date-sap" id="tvDate">--------</div>
-            <div class="tv-clock-sap" id="tvClock">--:--:--</div>
+        <div class="hdr-right">
+            <div class="time" id="tvClock">--:--:--</div>
+            <div class="date" id="tvDate">--------</div>
         </div>
     </header>
 
-    <!-- 2. Compact Top KPI Strip (52px) -->
-    <section class="sap-tv-kpis">
-        <div class="sap-kpi-chip blue">
-            <span class="title">1. Awaiting SAP</span>
-            <span class="num" id="kpiAwaitingTransfer">0</span>
+    <!-- 2. KPI Strip -->
+    <section class="kpi-strip">
+        <div class="kpi-chip k1">
+            <span class="lbl">Awaiting SAP</span>
+            <span class="val" id="kpiAwaitingTransfer">0</span>
         </div>
-        <div class="sap-kpi-chip yellow">
-            <span class="title">2. Transferred to SAP</span>
-            <span class="num" id="kpiTransferredSap">0</span>
+        <div class="kpi-chip k2">
+            <span class="lbl">In SAP</span>
+            <span class="val" id="kpiTransferredSap">0</span>
         </div>
-        <div class="sap-kpi-chip orange">
-            <span class="title">3. In Documentation</span>
-            <span class="num" id="kpiInDocumentation">0</span>
+        <div class="kpi-chip k3">
+            <span class="lbl">Processing</span>
+            <span class="val" id="kpiInDocumentation">0</span>
         </div>
-        <div class="sap-kpi-chip green">
-            <span class="title">4. Docs Finished</span>
-            <span class="num" id="kpiDocsFinished">0</span>
+        <div class="kpi-chip k4">
+            <span class="lbl">Docs Finished</span>
+            <span class="val" id="kpiDocsFinished">0</span>
         </div>
-        <div class="sap-kpi-chip purple">
-            <span class="title">5. Ready for WH</span>
-            <span class="num" id="kpiTransferredWh">0</span>
+        <div class="kpi-chip k5">
+            <span class="lbl">Ready WH</span>
+            <span class="val" id="kpiTransferredWh">0</span>
+        </div>
+        <div class="kpi-chip k6">
+            <span class="lbl">Departed</span>
+            <span class="val" id="kpiDeparted">0</span>
         </div>
     </section>
 
-    <!-- 3. Main Live Board (Expands to fit 100% middle viewport without scrolling) -->
-    <main class="sap-tv-container">
-        <div class="sap-board-card">
-            <div class="sap-board-header">
-                <h2>
-                    <span class="pulse-dot"></span>
-                    Live OTC Documentation Queue
-                </h2>
-                <div style="font-size: 12px; color: #94a3b8;" id="recordCountTag">
-                    Auto-synced via Live Socket • Updates Instantly
-                </div>
-            </div>
+    <!-- 3. Three SAP Analyst Pods (Dynamically Populated) -->
+    <section class="analyst-zone" id="analystPodZone">
+        <!-- Rendered by renderAnalystPods() -->
+    </section>
 
-            <div class="sap-table-wrap" id="tableWrap">
-                <table class="sap-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 60px;">Queue</th>
-                            <th style="width: 65px;">Door</th>
-                            <th style="width: 130px;">Truck / Plate</th>
-                            <th style="width: 130px;">Driver</th>
-                            <th style="width: 120px;">Hauler / Cargo</th>
-                            <th class="highlight" style="width: 100px;">1. To SAP</th>
-                            <th class="highlight" style="width: 95px;">2. Received</th>
-                            <th class="highlight" style="width: 100px;">3. Analyst</th>
-                            <th class="highlight" style="width: 120px;">4. Processing</th>
-                            <th class="highlight" style="width: 110px;">5. Ready WH</th>
-                            <th style="width: 95px;">Remarks</th>
-                            <th style="width: 80px;">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sapTableBody">
-                        <tr>
-                            <td colspan="12" style="text-align: center; padding: 35px; color: #64748b;">
-                                Loading real-time SAP Documentation records...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    <!-- 4. Master Document Table -->
+    <section class="table-zone">
+        <div class="th-bar">
+            <h3><span>●</span> ALL SAP OTC DOCUMENT RECORDS</h3>
+            <span class="cnt" id="recordCountTag">Auto-synced via Live Socket</span>
         </div>
-    </main>
+        <div class="tw" id="tableWrap">
+            <table class="qtab">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Queue</th>
+                        <th style="width: 55px;">Door</th>
+                        <th style="width: 100px;">Plate No.</th>
+                        <th style="width: 110px;">Driver</th>
+                        <th style="width: 110px;">Hauler / Cargo</th>
+                        <th style="width: 95px;">Station</th>
+                        <th style="width: 130px;">5-Stage OTC Progress</th>
+                        <th style="width: 80px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="sapTableBody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 25px; color: #64748b;">
+                            Loading live SAP documentation queue...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-    <!-- 4. Bottom Live Marquee Ticker (38px, Matches display.html) -->
+    <!-- 5. Fixed Seamless Bottom Ticker (Continuous Marquee, No Overlap) -->
     <footer class="tv-ticker">
-        <div class="tv-ticker-label">⏳ PENDING SAP TASKS:</div>
-        <div class="tv-ticker-list" id="sapTickerList">
-            <span style="color: #64748b;">Loading pending documentation tasks...</span>
+        <div class="ticker-badge">
+            <span class="p-dot"></span> PENDING SAP ACTIONS:
+        </div>
+        <div class="ticker-track">
+            <div class="ticker-content" id="sapTickerContent">
+                <span class="ticker-item"><strong style="color:#64748b;">Updating live pending tasks...</strong></span>
+            </div>
         </div>
     </footer>
 
@@ -480,6 +732,7 @@
             let inDocumentation = 0;
             let docsFinished = 0;
             let transferredWh = 0;
+            let departed = 0;
 
             trucks.forEach(t => {
                 if (t.status === 'Completed' && !t.doc_transfer_to_sap) awaitingTransfer++;
@@ -487,6 +740,7 @@
                 if (t.sap_doc_start && !t.sap_doc_end) inDocumentation++;
                 if (t.sap_doc_end && !t.doc_transfer_to_warehouse) docsFinished++;
                 if (t.doc_transfer_to_warehouse) transferredWh++;
+                if (t.status === 'Departed') departed++;
             });
 
             document.getElementById('kpiAwaitingTransfer').textContent = awaitingTransfer;
@@ -494,99 +748,182 @@
             document.getElementById('kpiInDocumentation').textContent = inDocumentation;
             document.getElementById('kpiDocsFinished').textContent = docsFinished;
             document.getElementById('kpiTransferredWh').textContent = transferredWh;
+            document.getElementById('kpiDeparted').textContent = departed;
 
             const countTag = document.getElementById('recordCountTag');
             if (countTag) {
                 countTag.textContent = `${sapTrucks.length} Active Records • Auto-synced`;
             }
 
-            // Render Pending SAP Documents / Upcoming Tasks Ticker
-            const pendingTasks = [];
+            // ── Render 3 Station Pods ──
+            renderAnalystPods(trucks);
 
-            trucks.forEach(t => {
-                if (t.status === 'Completed' || (t.doc_transfer_to_sap && !t.doc_transfer_to_warehouse)) {
-                    if (!t.doc_transfer_to_sap) {
-                        pendingTasks.push({
-                            queue: t.queue,
-                            plate: t.truck_number,
-                            action: 'Awaiting Transfer to SAP',
-                            color: '#60a5fa',
-                            icon: '📄'
-                        });
-                    } else if (!t.doc_received_from_warehouse) {
-                        pendingTasks.push({
-                            queue: t.queue,
-                            plate: t.truck_number,
-                            action: 'Pending Doc Received',
-                            color: '#facc15',
-                            icon: '📦'
-                        });
-                    } else if (!t.sap_analyst) {
-                        pendingTasks.push({
-                            queue: t.queue,
-                            plate: t.truck_number,
-                            action: 'Assign SAP Analyst',
-                            color: '#38bdf8',
-                            icon: '👤'
-                        });
-                    } else if (!t.sap_doc_start) {
-                        pendingTasks.push({
-                            queue: t.queue,
-                            plate: t.truck_number,
-                            action: 'Ready for Doc Start',
-                            color: '#fbbf24',
-                            icon: '▶'
-                        });
-                    } else if (!t.sap_doc_end) {
-                        pendingTasks.push({
-                            queue: t.queue,
-                            plate: t.truck_number,
-                            action: 'Doc Processing in Progress',
-                            color: '#f97316',
-                            icon: '⏳'
-                        });
-                    } else if (!t.doc_transfer_to_warehouse) {
-                        pendingTasks.push({
-                            queue: t.queue,
-                            plate: t.truck_number,
-                            action: 'Transfer to Warehouse',
-                            color: '#c084fc',
-                            icon: '🏭'
-                        });
-                    }
-                }
-            });
+            // ── Render Master Queue Table ──
+            renderMasterTable(sapTrucks);
 
-            // Incoming trucks currently loading
-            trucks.filter(t => t.status === 'Loading').forEach(t => {
-                pendingTasks.push({
-                    queue: t.queue,
-                    plate: t.truck_number,
-                    action: `Door ${t.loading_door || '?'} Loading (Incoming)`,
-                    color: '#4ade80',
-                    icon: '🚛'
+            // ── Render Continuous Bottom Ticker ──
+            renderTicker(trucks);
+        }
+
+        function renderAnalystPods(trucks) {
+            const podZone = document.getElementById('analystPodZone');
+            if (!podZone) return;
+
+            // Find trucks currently actively in processing
+            const processingTrucks = trucks.filter(t => t.sap_doc_start && !t.sap_doc_end);
+            // Trucks assigned or in sap ready for next processing
+            const waitingForProcessing = trucks.filter(t => 
+                (t.doc_received_from_warehouse || t.doc_transfer_to_sap) && 
+                !t.sap_doc_start && 
+                !t.doc_transfer_to_warehouse &&
+                t.status !== 'Departed'
+            );
+
+            const stations = [
+                { id: 1, tag: 'STN-01', title: 'SAP ANALYST 1' },
+                { id: 2, tag: 'STN-02', title: 'SAP ANALYST 2' },
+                { id: 3, tag: 'STN-03', title: 'SAP ANALYST 3' }
+            ];
+
+            const podHtml = stations.map((stn, idx) => {
+                // Find truck actively assigned to this station
+                let activeTruck = processingTrucks.find(t => {
+                    const a = (t.sap_analyst || '').toLowerCase();
+                    return a.includes(`analyst ${stn.id}`) || a.includes(`${stn.id}`);
                 });
-            });
 
-            const tickerEl = document.getElementById('sapTickerList');
-            if (tickerEl) {
-                if (pendingTasks.length === 0) {
-                    tickerEl.innerHTML = '<span style="color: #64748b; font-size: 12px;">Walang pending SAP documents sa ngayon. Lahat ng dokumento ay updated.</span>';
-                } else {
-                    tickerEl.innerHTML = pendingTasks.map(item => `
-                        <span class="tv-ticker-item">
-                            <strong>${escapeHtml(item.queue)} • ${escapeHtml(item.plate)}</strong>: 
-                            <span style="color: ${item.color}; font-weight: 700;">${item.icon} ${escapeHtml(item.action)}</span>
-                        </span>
-                    `).join('');
+                // Fallback: if not explicitly tagged by number, pick by index order
+                if (!activeTruck && processingTrucks[idx]) {
+                    activeTruck = processingTrucks[idx];
                 }
-            }
 
+                // If still no processing truck, see if a waiting truck is assigned
+                let isActuallyProcessing = !!activeTruck;
+                if (!activeTruck) {
+                    activeTruck = waitingForProcessing.find(t => {
+                        const a = (t.sap_analyst || '').toLowerCase();
+                        return a.includes(`analyst ${stn.id}`) || a.includes(`${stn.id}`);
+                    });
+                }
+
+                // Queue assigned to this station
+                const queuedTrucks = waitingForProcessing.filter(t => {
+                    if (activeTruck && t.id === activeTruck.id) return false;
+                    const a = (t.sap_analyst || '').toLowerCase();
+                    return a.includes(`analyst ${stn.id}`) || a.includes(`${stn.id}`);
+                }).slice(0, 2);
+
+                if (activeTruck) {
+                    const doorText = activeTruck.loading_door ? `Door ${activeTruck.loading_door}` : 'Door —';
+                    const driverText = activeTruck.driver_name || '—';
+                    const haulerText = activeTruck.company || activeTruck.load_type || '—';
+
+                    // 5-Stage LED Bar:
+                    // 1: To SAP (done)
+                    // 2: Received (done)
+                    // 3: Analyst (done)
+                    // 4: Processing (active if in-doc)
+                    // 5: Ready WH (done if transferred)
+                    const s1Class = activeTruck.doc_transfer_to_sap ? 'done' : 'pending';
+                    const s2Class = activeTruck.doc_received_from_warehouse ? 'done' : 'pending';
+                    const s3Class = activeTruck.sap_analyst ? 'done' : 'pending';
+                    const s4Class = activeTruck.sap_doc_start ? (activeTruck.sap_doc_end ? 'done' : 'active') : 'pending';
+                    const s5Class = activeTruck.doc_transfer_to_warehouse ? 'done' : 'pending';
+
+                    const queueHtml = queuedTrucks.length > 0 ? `
+                        <div class="pod-queue">
+                            <div class="q-hdr">📋 Next Queued (${queuedTrucks.length})</div>
+                            ${queuedTrucks.map(q => `
+                                <div class="pod-q-item">
+                                    <span class="qq">${escapeHtml(q.queue)}</span>
+                                    <span class="qp">${escapeHtml(q.truck_number)}</span>
+                                    <span class="qs">${escapeHtml(q.status === 'Completed' ? 'READY' : 'IN SAP')}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="pod-queue">
+                            <div class="q-hdr" style="color:#334155;">No pending queue behind</div>
+                        </div>
+                    `;
+
+                    return `
+                        <div class="pod-card active">
+                            <div class="pod-hdr">
+                                <div class="pod-badge">
+                                    <span class="station-tag">${stn.tag}</span>
+                                    <span class="station-title">${stn.title}</span>
+                                </div>
+                                <span class="pod-status act">${isActuallyProcessing ? '⚡ PROCESSING' : '📋 ASSIGNED'}</span>
+                            </div>
+                            <div class="pod-body">
+                                <div class="active-pod-truck">
+                                    <div class="tagline">Active Document Under Process</div>
+                                    <div class="big-plate">${escapeHtml(activeTruck.truck_number)}</div>
+                                    <div class="q-door">${escapeHtml(activeTruck.queue)} • ${doorText}</div>
+                                    <div class="meta-row"><span class="k">Driver:</span><span class="v">${escapeHtml(driverText)}</span></div>
+                                    <div class="meta-row"><span class="k">Hauler:</span><span class="v">${escapeHtml(haulerText)}</span></div>
+                                    <div class="led-pipeline">
+                                        <div class="led-step ${s1Class}" title="Transfer to SAP"></div>
+                                        <div class="led-step ${s2Class}" title="Docs Received"></div>
+                                        <div class="led-step ${s3Class}" title="Analyst Assigned"></div>
+                                        <div class="led-step ${s4Class}" title="In Processing"></div>
+                                        <div class="led-step ${s5Class}" title="Ready for WH"></div>
+                                    </div>
+                                </div>
+                                ${queueHtml}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Standby State (Clean, no active document)
+                    const generalQueue = waitingForProcessing.slice(idx * 2, (idx * 2) + 2);
+                    const queueHtml = generalQueue.length > 0 ? `
+                        <div class="pod-queue">
+                            <div class="q-hdr">📋 Available In Pool (${generalQueue.length})</div>
+                            ${generalQueue.map(q => `
+                                <div class="pod-q-item">
+                                    <span class="qq">${escapeHtml(q.queue)}</span>
+                                    <span class="qp">${escapeHtml(q.truck_number)}</span>
+                                    <span class="qs">AWAITING</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '';
+
+                    return `
+                        <div class="pod-card">
+                            <div class="pod-hdr">
+                                <div class="pod-badge">
+                                    <span class="station-tag">${stn.tag}</span>
+                                    <span class="station-title">${stn.title}</span>
+                                </div>
+                                <span class="pod-status idle">STANDBY</span>
+                            </div>
+                            <div class="pod-body">
+                                <div class="pod-standby">
+                                    <div class="icon">⏳</div>
+                                    <div class="title">STATION STANDBY</div>
+                                    <div class="sub">Ready for document assignment</div>
+                                </div>
+                                ${queueHtml}
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            podZone.innerHTML = podHtml;
+        }
+
+        function renderMasterTable(sapTrucks) {
             const tbody = document.getElementById('sapTableBody');
+            if (!tbody) return;
+
             if (sapTrucks.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="12" style="text-align: center; padding: 35px; color: #64748b;">
+                        <td colspan="8" style="text-align: center; padding: 25px; color: #64748b;">
                             No completed trucks or active SAP documentation records today.
                         </td>
                     </tr>
@@ -596,84 +933,173 @@
 
             tbody.innerHTML = sapTrucks.map(t => {
                 const doorBadge = t.loading_door 
-                    ? `<span style="background:#071220;color:#38bdf8;padding:2px 7px;border-radius:4px;font-weight:800;font-size:11.5px;border:1px solid #1e3a5f;">Door ${t.loading_door}</span>`
+                    ? `<span style="background:#071220;color:#38bdf8;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10.5px;border:1px solid #1e3a5f;">Door ${t.loading_door}</span>`
                     : '<span style="color:#64748b;">—</span>';
 
-                const transferSapHtml = t.doc_transfer_to_sap 
-                    ? `<span class="badge-otc-status status-transfer-sap">📄 ${escapeHtml(t.doc_transfer_to_sap)}</span>`
-                    : '<span style="color:#64748b;font-size:11px;">Pending</span>';
-
-                const receivedHtml = t.doc_received_from_warehouse
-                    ? `<span class="badge-otc-status status-received">📦 ${escapeHtml(t.doc_received_from_warehouse)}</span>`
-                    : '<span style="color:#64748b;">—</span>';
-
-                const analystHtml = t.sap_analyst
-                    ? `<span style="font-weight:700;color:#38bdf8;font-size:11.5px;">👤 ${escapeHtml(t.sap_analyst)}</span>`
-                    : '<span style="color:#64748b;">—</span>';
-
-                // Consolidated Doc Start -> End
-                let processingHtml = '<span style="color:#64748b;">—</span>';
-                if (t.sap_doc_start && t.sap_doc_end) {
-                    processingHtml = `<span class="badge-otc-status status-completed" title="Start: ${t.sap_doc_start} | End: ${t.sap_doc_end}">✅ ${escapeHtml(t.sap_doc_end)}</span>`;
-                } else if (t.sap_doc_start) {
-                    processingHtml = `<span class="badge-otc-status status-in-progress" title="Started at ${t.sap_doc_start}">⏳ In Prog (${escapeHtml(t.sap_doc_start)})</span>`;
+                // Assigned Station (clean: Analyst 1, 2, 3 or Unassigned)
+                let stationBadge = '<span style="color:#64748b;">Unassigned</span>';
+                if (t.sap_analyst) {
+                    const a = t.sap_analyst.toLowerCase();
+                    if (a.includes('1')) stationBadge = '<span style="color:var(--sky);font-weight:800;">Analyst 1</span>';
+                    else if (a.includes('2')) stationBadge = '<span style="color:var(--sky);font-weight:800;">Analyst 2</span>';
+                    else if (a.includes('3')) stationBadge = '<span style="color:var(--sky);font-weight:800;">Analyst 3</span>';
+                    else stationBadge = `<span style="color:var(--sky);font-weight:700;">${escapeHtml(t.sap_analyst.split(' ')[0])}</span>`;
                 }
 
-                const remarksHtml = t.remarks
-                    ? `<span style="color:#fbbf24;font-size:11.5px;font-weight:600;" title="${escapeHtml(t.remarks)}">📝 ${escapeHtml(t.remarks)}</span>`
-                    : '<span style="color:#64748b;">—</span>';
+                // 5-Stage Mini Pipeline:
+                // 1. To SAP | 2. Received | 3. Analyst | 4. Processing | 5. Ready WH
+                const d1 = t.doc_transfer_to_sap ? '<span class="mp-dot mp-done">✓</span>' : '<span class="mp-dot mp-pend"></span>';
+                const d2 = t.doc_received_from_warehouse ? '<span class="mp-dot mp-done">✓</span>' : '<span class="mp-dot mp-pend"></span>';
+                const d3 = t.sap_analyst ? '<span class="mp-dot mp-done">✓</span>' : '<span class="mp-dot mp-pend"></span>';
+                const d4 = t.sap_doc_start ? (t.sap_doc_end ? '<span class="mp-dot mp-done">✓</span>' : '<span class="mp-dot mp-act">⏳</span>') : '<span class="mp-dot mp-pend"></span>';
+                const d5 = t.doc_transfer_to_warehouse ? '<span class="mp-dot mp-done">✓</span>' : '<span class="mp-dot mp-pend"></span>';
 
-                const transferWhHtml = t.doc_transfer_to_warehouse
-                    ? `<span class="badge-otc-status status-transferred">📋 Ready (${escapeHtml(t.doc_transfer_to_warehouse)})</span>`
-                    : '<span style="color:#64748b;">—</span>';
+                const pipelineHtml = `
+                    <div class="mini-pipe">
+                        ${d1}<span class="mp-arr">→</span>
+                        ${d2}<span class="mp-arr">→</span>
+                        ${d3}<span class="mp-arr">→</span>
+                        ${d4}<span class="mp-arr">→</span>
+                        ${d5}
+                    </div>
+                `;
 
-                let statusColor = '#94a3b8';
-                let statusBg = '#1e293b';
-                if (t.status === 'Completed') { statusColor = '#4ade80'; statusBg = '#064e3b'; }
-                else if (t.status === 'Departed') { statusColor = '#38bdf8'; statusBg = '#0c2e4e'; }
-                
-                const statusBadge = `<span style="padding:2px 7px;border-radius:4px;font-size:11px;font-weight:800;background:${statusBg};color:${statusColor};">${escapeHtml(t.status)}</span>`;
+                // Status
+                let statusBadge = '<span class="stb stb-a">Awaiting</span>';
+                let isRowActive = false;
+
+                if (t.status === 'Departed') {
+                    statusBadge = '<span class="stb stb-dep">Departed</span>';
+                } else if (t.doc_transfer_to_warehouse) {
+                    statusBadge = '<span class="stb stb-r">Ready WH</span>';
+                } else if (t.sap_doc_start && !t.sap_doc_end) {
+                    statusBadge = '<span class="stb stb-p">Processing</span>';
+                    isRowActive = true;
+                } else if (t.sap_doc_end) {
+                    statusBadge = '<span class="stb stb-d">Docs Done</span>';
+                } else if (t.doc_received_from_warehouse) {
+                    statusBadge = '<span class="stb stb-t">Received</span>';
+                } else if (t.doc_transfer_to_sap) {
+                    statusBadge = '<span class="stb stb-t">In SAP</span>';
+                }
 
                 const haulerCargo = (t.company || t.load_type)
-                    ? `<span style="color:#cbd5e1;font-size:11.5px;">${escapeHtml(t.company || '—')}</span><br><span style="color:#64748b;font-size:10.5px;">${escapeHtml(t.load_type || '—')}</span>`
+                    ? `<span style="color:#cbd5e1;">${escapeHtml(t.company || '—')}</span>`
                     : '<span style="color:#64748b;">—</span>';
 
                 return `
-                    <tr>
-                        <td style="font-weight:900;color:#60a5fa;font-size:13px;">${escapeHtml(t.queue)}</td>
+                    <tr class="${isRowActive ? 'active-row' : ''}">
+                        <td style="font-weight:900;color:var(--sky);font-size:12px;">${escapeHtml(t.queue)}</td>
                         <td>${doorBadge}</td>
-                        <td style="font-weight:800;color:#f8fafc;font-size:13px;">${escapeHtml(t.truck_number)}</td>
-                        <td style="color:#e2e8f0;font-weight:600;">${escapeHtml(t.driver_name)}</td>
+                        <td style="font-family:'Courier Prime',monospace;font-weight:700;color:${isRowActive ? 'var(--lime)' : '#f8fafc'};font-size:12px;">${escapeHtml(t.truck_number)}</td>
+                        <td style="font-weight:600;">${escapeHtml(t.driver_name)}</td>
                         <td>${haulerCargo}</td>
-                        <td>${transferSapHtml}</td>
-                        <td>${receivedHtml}</td>
-                        <td>${analystHtml}</td>
-                        <td>${processingHtml}</td>
-                        <td>${transferWhHtml}</td>
-                        <td>${remarksHtml}</td>
+                        <td>${stationBadge}</td>
+                        <td>${pipelineHtml}</td>
                         <td>${statusBadge}</td>
                     </tr>
                 `;
             }).join('');
 
-            // Auto-scale font size to ensure all rows fit in the TV viewport without scrolling
             autoScaleTable(sapTrucks.length);
         }
 
-        // ── Dynamic Font Auto-Scaling: Shrinks table font when many rows ──
         function autoScaleTable(rowCount) {
             const wrap = document.getElementById('tableWrap');
-            const table = wrap ? wrap.querySelector('.sap-table') : null;
+            const table = wrap ? wrap.querySelector('.qtab') : null;
             if (!table) return;
 
             let fontSize;
-            if (rowCount <= 5)       fontSize = '13px';
-            else if (rowCount <= 8)  fontSize = '12px';
-            else if (rowCount <= 12) fontSize = '11px';
-            else if (rowCount <= 16) fontSize = '10px';
+            if (rowCount <= 5)       fontSize = '12.5px';
+            else if (rowCount <= 8)  fontSize = '11.5px';
+            else if (rowCount <= 12) fontSize = '10.5px';
+            else if (rowCount <= 16) fontSize = '9.5px';
             else                     fontSize = '9px';
 
             table.style.fontSize = fontSize;
+        }
+
+        function renderTicker(trucks) {
+            const tickerEl = document.getElementById('sapTickerContent');
+            if (!tickerEl) return;
+
+            const pendingTasks = [];
+
+            trucks.forEach(t => {
+                if (t.status === 'Completed' || (t.doc_transfer_to_sap && !t.doc_transfer_to_warehouse)) {
+                    if (!t.doc_transfer_to_sap) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            tagClass: 'tag-urgent',
+                            action: '🚨 Awaiting Transfer to SAP'
+                        });
+                    } else if (!t.doc_received_from_warehouse) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            tagClass: 'tag-wait',
+                            action: '📦 Pending Doc Received from WH'
+                        });
+                    } else if (!t.sap_analyst) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            tagClass: 'tag-wait',
+                            action: '👤 Assign SAP Analyst Station'
+                        });
+                    } else if (!t.sap_doc_start) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            tagClass: 'tag-urgent',
+                            action: '▶ Ready for Doc Processing'
+                        });
+                    } else if (!t.sap_doc_end) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            tagClass: 'tag-wait',
+                            action: '⏳ In Processing at SAP'
+                        });
+                    } else if (!t.doc_transfer_to_warehouse) {
+                        pendingTasks.push({
+                            queue: t.queue,
+                            plate: t.truck_number,
+                            tagClass: 'tag-ready',
+                            action: '🏃 Ready for WH • Send Runner Now'
+                        });
+                    }
+                }
+            });
+
+            // Loading trucks (incoming)
+            trucks.filter(t => t.status === 'Loading').forEach(t => {
+                pendingTasks.push({
+                    queue: t.queue,
+                    plate: t.truck_number,
+                    tagClass: 'tag-wait',
+                    action: `🚛 Door ${t.loading_door || '?'} Loading (Incoming)`
+                });
+            });
+
+            if (pendingTasks.length === 0) {
+                tickerEl.innerHTML = `
+                    <span class="ticker-item"><strong style="color:var(--lime);">✅ Lahat ng dokumento ay updated. Walang pending SAP tasks sa ngayon.</strong></span>
+                `;
+                return;
+            }
+
+            // Generate items stream duplicated for seamless 100% loop
+            const itemsHtml = pendingTasks.map(item => `
+                <span class="ticker-item">
+                    <strong>${escapeHtml(item.queue)} • ${escapeHtml(item.plate)}</strong>
+                    <span class="action-tag ${item.tagClass}">${escapeHtml(item.action)}</span>
+                </span>
+            `).join('');
+
+            // Stream + Repeat stream to prevent any gap
+            tickerEl.innerHTML = itemsHtml + itemsHtml;
         }
 
         socket.on('connect', fetchSapQueue);
@@ -681,6 +1107,9 @@
         socket.on('truck_status_changed', fetchSapQueue);
         socket.on('truck_registered', fetchSapQueue);
         socket.on('truck_called', fetchSapQueue);
+        socket.on('sap_docs_transferred_to_warehouse', fetchSapQueue);
+        socket.on('runner_dispatched', fetchSapQueue);
+        socket.on('runner_docs_received', fetchSapQueue);
 
         fetchSapQueue();
         setInterval(fetchSapQueue, 10000); // 10s auto-refresh fallback
