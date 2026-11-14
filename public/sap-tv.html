@@ -27,20 +27,30 @@
             --gray: #94a3b8;
             --dim: #475569;
             --border: #1a2838;
+            --ticker-h: 38px;
         }
 
-        html, body {
-            min-height: 100vh;
-            height: 100dvh !important;
-            max-height: 100dvh !important;
-            overflow: hidden !important;
+        html {
+            height: 100%;
             margin: 0;
             padding: 0;
+            background: var(--bg);
+        }
+
+        body {
+            height: 100%;
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+            padding-bottom: var(--ticker-h); /* Dedicated room for fixed bottom ticker */
             background: var(--bg);
             color: var(--white);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            box-sizing: border-box;
+            position: relative;
         }
 
         /* Industrial Grid Background */
@@ -141,7 +151,36 @@
             color: var(--lime);
             letter-spacing: 1px;
         }
-        .hdr-right { text-align: right; flex-shrink: 0; }
+        .hdr-right { 
+            text-align: right; 
+            flex-shrink: 0; 
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .hdr-clock-group { text-align: right; }
+        .board-nav-btn {
+            background: rgba(56, 189, 248, 0.12);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10.5px;
+            font-weight: 800;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .board-nav-btn:hover {
+            background: rgba(56, 189, 248, 0.28);
+            border-color: #38bdf8;
+            color: #fff;
+            transform: translateY(-1px);
+        }
         .hdr-right .time {
             font-family: 'Courier Prime', monospace;
             font-size: 22px;
@@ -412,7 +451,7 @@
         .pod-q-item .qp { font-family: 'Courier Prime', monospace; font-weight: 600; color: #cbd5e1; }
         .pod-q-item .qs { color: var(--dim); margin-left: auto; font-size: 8px; font-weight: 800; }
 
-        /* ── 4. Master Queue Table (Ordered: Active -> Pending -> Completed) ── */
+        /* ── 4. Master Queue Table (Ordered: Active -> Pending -> Completed by Queue Sequence) ── */
         .table-zone {
             flex: 1;
             min-height: 0;
@@ -556,20 +595,24 @@
         .stb-wait { background: #182230; color: #cbd5e1; }
         .stb-dep  { background: #0f172a; color: #64748b; }
 
-        /* ── 5. Fixed Seamless Bottom Ticker (Guaranteed Visible on All Devices) ── */
+        /* ── 5. Fixed Seamless Bottom Ticker (GLUED TO EXACT SCREEN BOTTOM — ZERO GAP GUARANTEE) ── */
         .tv-ticker {
-            height: 38px;
-            min-height: 38px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: var(--ticker-h);
+            min-height: var(--ticker-h);
             background: #04070c;
-            border-top: 2px solid rgba(132,204,22,.35);
+            border-top: 2px solid rgba(132,204,22,.4);
             display: flex;
             align-items: center;
             padding: 0;
             overflow: hidden;
             box-sizing: border-box;
-            flex-shrink: 0;
-            position: relative;
-            z-index: 100;
+            z-index: 9999;
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.85);
         }
         .ticker-badge {
             position: relative;
@@ -641,21 +684,21 @@
         .tag-wait   { background: rgba(234,179,8,.25); color: #fde047; border: 1px solid var(--amber); }
         .tag-load   { background: rgba(56,189,248,.2); color: #7dd3fc; border: 1px solid var(--sky); }
 
-        /* ── RESPONSIVE RULES FOR MOBILE & TABLETS ── */
-        @media (max-width: 991px) {
+        /* ── RESPONSIVE RULES FOR TABLETS & LAPTOPS (768px - 1023px) ── */
+        @media (max-width: 1023px) {
             .hdr {
                 height: 46px;
                 min-height: 46px;
-                padding: 0 10px;
+                padding: 0 12px;
             }
             .hdr-title h1 { font-size: 13px; }
             .hdr-live span { display: none; }
             .hdr-right .time { font-size: 18px; }
-            .hdr-right .date { display: none; }
+            .hdr-right .date { font-size: 8px; }
 
             .kpi-strip {
-                height: 36px;
-                min-height: 36px;
+                height: 38px;
+                min-height: 38px;
                 padding: 2px 8px;
                 gap: 4px;
                 overflow-x: auto;
@@ -674,8 +717,8 @@
                 -webkit-overflow-scrolling: touch;
             }
             .pod-card {
-                min-width: 250px;
-                max-width: 300px;
+                min-width: 260px;
+                max-width: 310px;
                 flex-shrink: 0;
             }
 
@@ -690,10 +733,6 @@
                 min-width: 650px;
             }
 
-            .tv-ticker {
-                height: 36px;
-                min-height: 36px;
-            }
             .ticker-badge {
                 padding: 0 10px;
                 font-size: 9.5px;
@@ -702,16 +741,78 @@
             .ticker-badge .badge-short { display: inline; }
         }
 
-        @media (max-width: 600px) {
-            .hdr-title h1 { font-size: 11px; }
+        /* ── RESPONSIVE RULES FOR MOBILE PHONES (< 768px) ── */
+        @media (max-width: 767px) {
+            body {
+                overflow-y: auto !important; /* Allow natural mobile scrolling if needed */
+            }
+
+            .hdr {
+                height: 44px;
+                min-height: 44px;
+                padding: 0 8px;
+            }
             .hdr-logo { width: 28px; height: 28px; }
-            .hdr-right .time { font-size: 15px; }
-            .kpi-strip { height: 34px; min-height: 34px; }
-            .analyst-zone { min-height: 170px; }
-            .pod-card { min-width: 230px; }
+            .hdr-title h1 { font-size: 11.5px; letter-spacing: 0.5px; }
+            .hdr-right { gap: 6px; }
+            .board-nav-btn { padding: 3px 6px; font-size: 8px; }
+            .hdr-right .time { font-size: 14px; }
+            .hdr-right .date { display: none; }
+
+            /* 3x2 Grid for KPIs on mobile */
+            .kpi-strip {
+                height: auto;
+                min-height: auto;
+                padding: 4px 8px;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+            }
+            .kpi-chip {
+                border-radius: 4px;
+                border-top: none;
+                border-left: 3px solid var(--blue);
+                padding: 3px 6px;
+            }
+            .kpi-chip.k1 { border-left-color: var(--blue); }
+            .kpi-chip.k2 { border-left-color: var(--amber); }
+            .kpi-chip.k3 { border-left-color: var(--orange); }
+            .kpi-chip.k4 { border-left-color: var(--green); }
+            .kpi-chip.k5 { border-left-color: var(--purple); }
+            .kpi-chip.k6 { border-left-color: var(--sky); }
+            .kpi-chip .lbl { font-size: 7px; }
+            .kpi-chip .val { font-size: 14px; }
+
+            /* Swipeable Pod Carousel on Mobile */
+            .analyst-zone {
+                height: auto;
+                min-height: 180px;
+                padding: 6px 8px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                gap: 8px;
+            }
+            .pod-card {
+                min-width: 82vw;
+                max-width: 85vw;
+                scroll-snap-align: center;
+                flex-shrink: 0;
+            }
             .active-pod-truck .big-plate { font-size: 22px; }
+
+            .table-zone {
+                padding: 2px 6px 4px;
+            }
+            table.qtab { min-width: 580px; font-size: 10px; }
+            table.qtab th, table.qtab td { padding: 4px 5px; }
+
+            .tv-ticker {
+                height: 34px;
+                min-height: 34px;
+            }
+            :root { --ticker-h: 34px; }
             .ticker-badge { padding: 0 8px; font-size: 9px; }
-            .ticker-item { font-size: 10.5px; }
+            .ticker-item { font-size: 10px; }
         }
     </style>
 </head>
@@ -732,8 +833,11 @@
             </div>
         </div>
         <div class="hdr-right">
-            <div class="time" id="tvClock">--:--:--</div>
-            <div class="date" id="tvDate">--------</div>
+            <a href="/display" class="board-nav-btn" title="Switch to Live Truck Dispatch Queue Board">📺 TRUCK QUEUE ↗</a>
+            <div class="hdr-clock-group">
+                <div class="time" id="tvClock">--:--:--</div>
+                <div class="date" id="tvDate">--------</div>
+            </div>
         </div>
     </header>
 
@@ -801,7 +905,7 @@
         </div>
     </section>
 
-    <!-- 5. Fixed Seamless Bottom Ticker (Guaranteed 100% Visible on Mobile & All Devices) -->
+    <!-- 5. Fixed Seamless Bottom Ticker (GLUED TO ABSOLUTE BOTTOM ON ALL DEVICES) -->
     <footer class="tv-ticker">
         <div class="ticker-badge">
             <span class="p-dot"></span>
@@ -845,7 +949,7 @@
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        // Helper: Extract queue number (e.g. Q001 -> 1, Q-055 -> 55) for accurate sequence sorting
+        // Extract numeric portion from queue code (e.g. Q001 -> 1, Q055 -> 55)
         function getQueueNum(q) {
             if (!q) return 999999;
             const match = String(q).match(/\d+/);
@@ -854,7 +958,6 @@
 
         async function fetchSapQueue() {
             try {
-                // Fetch trucks (includes all active trucks across plant + recent records)
                 const res = await fetch('/api/trucks/today?scope=7days');
                 const data = await res.json();
                 if (!data.success) return;
@@ -866,7 +969,7 @@
         }
 
         function renderSapBoard(trucks) {
-            // ── Accurate Current KPIs (Active Plant Counts Only) ──
+            // ── Accurate Plant KPIs ──
             let awaitingTransfer = 0;
             let transferredSap = 0;
             let inDocumentation = 0;
@@ -892,13 +995,13 @@
             document.getElementById('kpiTransferredWh').textContent = transferredWh;
             document.getElementById('kpiDeparted').textContent = departed;
 
-            // ── Render 3 Station Pods (Matches Real-time Ongoing Queue) ──
+            // ── Render 3 Station Pods ──
             renderAnalystPods(trucks);
 
-            // ── Render Master Queue Table (Grouped: Active -> Pending -> Completed by Queue Sequence) ──
+            // ── Render Master Queue Table ──
             renderMasterTable(trucks);
 
-            // ── Render Continuous Bottom Ticker (Guaranteed 100% Visible & Non-overlapping) ──
+            // ── Render Continuous Bottom Ticker ──
             renderTicker(trucks);
         }
 
@@ -906,21 +1009,14 @@
             const podZone = document.getElementById('analystPodZone');
             if (!podZone) return;
 
-            // Real-time Pipeline Ranking for Station Pods:
-            // 1. Actively in processing
+            // Active Pipeline Ranking:
             const processingTrucks = trucks.filter(t => t.sap_doc_start && !t.sap_doc_end && t.status !== 'Departed');
-            // 2. Docs received from warehouse (ready to start processing)
             const receivedTrucks = trucks.filter(t => t.doc_received_from_warehouse && !t.sap_doc_start && !t.doc_transfer_to_warehouse && t.status !== 'Departed');
-            // 3. Transferred to SAP (waiting for physical docs)
             const inSapTrucks = trucks.filter(t => t.doc_transfer_to_sap && !t.doc_received_from_warehouse && t.status !== 'Departed');
-            // 4. Docs completed at SAP ready for warehouse runner
             const readyWhTrucks = trucks.filter(t => t.doc_transfer_to_warehouse && !t.doc_runner_received && t.status !== 'Departed');
-            // 5. Completed loading at door, awaiting SAP transfer
             const completedLoading = trucks.filter(t => t.status === 'Completed' && !t.doc_transfer_to_sap);
-            // 6. Currently loading at doors (incoming to SAP soon)
             const loadingTrucks = trucks.filter(t => t.status === 'Loading');
 
-            // Pool of all active/incoming trucks for pod display
             const activePool = [
                 ...processingTrucks,
                 ...receivedTrucks,
@@ -939,14 +1035,12 @@
             const assignedTruckIds = new Set();
 
             const podHtml = stations.map((stn, idx) => {
-                // Priority A: Truck specifically assigned to this analyst station
                 let activeTruck = activePool.find(t => {
                     if (assignedTruckIds.has(t.id)) return false;
                     const a = (t.sap_analyst || '').toLowerCase();
                     return a.includes(`analyst ${stn.id}`) || a.includes(`${stn.id}`);
                 });
 
-                // Priority B: If no specific analyst number match, pick next unassigned active truck from pool
                 if (!activeTruck) {
                     activeTruck = activePool.find(t => !assignedTruckIds.has(t.id));
                 }
@@ -955,7 +1049,6 @@
                     assignedTruckIds.add(activeTruck.id);
                 }
 
-                // Queued next trucks (other available active trucks)
                 const queuedNext = activePool.filter(t => !assignedTruckIds.has(t.id)).slice(0, 2);
 
                 if (activeTruck) {
@@ -963,7 +1056,6 @@
                     const driverText = activeTruck.driver_name || '—';
                     const haulerText = activeTruck.company || activeTruck.load_type || '—';
 
-                    // Determine Status Tag & Header Pill
                     let statusTag = 'ACTIVE DOCUMENT IN PIPELINE';
                     let statusPillClass = 'act';
                     let statusPillText = '⚡ PROCESSING';
@@ -994,7 +1086,6 @@
                         statusPillText = '🚛 INCOMING TRUCK';
                     }
 
-                    // 5-Stage LED Bar:
                     const s1Class = activeTruck.doc_transfer_to_sap ? 'done' : 'pending';
                     const s2Class = activeTruck.doc_received_from_warehouse ? 'done' : 'pending';
                     const s3Class = activeTruck.sap_analyst ? 'done' : 'pending';
@@ -1047,7 +1138,6 @@
                         </div>
                     `;
                 } else {
-                    // Clean Standby State
                     return `
                         <div class="pod-card">
                             <div class="pod-hdr">
@@ -1077,34 +1167,27 @@
             const countTag = document.getElementById('recordCountTag');
             if (!tbody) return;
 
-            // Helper to classify into Tiers:
-            // Tier 1: ACTIVE (SA TAAS) - Processing, In SAP, Received, Ready WH, Loading, Called
-            // Tier 2: PENDING (SA GITNA) - Completed awaiting transfer, Waiting in yard
-            // Tier 3: KUMPLETO NA (SA BABA) - Departed
             function getTier(t) {
                 const isDeparted = t.status === 'Departed' || !!t.departed_time;
                 if (isDeparted) return 3;
                 if (t.status === 'Cancelled') return 4;
 
-                // Active ongoing SAP tasks or active door operations
                 if (t.sap_doc_start && !t.sap_doc_end) return 1;
                 if (t.doc_received_from_warehouse && !t.doc_transfer_to_warehouse) return 1;
                 if (t.doc_transfer_to_sap && !t.doc_received_from_warehouse) return 1;
                 if (t.doc_transfer_to_warehouse && !t.doc_runner_received) return 1;
                 if (t.status === 'Loading' || t.status === 'Called') return 1;
 
-                // Pending queue
                 if (t.status === 'Completed' && !t.doc_transfer_to_sap) return 2;
                 if (t.status === 'Waiting') return 2;
 
                 return 3;
             }
 
-            // Filter out cancelled trucks unless needed
             const list = allTrucks.filter(t => t.status !== 'Cancelled');
 
-            // Sort: 1. By Tier (Active -> Pending -> Completed)
-            //       2. Within Tier: "base dun sa per queue sequence" (Q001, Q002, etc.)
+            // 1. Tier (Active -> Pending -> Completed)
+            // 2. Queue sequence (Q001, Q002...)
             list.sort((a, b) => {
                 const tierA = getTier(a);
                 const tierB = getTier(b);
@@ -1147,7 +1230,6 @@
             list.forEach(t => {
                 const tier = getTier(t);
 
-                // Insert clear tier section divider
                 if (tier !== lastTier) {
                     if (tier === 1) {
                         rowsHtml += `<tr class="table-sec-divider active-sec"><td colspan="8">⚡ ACTIVE TRUCKS IN SAP &amp; LOADING DOORS (${activeCount})</td></tr>`;
@@ -1163,7 +1245,6 @@
                     ? `<span style="background:#071220;color:#38bdf8;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10.5px;border:1px solid #1e3a5f;">Door ${t.loading_door}</span>`
                     : '<span style="color:#64748b;">—</span>';
 
-                // Assigned Station (clean: Analyst 1, 2, 3 or Unassigned)
                 let stationBadge = '<span style="color:#64748b;">Unassigned</span>';
                 if (t.sap_analyst) {
                     const a = t.sap_analyst.toLowerCase();
@@ -1173,7 +1254,6 @@
                     else stationBadge = `<span style="color:var(--sky);font-weight:700;">${escapeHtml(t.sap_analyst.split(' ')[0])}</span>`;
                 }
 
-                // 5-Stage Mini Pipeline:
                 const d1 = t.doc_transfer_to_sap ? '<span class="mp-dot mp-done">✓</span>' : '<span class="mp-dot mp-pend"></span>';
                 const d2 = t.doc_received_from_warehouse ? '<span class="mp-dot mp-done">✓</span>' : '<span class="mp-dot mp-pend"></span>';
                 const d3 = t.sap_analyst ? '<span class="mp-dot mp-done">✓</span>' : '<span class="mp-dot mp-pend"></span>';
@@ -1190,7 +1270,6 @@
                     </div>
                 `;
 
-                // Status Badge & Row Highlighting
                 let statusBadge = '<span class="stb stb-wait">Waiting</span>';
                 let rowClass = '';
 
@@ -1247,7 +1326,11 @@
             const table = wrap ? wrap.querySelector('.qtab') : null;
             if (!table) return;
 
-            // Table has its own scroll wrapper on larger lists, so maintain legible font sizes
+            if (window.innerWidth <= 767) {
+                table.style.fontSize = '10px';
+                return;
+            }
+
             if (rowCount <= 6) table.style.fontSize = '12px';
             else if (rowCount <= 12) table.style.fontSize = '11px';
             else table.style.fontSize = '10.5px';
@@ -1259,7 +1342,6 @@
 
             const pendingTasks = [];
 
-            // 1. SAP Document Specific Tasks
             trucks.forEach(t => {
                 const isDeparted = t.status === 'Departed' || !!t.departed_time;
 
@@ -1303,7 +1385,6 @@
                 }
             });
 
-            // 2. Incoming trucks actively loading in doors
             trucks.filter(t => t.status === 'Loading').forEach(t => {
                 pendingTasks.push({
                     queue: t.queue,
@@ -1320,7 +1401,6 @@
                 return;
             }
 
-            // Stream items duplicated for seamless infinite loop
             const itemsHtml = pendingTasks.map(item => `
                 <span class="ticker-item">
                     <strong>${escapeHtml(item.queue)} • ${escapeHtml(item.plate)}</strong>
@@ -1339,9 +1419,15 @@
         socket.on('sap_docs_transferred_to_warehouse', fetchSapQueue);
         socket.on('runner_dispatched', fetchSapQueue);
         socket.on('runner_docs_received', fetchSapQueue);
+        socket.on('queue_sequence_reset', fetchSapQueue);
 
         fetchSapQueue();
         setInterval(fetchSapQueue, 10000); // 10s auto-refresh fallback
+
+        window.addEventListener('resize', () => {
+            const table = document.querySelector('.qtab');
+            if (table) autoScaleTable(table.querySelectorAll('tr').length);
+        });
     </script>
 </body>
 </html>

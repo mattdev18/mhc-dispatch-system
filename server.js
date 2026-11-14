@@ -72,7 +72,7 @@ const SCREEN_ACCESS = {
     dispatch: ['admin', 'dispatcher', 'warehouse', 'sapanalyst'],           // dispatch.html
     display:  ['admin', 'dispatcher', 'warehouse', 'sapanalyst', 'guard'], // display.html — Live TV Queue (public)
     reports:  ['admin', 'sapanalyst', 'warehouse'],                         // reports.html — Reports & Logs
-    'sap-tv': ['admin', 'sapanalyst', 'dispatcher', 'warehouse']           // sap-tv.html — Live TV SAP Documentation
+    'sap-tv': ['admin', 'sapanalyst', 'dispatcher', 'warehouse', 'guard']           // sap-tv.html — Live TV SAP Documentation
 };
 
 // Saan dadalhin ang user pagkatapos mag-login
