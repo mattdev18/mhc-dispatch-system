@@ -272,10 +272,29 @@ async function handleGetTrucks(req, res) {
         const days = parseInt(req.query.days) || 7;
         const startDate = getDateDaysAgo(days - 1);
 
+        const cycleCutoff = getCurrentCycleCutoffIso();
+        const resetCfg = await get(`SELECT value FROM settings WHERE key = 'last_queue_reset'`);
+        let effectiveCutoff = cycleCutoff;
+        if (resetCfg && resetCfg.value && resetCfg.value > cycleCutoff) {
+            effectiveCutoff = resetCfg.value;
+        }
+
         let query = '';
         let params = [];
 
-        if (scope === 'today_only' || days === 1) {
+        if (scope === 'sap_tv' || scope === 'current_cycle') {
+            // Live SAP Board:
+            // 1. ALL active trucks in plant (Waiting, Called, Loading, Completed)
+            // 2. Departed trucks ONLY starting from Queue 1 of the current day/cycle (arrival_timestamp >= effectiveCutoff)
+            query = `
+                SELECT * FROM trucks 
+                WHERE status IN ('Waiting', 'Called', 'Loading', 'Completed') 
+                   OR (status = 'Departed' AND arrival_timestamp >= ?)
+                   OR (status = 'Departed' AND date = ? AND (arrival_timestamp IS NULL OR arrival_timestamp >= ?))
+                ORDER BY id ASC
+            `;
+            params = [effectiveCutoff, today, effectiveCutoff];
+        } else if (scope === 'today_only' || days === 1) {
             // Today's trucks PLUS any active or Completed (pending Depart Plant) trucks from any date
             query = `SELECT * FROM trucks WHERE date = ? OR status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
             params = [today];
@@ -290,7 +309,7 @@ async function handleGetTrucks(req, res) {
         }
 
         const trucks = await all(query, params);
-        res.json({ success: true, date: today, startDate, scope, days, count: trucks.length, trucks });
+        res.json({ success: true, date: today, startDate, scope, days, effectiveCutoff, count: trucks.length, trucks });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

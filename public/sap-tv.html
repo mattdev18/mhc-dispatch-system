@@ -783,22 +783,54 @@
             .kpi-chip .lbl { font-size: 7px; }
             .kpi-chip .val { font-size: 14px; }
 
-            /* Swipeable Pod Carousel on Mobile */
+            /* NO Horizontal Scroll on Mobile — Stacked Vertically 100% Full Width */
             .analyst-zone {
-                height: auto;
-                min-height: 180px;
-                padding: 6px 8px;
-                overflow-x: auto;
-                scroll-snap-type: x mandatory;
-                gap: 8px;
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+                padding: 6px 8px !important;
+                overflow-x: hidden !important;
+                overflow-y: visible !important;
+                scroll-snap-type: none !important;
+                gap: 8px !important;
+                box-sizing: border-box !important;
             }
             .pod-card {
-                min-width: 82vw;
-                max-width: 85vw;
-                scroll-snap-align: center;
-                flex-shrink: 0;
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                flex: none !important;
+                scroll-snap-align: none !important;
+                box-sizing: border-box !important;
             }
             .active-pod-truck .big-plate { font-size: 22px; }
+
+            /* Compact Standby Cards on Mobile so they don't take up excessive vertical space */
+            .pod-card:not(.active) .pod-body {
+                padding: 6px 10px !important;
+                min-height: auto !important;
+            }
+            .pod-card:not(.active) .pod-standby {
+                padding: 8px 12px !important;
+                min-height: 44px !important;
+                flex-direction: row !important;
+                gap: 10px !important;
+                justify-content: flex-start !important;
+                text-align: left !important;
+            }
+            .pod-card:not(.active) .pod-standby .icon {
+                font-size: 16px !important;
+            }
+            .pod-card:not(.active) .pod-standby .title {
+                font-size: 10.5px !important;
+                letter-spacing: 0.5px !important;
+            }
+            .pod-card:not(.active) .pod-standby .sub {
+                font-size: 8.5px !important;
+            }
 
             .table-zone {
                 padding: 2px 6px 4px;
@@ -958,17 +990,17 @@
 
         async function fetchSapQueue() {
             try {
-                const res = await fetch('/api/trucks/today?scope=7days');
+                const res = await fetch('/api/trucks/today?scope=sap_tv');
                 const data = await res.json();
                 if (!data.success) return;
 
-                renderSapBoard(data.trucks || []);
+                renderSapBoard(data.trucks || [], data.effectiveCutoff);
             } catch (err) {
                 console.error('Failed to load SAP queue:', err);
             }
         }
 
-        function renderSapBoard(trucks) {
+        function renderSapBoard(trucks, effectiveCutoff) {
             // ── Accurate Plant KPIs ──
             let awaitingTransfer = 0;
             let transferredSap = 0;
@@ -999,7 +1031,7 @@
             renderAnalystPods(trucks);
 
             // ── Render Master Queue Table ──
-            renderMasterTable(trucks);
+            renderMasterTable(trucks, effectiveCutoff);
 
             // ── Render Continuous Bottom Ticker ──
             renderTicker(trucks);
@@ -1162,7 +1194,7 @@
             podZone.innerHTML = podHtml;
         }
 
-        function renderMasterTable(allTrucks) {
+        function renderMasterTable(allTrucks, effectiveCutoff) {
             const tbody = document.getElementById('sapTableBody');
             const countTag = document.getElementById('recordCountTag');
             if (!tbody) return;
@@ -1184,7 +1216,28 @@
                 return 3;
             }
 
-            const list = allTrucks.filter(t => t.status !== 'Cancelled');
+            // Exclude cancelled trucks
+            let list = allTrucks.filter(t => t.status !== 'Cancelled');
+
+            // Completed & Departed: Only include trucks starting from Queue 1 of the active day/cycle
+            if (effectiveCutoff) {
+                list = list.filter(t => {
+                    const isDeparted = t.status === 'Departed' || !!t.departed_time;
+                    if (!isDeparted) return true; // keep all active & waiting trucks
+                    return (t.arrival_timestamp && t.arrival_timestamp >= effectiveCutoff) || (t.date && t.date >= effectiveCutoff.slice(0, 10));
+                });
+            } else {
+                // Client fallback: find latest Q001 in sequence
+                const q1List = list.filter(t => t.queue === 'Q001' || t.queue === 'Q-001');
+                if (q1List.length > 0) {
+                    const latestQ1Id = Math.max(...q1List.map(t => t.id || 0));
+                    list = list.filter(t => {
+                        const isDeparted = t.status === 'Departed' || !!t.departed_time;
+                        if (!isDeparted) return true;
+                        return (t.id || 0) >= latestQ1Id;
+                    });
+                }
+            }
 
             // 1. Tier (Active -> Pending -> Completed)
             // 2. Queue sequence (Q001, Q002...)
