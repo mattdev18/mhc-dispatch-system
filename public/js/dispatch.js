@@ -202,6 +202,7 @@ async function loadTodayData() {
         renderTable();
         updateAlarmToggleButton();
         checkPendingRunnerReminders();
+        check1HourOverdueDepartures();
     } catch (err) {
         console.error('Error fetching dispatch data:', err);
     }
@@ -1531,6 +1532,127 @@ function dismissDepartToast() {
     if (banner) banner.style.display = 'none';
 }
 
+// ── Floating Toast helpers for Dispatcher (1-Hour Overdue Departure Reminder) ──
+let overdueDepartToastTimer = null;
+const lastOverdueDepartReminder = {};
+
+function isDispatcherScreen() {
+    const user = window.currentUser || getAuthUser();
+    if (!user) {
+        try {
+            const raw = localStorage.getItem('mhc_auth_user') || sessionStorage.getItem('mhc_auth_user');
+            if (raw) return checkUser(JSON.parse(raw));
+        } catch(e) {}
+        return false;
+    }
+    return checkUser(user);
+
+    function checkUser(u) {
+        if (!u) return false;
+        const role = String(u.role || '').toLowerCase().trim();
+        const uname = String(u.username || '').toLowerCase().trim();
+        return role === 'dispatcher' || 
+               role.includes('dispatcher') || 
+               uname.includes('dispatcher') ||
+               role === 'admin';
+    }
+}
+
+function show1HourOverdueDepartToast(truck) {
+    if (!truck) return;
+    const banner = document.getElementById('dispatcherOverdueDepartBanner');
+    const msg = document.getElementById('dispatcherOverdueDepartMessage');
+    const actionBtn = document.getElementById('dispatcherOverdueDepartActionBtn');
+    if (!banner || !msg) return;
+
+    // Calculate how long it has been overdue
+    const completedAt = truck.completed_timestamp 
+        ? new Date(truck.completed_timestamp).getTime() 
+        : (truck.arrival_timestamp ? new Date(truck.arrival_timestamp).getTime() : Date.now());
+    const diffMinutes = Math.max(0, Math.floor((Date.now() - completedAt) / 60000));
+    const hours = Math.floor(diffMinutes / 60);
+    const mins = diffMinutes % 60;
+    const timeElapsedText = hours > 0 
+        ? `${hours} oras at ${mins} minuto` 
+        : `${diffMinutes} minuto`;
+
+    const doorText = truck.loading_door ? `Door ${truck.loading_door}` : 'Loading Dock';
+
+    msg.innerHTML = `
+        <div style="font-size: 15px; font-weight: 800; color: #fbbf24; margin-bottom: 4px;">
+            ${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">(${doorText} • ${escapeHtml(truck.driver_name || 'Driver')})</span>
+        </div>
+        <div style="color: #fef08a; font-weight: 700; margin-bottom: 5px;">
+            ⚠️ Mahigit 1 oras na ang nakalipas mula nang matapos ang loading (${timeElapsedText} nang nakalipas)!
+        </div>
+        <div style="color: #e2e8f0; font-size: 13px; line-height: 1.45;">
+            Hindi pa nadedepart ang trak na ito sa Dispatcher Station. Kung kumpleto na ang dokumento at nakaalis na ang trak sa planta, 
+            <strong>pakipindot agad ang "Depart Plant Now"</strong> upang ma-update ang records at mabakante ang queue.
+        </div>
+    `;
+
+    if (actionBtn) {
+        actionBtn.onclick = () => {
+            dismissOverdueDepartToast();
+            departTruck(truck.id);
+        };
+    }
+
+    banner.style.display = 'block';
+    playDepartReadyAlarm();
+
+    if (overdueDepartToastTimer) clearTimeout(overdueDepartToastTimer);
+    overdueDepartToastTimer = setTimeout(() => {
+        dismissOverdueDepartToast();
+    }, 45000);
+}
+
+function dismissOverdueDepartToast() {
+    const banner = document.getElementById('dispatcherOverdueDepartBanner');
+    if (banner) banner.style.display = 'none';
+}
+
+function check1HourOverdueDepartures() {
+    if (!isDispatcherScreen()) return;
+
+    const now = Date.now();
+    const ONE_HOUR_MS = 60 * 60 * 1000; // 60 minutes
+
+    const overdueTrucks = (todayTrucks || []).filter(t => {
+        if (t.status === 'Departed' || t.status === 'Cancelled' || !!t.departed_time) return false;
+        if (t.status !== 'Completed') return false;
+
+        let completedMs = 0;
+        if (t.completed_timestamp) {
+            completedMs = new Date(t.completed_timestamp).getTime();
+        } else if (t.completed_time) {
+            completedMs = t.arrival_timestamp ? new Date(t.arrival_timestamp).getTime() : 0;
+        }
+
+        if (!completedMs || isNaN(completedMs)) return false;
+
+        return (now - completedMs) >= ONE_HOUR_MS;
+    });
+
+    if (overdueTrucks.length === 0) return;
+
+    overdueTrucks.sort((a, b) => {
+        const tA = new Date(a.completed_timestamp || a.arrival_timestamp).getTime();
+        const tB = new Date(b.completed_timestamp || b.arrival_timestamp).getTime();
+        return tA - tB;
+    });
+
+    for (const truck of overdueTrucks) {
+        const lastReminded = lastOverdueDepartReminder[truck.id] || 0;
+        const REMINDER_COOLDOWN = 15 * 60 * 1000; // 15 minutes repeat cooldown
+        if (now - lastReminded >= REMINDER_COOLDOWN) {
+            lastOverdueDepartReminder[truck.id] = now;
+            show1HourOverdueDepartToast(truck);
+            break;
+        }
+    }
+}
+
 // ── Warehouse Runner 2-Step Workflow & Notifications ────────
 async function dispatchRunner(id) {
     const user = window.currentUser || getAuthUser();
@@ -1793,8 +1915,9 @@ function checkPendingRunnerReminders() {
     }
 }
 
-// Check every 15 seconds so 10-minute reminders trigger with zero delay
+// Check every 15 seconds so reminders trigger with zero delay
 setInterval(checkPendingRunnerReminders, 15 * 1000);
+setInterval(check1HourOverdueDepartures, 15 * 1000);
 
 function playNotificationBeep() {
     try {

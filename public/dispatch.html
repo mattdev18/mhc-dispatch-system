@@ -600,6 +600,26 @@
         </div>
     </div>
 
+    <!-- Floating Real-Time Dispatcher 1-Hour Overdue Departure Reminder Banner -->
+    <div id="dispatcherOverdueDepartBanner" style="position: fixed; top: 20px; right: 20px; z-index: 99998; background: #181208; border: 2px solid #f59e0b; border-left: 8px solid #fbbf24; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 28px rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 18px 22px; max-width: 480px; width: calc(100% - 32px); color: #f8fafc; display: none;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">⏱️</span>
+                <strong style="color: #fbbf24; font-size: 15px; font-weight: 800; letter-spacing: 0.3px;">1-HOUR DEPARTURE REMINDER</strong>
+            </div>
+            <button onclick="dismissOverdueDepartToast()" style="background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+        </div>
+        <div id="dispatcherOverdueDepartMessage" style="color: #e2e8f0; font-size: 13.5px; line-height: 1.5; margin-bottom: 14px;">
+            <!-- Overdue departure truck details injected dynamically -->
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="dismissOverdueDepartToast()" style="padding: 7px 14px; font-size: 12px; background: rgba(255,255,255,0.12); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; cursor: pointer; font-weight: 700;">Dismiss</button>
+            <button id="dispatcherOverdueDepartActionBtn" class="btn btn-depart-active" style="padding: 7px 16px; font-size: 12px; font-weight: 800;">
+                🚛 Depart Plant Now
+            </button>
+        </div>
+    </div>
+
     <!-- Modal: Reset Queue Sequence Confirmation (100% Professional English - Admin Only) -->
     <div class="modal" id="resetQueueModal">
         <div class="modal-content" style="max-width: 490px; text-align: left;">
