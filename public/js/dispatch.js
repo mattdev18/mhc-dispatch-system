@@ -911,6 +911,8 @@ function buildSapActionButtons(truck) {
     // Step 2: SAP Analyst / OTC
     if (!truck.sap_analyst) {
         steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapAnalystModal(${truck.id})" title="Assign SAP OTC Analyst handling documentation">👤 Set Analyst</button>`);
+    } else if (isCurrentUserAdmin()) {
+        steps.push(`<button class="btn sap-btn" style="background:#0284c7;color:#fff;border:1.5px solid #0369a1;font-weight:700;padding:3px 8px;font-size:11px;border-radius:4px;cursor:pointer;" onclick="openSapAnalystModal(${truck.id})" title="Admin Edit: Click to reassign or change SAP Analyst name">👤 ${escapeHtml(truck.sap_analyst.split(' ')[0])} ✏️ Edit</button>`);
     } else {
         steps.push(`<span class="sap-done-badge" title="Assigned Analyst: ${escapeHtml(truck.sap_analyst)}">👤 ${escapeHtml(truck.sap_analyst.split(' ')[0])} ✓</span>`);
     }
@@ -961,11 +963,11 @@ function buildAdminCompletedButtons(truck) {
         steps.push(`<span class="sap-done-badge">📦 Doc Received ✓</span>`);
     }
 
-    // SAP: Analyst
+    // SAP: Analyst (Admin can edit/reassign if selected in error)
     if (!truck.sap_analyst) {
         steps.push(`<button class="btn btn-primary sap-btn" onclick="openSapAnalystModal(${truck.id})" title="Assign SAP OTC Analyst handling documentation">👤 Set Analyst</button>`);
     } else {
-        steps.push(`<span class="sap-done-badge">👤 ${escapeHtml(truck.sap_analyst.split(' ')[0])} ✓</span>`);
+        steps.push(`<button class="btn sap-btn" style="background:#0284c7;color:#fff;border:1.5px solid #0369a1;font-weight:700;padding:3px 8px;font-size:11px;border-radius:4px;cursor:pointer;" onclick="openSapAnalystModal(${truck.id})" title="Admin Edit: Click to reassign or change SAP Analyst name if selected in error">👤 ${escapeHtml(truck.sap_analyst.split(' ')[0])} ✏️ Edit</button>`);
     }
 
     // SAP: Document Start
@@ -1055,20 +1057,63 @@ let pendingSapAnalystId = null;
 function openSapAnalystModal(id) {
     pendingSapAnalystId = id;
     const truck = getTruckFromCache(id);
-    document.getElementById('sapAnalystTruckInfo').textContent = truckLabel(truck);
+    if (!truck) return;
+
+    const infoEl = document.getElementById('sapAnalystTruckInfo');
+    const titleEl = document.getElementById('sapAnalystModalTitle');
+    const isAdmin = isCurrentUserAdmin();
+
+    if (titleEl) {
+        titleEl.textContent = (isAdmin && truck.sap_analyst)
+            ? 'Admin: Edit / Reassign SAP Analyst'
+            : 'Select SAP Analyst / OTC';
+    }
+
+    if (infoEl) {
+        const currentAnalystBadge = truck.sap_analyst
+            ? `<div style="margin-top:6px;font-size:12.5px;color:#0284c7;font-weight:700;">Currently Assigned: <strong>${escapeHtml(truck.sap_analyst)}</strong></div>`
+            : '';
+        infoEl.innerHTML = `
+            <div>${escapeHtml(truck.queue)} &bull; ${escapeHtml(truck.truck_number)} <span style="font-size:12px;color:#475569;font-weight:600;">(${escapeHtml(truck.driver_name || 'Driver')})</span></div>
+            ${currentAnalystBadge}
+        `;
+    }
+
     const btnContainer = document.getElementById('sapAnalystButtons');
-    btnContainer.innerHTML = SAP_ANALYSTS.map(name =>
-        `<button class="btn btn-outline sap-analyst-name-btn" style="font-size:13px;padding:10px 8px;border-color:#1e40af;color:#1e40af;" onclick="executeSapAnalyst('${name.replace(/'/g, "\\'")}')">👤 ${name}</button>`
-    ).join('');
+    btnContainer.innerHTML = SAP_ANALYSTS.map(name => {
+        const isSelected = truck.sap_analyst === name;
+        const btnStyle = isSelected
+            ? 'font-size:13px;padding:10px 8px;background:#1e40af;color:#fff;border:2px solid #1e3a8a;font-weight:800;border-radius:6px;cursor:pointer;'
+            : 'font-size:13px;padding:10px 8px;border:1.5px solid #1e40af;color:#1e40af;background:#fff;border-radius:6px;cursor:pointer;';
+        const checkIcon = isSelected ? ' ✓ (Current)' : '';
+        return `<button class="btn sap-analyst-name-btn" style="${btnStyle}" onclick="executeSapAnalyst('${name.replace(/'/g, "\\'")}')">👤 ${name}${checkIcon}</button>`;
+    }).join('');
+
     document.getElementById('sapAnalystModal').classList.add('show');
 }
+
 function closeSapAnalystModal() {
     pendingSapAnalystId = null;
     document.getElementById('sapAnalystModal').classList.remove('show');
 }
+
 async function executeSapAnalyst(analystName) {
     if (!pendingSapAnalystId) return;
     const id = pendingSapAnalystId;
+    const truck = getTruckFromCache(id);
+    const label = truck ? `${truck.queue} (${truck.truck_number})` : `Truck #${id}`;
+
+    // Confirmation prompt before committing SAP analyst selection
+    const isEdit = truck && truck.sap_analyst && truck.sap_analyst !== analystName;
+    const confirmMessage = isEdit
+        ? `✏️ Confirm SAP Analyst Reassignment:\n\nSigurado ka ba na papalitan mo ang analyst mula "${truck.sap_analyst}" papunta kay "${analystName}" para sa ${label}?\n\n(Pindutin ang OK upang kumpirmahin, Cancel upang pumili ng iba)`
+        : `👤 Confirm SAP Analyst Assignment:\n\nSigurado ka ba na si "${analystName}" ang magpo-proseso ng dokumento para sa ${label}?\n\n(Pindutin ang OK upang kumpirmahin, Cancel upang pumili ng iba)`;
+
+    const confirmed = confirm(confirmMessage);
+    if (!confirmed) {
+        return; // Keeps the modal open so they can re-select without frustration
+    }
+
     closeSapAnalystModal();
     await callSapFlow(id, { sap_analyst: analystName });
 }
