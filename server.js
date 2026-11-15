@@ -24,6 +24,18 @@ const sessions = new Map();
 
 app.use(cors());
 app.use(express.json());
+
+// Disable aggressive browser caching on all operational screens and APIs so updates reflect immediately
+app.use((req, res, next) => {
+    res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+    });
+    next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Authentication Middleware for Protected Actions
