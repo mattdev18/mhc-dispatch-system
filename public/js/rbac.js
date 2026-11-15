@@ -52,9 +52,9 @@
     fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
         .then(function (res) { return res.ok ? res.json() : Promise.reject(new Error('not logged in')); })
         .then(function (data) {
-            // Hindi allowed ang role sa page na ito -> ibalik sa sariling home page
+            // Role not allowed on this page -> redirect to home
             if (!data.screens.includes(screen)) {
-                alert('Walang access ang role mo sa page na ito.');
+                alert('Your role does not have access to this page.');
                 location.replace(data.home || '/login');
                 return;
             }

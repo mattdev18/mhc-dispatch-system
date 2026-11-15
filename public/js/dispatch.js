@@ -1106,8 +1106,8 @@ async function executeSapAnalyst(analystName) {
     // Confirmation prompt before committing SAP analyst selection
     const isEdit = truck && truck.sap_analyst && truck.sap_analyst !== analystName;
     const confirmMessage = isEdit
-        ? `✏️ Confirm SAP Analyst Reassignment:\n\nSigurado ka ba na papalitan mo ang analyst mula "${truck.sap_analyst}" papunta kay "${analystName}" para sa ${label}?\n\n(Pindutin ang OK upang kumpirmahin, Cancel upang pumili ng iba)`
-        : `👤 Confirm SAP Analyst Assignment:\n\nSigurado ka ba na si "${analystName}" ang magpo-proseso ng dokumento para sa ${label}?\n\n(Pindutin ang OK upang kumpirmahin, Cancel upang pumili ng iba)`;
+        ? `✏️ Confirm SAP Analyst Reassignment:\n\nAre you sure you want to change the analyst from "${truck.sap_analyst}" to "${analystName}" for ${label}?\n\n(Click OK to confirm, Cancel to select another)`
+        : `👤 Confirm SAP Analyst Assignment:\n\nAre you sure you want to assign "${analystName}" to process documents for ${label}?\n\n(Click OK to confirm, Cancel to select another)`;
 
     const confirmed = confirm(confirmMessage);
     if (!confirmed) {
@@ -1618,8 +1618,8 @@ function show1HourOverdueDepartToast(truck) {
     const hours = Math.floor(diffMinutes / 60);
     const mins = diffMinutes % 60;
     const timeElapsedText = hours > 0 
-        ? `${hours} oras at ${mins} minuto` 
-        : `${diffMinutes} minuto`;
+        ? `${hours} hr and ${mins} min`
+        : `${diffMinutes} min`;
 
     const doorText = truck.loading_door ? `Door ${truck.loading_door}` : 'Loading Dock';
 
@@ -1628,11 +1628,11 @@ function show1HourOverdueDepartToast(truck) {
             ${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">(${doorText} • ${escapeHtml(truck.driver_name || 'Driver')})</span>
         </div>
         <div style="color: #fef08a; font-weight: 700; margin-bottom: 5px;">
-            ⚠️ Mahigit 1 oras na ang nakalipas mula nang matapos ang loading (${timeElapsedText} nang nakalipas)!
+            ⚠️ Over 1 hour has passed since loading was completed (${timeElapsedText} elapsed)!
         </div>
         <div style="color: #e2e8f0; font-size: 13px; line-height: 1.45;">
-            Hindi pa nadedepart ang trak na ito sa Dispatcher Station. Kung kumpleto na ang dokumento at nakaalis na ang trak sa planta, 
-            <strong>pakipindot agad ang "Depart Plant Now"</strong> upang ma-update ang records at mabakante ang queue.
+            This truck has not yet departed from the Dispatcher Station. If documents are complete and the truck has left the plant, 
+            <strong>please click "Depart Plant Now" immediately</strong> to update the records and free the queue.
         </div>
     `;
 
@@ -1760,10 +1760,10 @@ function showWarehouseRunnerToast(truck, isReminder = false) {
                 ${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">(${escapeHtml(truck.driver_name || 'Driver')})</span>
             </div>
             <div style="color: #fef08a; font-weight: 700; margin-bottom: 4px;">
-                ⚠️ Mahigit 10 minuto nang naghihintay ang dokumento sa Admin office (${escapeHtml(truck.doc_transfer_to_warehouse || '')})!
+                ⚠️ Documents have been waiting at the Admin office for over 10 minutes (${escapeHtml(truck.doc_transfer_to_warehouse || '')})!
             </div>
             <div style="color: #e2e8f0; font-size: 12.5px; line-height: 1.4;">
-                Wala pa ring response o natatanggap na dokumento ang warehouse. Pakipadala agad ang runner sa Admin/SAP upang hindi maantala ang truck departure.
+                No response or document receipt from warehouse yet. Please send the runner to Admin/SAP immediately to avoid delaying the truck departure.
             </div>
         `;
     } else {
@@ -1781,7 +1781,7 @@ function showWarehouseRunnerToast(truck, isReminder = false) {
                 ${escapeHtml(truck.queue)} — ${escapeHtml(truck.truck_number)} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">(${escapeHtml(truck.driver_name || 'Driver')})</span>
             </div>
             <div style="color: #e2e8f0; font-size: 13px; line-height: 1.4;">
-                Ready na ang SAP documents sa Admin (${escapeHtml(truck.doc_transfer_to_warehouse || '')}). Pakipadala ang runner para kunin ang dokumento.
+                SAP documents are ready at Admin (${escapeHtml(truck.doc_transfer_to_warehouse || '')}). Please send the runner to pick up the documents.
             </div>
         `;
     }
