@@ -467,12 +467,25 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 4px 10px;
+            padding: 5px 12px;
             background: var(--card-hdr);
             border-radius: 6px 6px 0 0;
             border: 1px solid var(--border);
             border-bottom: none;
             flex-shrink: 0;
+            gap: 8px;
+        }
+        .th-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .th-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .th-bar h3 {
             font-size: 10.5px;
@@ -486,6 +499,177 @@
         .th-bar .cnt {
             font-size: 9px;
             color: var(--dim);
+        }
+        .swipe-indicator-pill {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            font-size: 8.5px;
+            font-weight: 800;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 2px 7px;
+            border-radius: 9999px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .view-switch-grp {
+            display: inline-flex;
+            background: #091018;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
+        }
+        .v-switch-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 9.5px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .v-switch-btn.active {
+            background: #1e3a5f;
+            color: #38bdf8;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+
+        .cards-wrap {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            background: #060a10;
+            border: 1px solid var(--border);
+            border-radius: 0 0 6px 6px;
+            padding: 8px;
+            flex: 1;
+            min-height: 0;
+        }
+        .cards-wrap::-webkit-scrollbar { width: 5px; }
+        .cards-wrap::-webkit-scrollbar-thumb { background: #1a2e48; border-radius: 3px; }
+
+        .card-sec-divider {
+            background: #0b1522;
+            color: #94a3b8;
+            font-size: 9.5px;
+            font-weight: 900;
+            letter-spacing: .8px;
+            text-transform: uppercase;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #1a2e48;
+            margin-top: 4px;
+            margin-bottom: 2px;
+        }
+        .card-sec-divider.active-sec {
+            color: var(--orange);
+            border-left: 3px solid var(--orange);
+            background: rgba(249,115,22,0.08);
+        }
+        .card-sec-divider.pending-sec {
+            color: var(--amber);
+            border-left: 3px solid var(--amber);
+            background: rgba(245,158,11,0.08);
+        }
+        .card-sec-divider.done-sec {
+            color: var(--green);
+            border-left: 3px solid var(--green);
+            background: rgba(34,197,94,0.08);
+        }
+
+        .sap-m-card {
+            background: #0c1420;
+            border: 1px solid #1a2838;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sap-m-card.active-row {
+            border-color: rgba(249,115,22,0.45);
+            background: linear-gradient(180deg, rgba(249,115,22,0.06), #0c1420);
+        }
+        .sap-m-card.loading-row {
+            border-color: rgba(56,189,248,0.45);
+            background: linear-gradient(180deg, rgba(56,189,248,0.06), #0c1420);
+        }
+        .smc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .smc-tags {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .smc-q {
+            font-size: 13px;
+            font-weight: 900;
+            color: var(--sky);
+            background: rgba(56,189,248,0.12);
+            border: 1px solid rgba(56,189,248,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .smc-plate {
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            font-size: 13px;
+            color: #f8fafc;
+            letter-spacing: 0.5px;
+        }
+        .smc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 8px;
+            font-size: 11px;
+            background: rgba(10,16,24,0.6);
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .smc-col {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .smc-lbl {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .smc-val {
+            color: #e2e8f0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .smc-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            padding-top: 6px;
+        }
+        .smc-pipe-title {
+            font-size: 9.5px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
         }
         .tw {
             flex: 1;
@@ -836,10 +1020,84 @@
             }
 
             .table-zone {
-                padding: 2px 6px 4px;
+                padding: 2px 6px 10px;
+                flex: none !important;
+                height: auto !important;
+                overflow: visible !important;
             }
-            table.qtab { min-width: 580px; font-size: 10px; }
-            table.qtab th, table.qtab td { padding: 4px 5px; }
+            /* Table header bar — wrap title, count, and view toggles on mobile */
+            .th-bar {
+                flex-wrap: wrap;
+                padding: 6px 8px;
+                gap: 6px;
+            }
+            .th-bar h3 { font-size: 10px; letter-spacing: 0.3px; }
+            .th-bar .cnt { font-size: 8.5px; }
+            .swipe-indicator-pill { display: inline-flex !important; }
+
+            /* Smooth horizontal touch scroll with visible accent scrollbar */
+            .tw {
+                overflow-x: auto !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                touch-action: pan-x pan-y !important;
+                border-radius: 0 0 6px 6px;
+                max-height: 480px;
+            }
+            .tw::-webkit-scrollbar {
+                height: 6px !important;
+                width: 5px !important;
+            }
+            .tw::-webkit-scrollbar-thumb {
+                background: #0284c7 !important;
+                border-radius: 3px !important;
+            }
+            .tw::-webkit-scrollbar-track {
+                background: #07101b !important;
+            }
+
+            table.qtab {
+                min-width: 720px !important;
+                width: 100% !important;
+                table-layout: fixed !important;
+                font-size: 10.5px;
+            }
+            table.qtab th, table.qtab td { padding: 5px 6px; }
+            table.qtab th { font-size: 8px; white-space: nowrap; }
+
+            /* Frozen Sticky Queue column on mobile — stays pinned when swiping horizontally */
+            table.qtab th:first-child,
+            table.qtab tr:not(.table-sec-divider) td:first-child {
+                position: sticky !important;
+                left: 0 !important;
+                z-index: 6 !important;
+                background: #07111c !important;
+                border-right: 2px solid #1e3a5f !important;
+                box-shadow: 3px 0 8px rgba(0,0,0,0.5) !important;
+            }
+            table.qtab th:first-child {
+                z-index: 10 !important;
+                background: #050a12 !important;
+            }
+
+            /* Section divider pinned header across full horizontal swipe */
+            table.qtab tr.table-sec-divider td {
+                position: sticky !important;
+                left: 0 !important;
+                z-index: 5 !important;
+            }
+
+            /* Compact progress dots on mobile */
+            .mini-pipe { gap: 2px !important; }
+            .mp-dot { width: 11px !important; height: 11px !important; font-size: 7.5px !important; }
+            .mp-arr { font-size: 7px !important; }
+
+            /* Compact status badges on mobile */
+            .stb { font-size: 8px !important; padding: 2px 5px !important; }
+
+            .cards-wrap {
+                max-height: 480px;
+            }
 
             .tv-ticker {
                 height: 34px;
@@ -913,8 +1171,17 @@
     <!-- 4. Master Document Table (Ordered: Active -> Pending -> Completed by Queue Sequence) -->
     <section class="table-zone">
         <div class="th-bar">
-            <h3><span>●</span> ALL SAP OTC DOCUMENT RECORDS</h3>
-            <span class="cnt" id="recordCountTag">Auto-synced via Live Socket</span>
+            <div class="th-bar-left">
+                <h3><span>●</span> ALL SAP OTC DOCUMENT RECORDS</h3>
+                <span class="swipe-indicator-pill" id="swipeHint">⟷ Swipe table</span>
+            </div>
+            <div class="th-bar-right">
+                <span class="cnt" id="recordCountTag">Auto-synced via Live Socket</span>
+                <div class="view-switch-grp">
+                    <button class="v-switch-btn active" id="btnViewTable" onclick="switchMasterView('table')" type="button">☰ Table</button>
+                    <button class="v-switch-btn" id="btnViewCards" onclick="switchMasterView('cards')" type="button">📱 Cards</button>
+                </div>
+            </div>
         </div>
         <div class="tw" id="tableWrap">
             <table class="qtab">
@@ -938,6 +1205,11 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <div class="cards-wrap" id="cardsWrap">
+            <div style="text-align: center; padding: 25px; color: #64748b;">
+                Loading real-time ongoing truck queue...
+            </div>
         </div>
     </section>
 
@@ -1200,6 +1472,7 @@
 
         function renderMasterTable(allTrucks, effectiveCutoff) {
             const tbody = document.getElementById('sapTableBody');
+            const cardsWrap = document.getElementById('cardsWrap');
             const countTag = document.getElementById('recordCountTag');
             if (!tbody) return;
 
@@ -1278,23 +1551,42 @@
                         </td>
                     </tr>
                 `;
+                if (cardsWrap) {
+                    cardsWrap.innerHTML = `
+                        <div style="text-align: center; padding: 25px; color: #64748b;">
+                            No active or completed truck records today.
+                        </div>
+                    `;
+                }
                 return;
             }
 
             let lastTier = null;
             let rowsHtml = '';
+            let cardsHtml = '';
 
             list.forEach(t => {
                 const tier = getTier(t);
 
                 if (tier !== lastTier) {
+                    let secTitle = '';
+                    let secClass = '';
+                    let count = 0;
                     if (tier === 1) {
-                        rowsHtml += `<tr class="table-sec-divider active-sec"><td colspan="8">⚡ ACTIVE TRUCKS IN SAP &amp; LOADING DOORS (${activeCount})</td></tr>`;
+                        secTitle = '⚡ ACTIVE TRUCKS IN SAP &amp; LOADING DOORS';
+                        secClass = 'active-sec';
+                        count = activeCount;
                     } else if (tier === 2) {
-                        rowsHtml += `<tr class="table-sec-divider pending-sec"><td colspan="8">⏳ PENDING SAP QUEUE &amp; YARD WAITING (${pendingCount})</td></tr>`;
+                        secTitle = '⏳ PENDING SAP QUEUE &amp; YARD WAITING';
+                        secClass = 'pending-sec';
+                        count = pendingCount;
                     } else if (tier === 3) {
-                        rowsHtml += `<tr class="table-sec-divider done-sec"><td colspan="8">✅ COMPLETED &amp; DEPARTED RECORDS (${doneCount})</td></tr>`;
+                        secTitle = '✅ COMPLETED &amp; DEPARTED RECORDS';
+                        secClass = 'done-sec';
+                        count = doneCount;
                     }
+                    rowsHtml += `<tr class="table-sec-divider ${secClass}"><td colspan="8">${secTitle} (${count})</td></tr>`;
+                    cardsHtml += `<div class="card-sec-divider ${secClass}">${secTitle} (${count})</div>`;
                     lastTier = tier;
                 }
 
@@ -1372,10 +1664,57 @@
                         <td>${statusBadge}</td>
                     </tr>
                 `;
+
+                cardsHtml += `
+                    <div class="sap-m-card ${rowClass}">
+                        <div class="smc-header">
+                            <div class="smc-tags">
+                                <span class="smc-q">${escapeHtml(t.queue)}</span>
+                                ${doorBadge}
+                                <span class="smc-plate">${escapeHtml(t.truck_number)}</span>
+                            </div>
+                            <div class="smc-status">${statusBadge}</div>
+                        </div>
+                        <div class="smc-grid">
+                            <div class="smc-col"><span class="smc-lbl">Driver:</span> <strong class="smc-val">${escapeHtml(t.driver_name || '—')}</strong></div>
+                            <div class="smc-col"><span class="smc-lbl">Hauler:</span> <span class="smc-val">${escapeHtml(t.company || t.load_type || '—')}</span></div>
+                            <div class="smc-col" style="grid-column: span 2;"><span class="smc-lbl">Station:</span> ${stationBadge}</div>
+                        </div>
+                        <div class="smc-footer">
+                            <span class="smc-pipe-title">5-Stage OTC:</span>
+                            ${pipelineHtml}
+                        </div>
+                    </div>
+                `;
             });
 
             tbody.innerHTML = rowsHtml;
+            if (cardsWrap) cardsWrap.innerHTML = cardsHtml;
             autoScaleTable(list.length);
+        }
+
+        function switchMasterView(mode) {
+            const tableWrap = document.getElementById('tableWrap');
+            const cardsWrap = document.getElementById('cardsWrap');
+            const btnTable = document.getElementById('btnViewTable');
+            const btnCards = document.getElementById('btnViewCards');
+            const swipeHint = document.getElementById('swipeHint');
+
+            if (mode === 'cards') {
+                if (tableWrap) tableWrap.style.display = 'none';
+                if (cardsWrap) cardsWrap.style.display = 'flex';
+                if (btnTable) btnTable.classList.remove('active');
+                if (btnCards) btnCards.classList.add('active');
+                if (swipeHint) swipeHint.style.display = 'none';
+                try { localStorage.setItem('mhc_sap_view_mode', 'cards'); } catch(e) {}
+            } else {
+                if (tableWrap) tableWrap.style.display = 'block';
+                if (cardsWrap) cardsWrap.style.display = 'none';
+                if (btnTable) btnTable.classList.add('active');
+                if (btnCards) btnCards.classList.remove('active');
+                if (swipeHint && window.innerWidth <= 767) swipeHint.style.display = 'inline-flex';
+                try { localStorage.setItem('mhc_sap_view_mode', 'table'); } catch(e) {}
+            }
         }
 
         function autoScaleTable(rowCount) {
@@ -1477,6 +1816,14 @@
         socket.on('runner_dispatched', fetchSapQueue);
         socket.on('runner_docs_received', fetchSapQueue);
         socket.on('queue_sequence_reset', fetchSapQueue);
+
+        // Restore view preference (Table vs Cards)
+        try {
+            const savedView = localStorage.getItem('mhc_sap_view_mode');
+            if (savedView === 'cards') {
+                switchMasterView('cards');
+            }
+        } catch(e) {}
 
         fetchSapQueue();
         setInterval(fetchSapQueue, 10000); // 10s auto-refresh fallback
