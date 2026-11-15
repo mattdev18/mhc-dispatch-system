@@ -62,13 +62,43 @@ socket.on('truck_called', (truck) => {
     loadTodayData();
 });
 
+// Helper: Checks if current logged-in screen is Warehouse 1 or 2 (strictly excluding Admin and SAP Analyst)
+function isWarehouseScreen() {
+    const user = window.currentUser || getAuthUser();
+    if (!user) {
+        try {
+            const raw = localStorage.getItem('mhc_auth_user') || sessionStorage.getItem('mhc_auth_user');
+            if (raw) return checkUser(JSON.parse(raw));
+        } catch(e) {}
+        return false;
+    }
+    return checkUser(user);
+
+    function checkUser(u) {
+        if (!u) return false;
+        const role = String(u.role || '').toLowerCase().trim();
+        const uname = String(u.username || '').toLowerCase().trim();
+
+        // 1. Strictly exclude Admin ("wag sa admin user")
+        if (role === 'admin' || uname === 'admin') return false;
+        // 2. Exclude SAP Analyst (they are the ones sending)
+        if (role === 'sapanalyst' || uname.includes('sapanalyst')) return false;
+
+        // 3. Match Warehouse 1, Warehouse 2, Warehouse roles or Dispatchers coordinating with warehouse
+        return role === 'warehouse' || 
+               role.includes('warehouse') || 
+               role === 'dispatcher' || 
+               role.includes('dispatcher') || 
+               uname.includes('warehouse') || 
+               uname.includes('dispatcher');
+    }
+}
+
 // Dedicated Real-time Event: When SAP completes Transfer to Warehouse (ONLY Warehouse 1 & 2 receive toast, NOT admin)
 socket.on('sap_docs_transferred_to_warehouse', (truck) => {
     loadTodayData();
-    const user = window.currentUser || getAuthUser();
-    const userRole = user ? user.role : '';
     // Only Warehouse 1 and 2 screens will show the pop-up notification
-    if (userRole === 'warehouse') {
+    if (isWarehouseScreen()) {
         if (truck && truck.id) {
             lastRunnerReminderTime[truck.id] = Date.now();
         }
@@ -99,10 +129,10 @@ socket.on('truck_status_changed', (truck) => {
 
     // 1. Warehouse Notification: When SAP completes Transfer to Warehouse (ONLY Warehouse 1 & 2, NOT Admin)
     if (truck.doc_transfer_to_warehouse && !truck.doc_runner_received) {
-        if (userRole === 'warehouse') {
+        if (isWarehouseScreen()) {
             const lastTime = lastRunnerReminderTime[truck.id] || 0;
-            // Only fire if not fired in the last 60 seconds
-            if (Date.now() - lastTime > 60 * 1000) {
+            // Only fire if not fired in the last 45 seconds
+            if (Date.now() - lastTime > 45 * 1000) {
                 lastRunnerReminderTime[truck.id] = Date.now();
                 showWarehouseRunnerToast(truck, false);
             }
@@ -1504,8 +1534,8 @@ function dismissDepartToast() {
 // ── Warehouse Runner 2-Step Workflow & Notifications ────────
 async function dispatchRunner(id) {
     const user = window.currentUser || getAuthUser();
-    if (!user || !['dispatcher', 'admin'].includes(user.role)) {
-        alert('Access Restricted: Only Lead Dispatcher (Dispatcher 1 & 2) and Plant Admin are authorized to dispatch runners.');
+    if (!user || !['dispatcher', 'admin', 'warehouse'].includes(user.role)) {
+        alert('Access Restricted: Only Warehouse 1 & 2, Lead Dispatcher, and Plant Admin are authorized to dispatch runners.');
         return;
     }
     const truck = getTruckFromCache(id);
@@ -1519,8 +1549,8 @@ async function dispatchRunner(id) {
 
 async function receiveRunnerDocs(id) {
     const user = window.currentUser || getAuthUser();
-    if (!user || !['dispatcher', 'admin'].includes(user.role)) {
-        alert('Access Restricted: Only Lead Dispatcher (Dispatcher 1 & 2) and Plant Admin are authorized to confirm document receipt.');
+    if (!user || !['dispatcher', 'admin', 'warehouse'].includes(user.role)) {
+        alert('Access Restricted: Only Warehouse 1 & 2, Lead Dispatcher, and Plant Admin are authorized to confirm document receipt.');
         return;
     }
     const truck = getTruckFromCache(id);
@@ -1537,6 +1567,7 @@ let runnerToastDismissTimer = null;
 const lastRunnerReminderTime = {};
 
 function showWarehouseRunnerToast(truck, isReminder = false) {
+    if (!truck) return;
     const banner = document.getElementById('warehouseRunnerToastBanner');
     const msg = document.getElementById('warehouseRunnerToastMessage');
     const title = document.getElementById('warehouseRunnerToastTitle');
@@ -1545,7 +1576,7 @@ function showWarehouseRunnerToast(truck, isReminder = false) {
     if (!banner || !msg) return;
 
     const user = window.currentUser || getAuthUser();
-    const canAction = user && ['dispatcher', 'admin'].includes(user.role);
+    const canAction = user && ['dispatcher', 'admin', 'warehouse'].includes(user.role);
 
     if (isReminder) {
         if (icon) icon.textContent = '🔔';
@@ -1724,9 +1755,8 @@ document.addEventListener('click', (e) => {
 
 // 🔔 Periodic 10-Minute Recurring Reminder: Checks pending unresponded runner pickups
 function checkPendingRunnerReminders() {
-    const user = window.currentUser || getAuthUser();
-    // Only Warehouse 1 & 2 screens receive the recurring 10-minute reminder pop-up (NOT admin, NOT dispatcher)
-    if (!user || user.role !== 'warehouse') return;
+    // Only Warehouse 1 & 2 screens receive the recurring 10-minute reminder pop-up (NOT admin, NOT sapanalyst)
+    if (!isWarehouseScreen()) return;
 
     const now = Date.now();
     const pendingPickups = (todayTrucks || []).filter(t =>

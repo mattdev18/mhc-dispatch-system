@@ -9,7 +9,12 @@ function getAuthToken() {
 
 function getAuthUser() {
     try {
-        const u = localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY);
+        const u = localStorage.getItem(AUTH_USER_KEY) || 
+                  sessionStorage.getItem(AUTH_USER_KEY) ||
+                  localStorage.getItem('mhc_auth_user') ||
+                  sessionStorage.getItem('mhc_auth_user') ||
+                  localStorage.getItem('user') ||
+                  sessionStorage.getItem('user');
         return u ? JSON.parse(u) : null;
     } catch (e) {
         return null;
