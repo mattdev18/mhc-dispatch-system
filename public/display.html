@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Live TV Queue Display - May Harvest Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/display.css">
     <script src="/socket.io/socket.io.js"></script>
@@ -22,21 +28,35 @@
                 <h2>LIVE TRUCK DISPATCH &amp; QUEUE BOARD</h2>
             </div>
         </div>
-        <div class="tv-clock-box">
-            <a href="/sap-tv" target="_blank" style="background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid #22c55e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:800;text-decoration:none;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:4px;margin-right:12px;transition:all 0.2s;" onmouseover="this.style.background='rgba(34,197,94,0.3)'" onmouseout="this.style.background='rgba(34,197,94,0.15)'">🗂️ LIVE SAP BOARD ↗</a>
-            <div class="tv-clock" id="tvClock">--:--:--</div>
-            <div class="tv-date" id="tvDate">--------</div>
+        <div class="tv-header-right">
+            <div class="tv-controls-group">
+                <button class="tv-ctrl-btn" id="soundBtn" onclick="toggleSound()" title="Enable Voice Announcement for Truckers">
+                    🔊 Audio: Off
+                </button>
+                <select id="tvVoiceSelect" onchange="changeTvVoice(this.value)" class="tv-voice-select" style="display: none;">
+                </select>
+                <a href="/sap-tv" target="_blank" class="tv-ctrl-btn tv-btn-sap" title="Open Live SAP OTC Board">
+                    🗂️ SAP BOARD ↗
+                </a>
+                <button class="tv-ctrl-btn tv-btn-fs" onclick="toggleTvFullscreen()" title="Toggle Fullscreen TV Mode">
+                    ⛶ FULLSCREEN
+                </button>
+            </div>
+            <div class="tv-clock-box">
+                <div class="tv-clock" id="tvClock">--:--:--</div>
+                <div class="tv-date" id="tvDate">--------</div>
+            </div>
         </div>
     </header>
 
     <!-- TV Main Content Grid -->
     <main class="tv-main">
 
-        <!-- Left: Now Serving Hero Box -->
+        <!-- Left: Now Serving Hero Box (Massive & High Contrast for 50ft Distance) -->
         <section class="tv-calling-panel" id="callingPanel">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; margin-bottom: 12px;">
-                <div class="tv-calling-badge" id="callingBadge" style="margin-bottom: 0;">NOW CALLING</div>
-                <div id="callingCountBadge" style="display: none; font-size: 13px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid #22c55e; letter-spacing: 0.5px; text-transform: uppercase;">📢 1st Call</div>
+            <div class="tv-calling-hdr-row">
+                <div class="tv-calling-badge" id="callingBadge">NOW CALLING</div>
+                <div id="callingCountBadge" style="display: none;" class="tv-call-counter-badge">📢 1st Call</div>
             </div>
             <div class="tv-calling-queue" id="callingQueue">---</div>
             <div class="tv-calling-truck" id="callingPlate">WAITING FOR CALL</div>
@@ -48,8 +68,11 @@
         <!-- Right: 8 Loading Bays Status Grid -->
         <section class="tv-docks-panel">
             <div class="tv-panel-title">
-                <span>🚛 Loading Bay Doors (1 to 8)</span>
-                <span style="font-size: 13px; color: #4ade80;" id="dockSummary">8 Total Doors</span>
+                <div class="tv-panel-title-left">
+                    <span class="tv-dock-icon">🚛</span>
+                    <span>LOADING BAY DOORS (1 TO 8)</span>
+                </div>
+                <span class="tv-dock-summary" id="dockSummary">8 Total Doors</span>
             </div>
 
             <div class="tv-doors-grid" id="tvDoorsGrid">
@@ -59,22 +82,18 @@
 
     </main>
 
-    <!-- Bottom Ticker: Next in line -->
+    <!-- Bottom Ticker: Next in line (Continuous Marquee for Truckers in Staging) -->
     <footer class="tv-ticker">
-        <div class="tv-ticker-label">NEXT IN LINE:</div>
-        <div class="tv-ticker-list" id="tvTickerList">
-            <span style="color: #64748b;">No other waiting trucks in queue.</span>
+        <div class="tv-ticker-label">
+            <span class="ticker-pulse-dot"></span>
+            NEXT IN LINE (QUEUE):
+        </div>
+        <div class="tv-ticker-track" id="tvTickerTrack">
+            <div class="tv-ticker-list" id="tvTickerList">
+                <span style="color: #64748b;">No other waiting trucks in queue.</span>
+            </div>
         </div>
     </footer>
-
-    <!-- Audio Activation & Female Airport Voice Selector -->
-    <div style="position: fixed; bottom: 16px; right: 20px; display: flex; align-items: center; gap: 8px; z-index: 9999; flex-wrap: wrap;">
-        <select id="tvVoiceSelect" onchange="changeTvVoice(this.value)" style="display: none; background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 9999px; padding: 10px 16px; font-size: 13px; font-weight: 700; outline: none; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
-        </select>
-        <button class="tv-sound-btn" id="soundBtn" onclick="toggleSound()" style="margin: 0; position: static;">
-            🔊 Click to Enable Voice &amp; Chime
-        </button>
-    </div>
 
     <script src="/js/display.js"></script>
 </body>

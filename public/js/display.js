@@ -20,15 +20,30 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+// Fullscreen Toggle for Commercial Outdoor TV
+function toggleTvFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log('[TV Fullscreen] Request error:', err);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
 // Sound Toggle
 function toggleSound() {
     initAudio();
     isSoundActive = true;
     const btn = document.getElementById('soundBtn');
-    btn.innerHTML = '✓ Airport Voice Active (Female)';
-    btn.style.background = '#0f172a';
-    btn.style.color = '#86efac';
-    btn.style.border = '1px solid #22c55e';
+    if (btn) {
+        btn.innerHTML = '✓ Audio: On';
+        btn.style.background = 'rgba(34, 197, 94, 0.2)';
+        btn.style.color = '#86efac';
+        btn.style.borderColor = '#22c55e';
+    }
     updateTvVoiceOptions();
     playChime(); // test chime feedback
 }
@@ -267,11 +282,13 @@ function renderDoors(activeTruckList) {
             html += `
                 <div class="tv-door-box vacant">
                     <div class="tv-door-top">
-                        <span class="tv-door-num">DOOR ${door}</span>
-                        <span class="tv-door-status" style="background: rgba(255,255,255,0.1); color: #94a3b8;">VACANT</span>
+                        <span class="tv-door-num">DOOR 0${door}</span>
+                        <span class="tv-door-status" style="background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.3);">
+                            🟢 AVAILABLE
+                        </span>
                     </div>
-                    <div style="text-align: center; color: #64748b; font-size: 14px; margin: auto;">
-                        Available
+                    <div style="text-align: center; color: #64748b; font-size: 13.5px; margin: auto; font-weight: 700; letter-spacing: 0.5px;">
+                        BAY READY
                     </div>
                 </div>
             `;
@@ -280,6 +297,7 @@ function renderDoors(activeTruckList) {
             const isCalled = truck.status === 'Called';
             const boxClass = isCalled ? 'tv-door-box called' : 'tv-door-box loading';
             const statusColor = isCalled ? '#f59e0b' : '#ea580c';
+            const statusBadgeText = isCalled ? '📢 CALLED' : '🚛 LOADING';
             const callBadgeText = (isCalled && truck.call_count && Number(truck.call_count) > 1)
                 ? ` (${truck.call_count}x)`
                 : '';
@@ -287,9 +305,9 @@ function renderDoors(activeTruckList) {
             html += `
                 <div class="${boxClass}">
                     <div class="tv-door-top">
-                        <span class="tv-door-num">DOOR ${door}</span>
+                        <span class="tv-door-num">DOOR 0${door}</span>
                         <span class="tv-door-status" style="background: ${statusColor}; color: white;">
-                            ${escapeHtml(truck.status)}${callBadgeText}
+                            ${statusBadgeText}${callBadgeText}
                         </span>
                     </div>
                     <div class="tv-door-plate">${escapeHtml(truck.truck_number)}</div>
@@ -304,21 +322,36 @@ function renderDoors(activeTruckList) {
     document.getElementById('dockSummary').textContent = `${occupiedCount} of 8 Doors Active`;
 }
 
-// Render Bottom Ticker
+// Render Bottom Ticker (Continuous Smooth Loop for Truckers in Staging)
 function renderTicker(trucks) {
     const ticker = document.getElementById('tvTickerList');
+    if (!ticker) return;
+
     const waiting = trucks.filter(t => t.status === 'Waiting');
 
     if (waiting.length === 0) {
-        ticker.innerHTML = '<span style="color: #64748b; font-size: 14px;">No other waiting trucks in queue.</span>';
+        ticker.innerHTML = '<span style="color: #64748b; font-size: 14px; font-weight: 600;">No other waiting trucks in queue. Staging area clear.</span>';
+        ticker.style.animation = 'none';
         return;
     }
 
-    ticker.innerHTML = waiting.map(t => `
+    const itemsHtml = waiting.map(t => `
         <div class="tv-ticker-item">
-            <strong>${escapeHtml(t.queue)}</strong>: ${escapeHtml(t.truck_number)} (${escapeHtml(t.driver_name)})
+            <strong>${escapeHtml(t.queue)}</strong>
+            <span class="tv-ticker-chip-plate">${escapeHtml(t.truck_number)}</span>
+            <span class="tv-ticker-chip-driver">(${escapeHtml(t.driver_name || 'Driver')})</span>
         </div>
     `).join('');
+
+    // Duplicate list if 2 or more trucks to create infinite seamless marquee loop
+    if (waiting.length >= 2) {
+        ticker.innerHTML = itemsHtml + itemsHtml;
+        const duration = Math.max(22, waiting.length * 6);
+        ticker.style.animation = `tvTickerScroll ${duration}s linear infinite`;
+    } else {
+        ticker.innerHTML = itemsHtml;
+        ticker.style.animation = 'none';
+    }
 }
 
 function escapeHtml(str) {
