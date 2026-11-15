@@ -201,45 +201,46 @@
 
         /* ── 2. Top KPI Metric Strip ── */
         .kpi-strip {
-            height: 40px;
-            min-height: 40px;
+            height: 44px;
+            min-height: 44px;
             display: flex;
-            gap: 6px;
-            padding: 3px 14px;
+            gap: 8px;
+            padding: 4px 14px;
             background: #050910;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1.5px solid var(--border);
             flex-shrink: 0;
         }
         .kpi-chip {
             flex: 1;
             background: var(--card);
-            border-top: 3px solid var(--blue);
-            border-radius: 0 0 5px 5px;
+            border-top: 3.5px solid var(--blue);
+            border-radius: 0 0 6px 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 2px 10px;
+            padding: 3px 12px;
             min-width: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
         }
-        .kpi-chip.k1 { border-color: var(--blue); }
-        .kpi-chip.k2 { border-color: var(--amber); }
-        .kpi-chip.k3 { border-color: var(--orange); }
-        .kpi-chip.k4 { border-color: var(--green); }
-        .kpi-chip.k5 { border-color: var(--purple); }
-        .kpi-chip.k6 { border-color: var(--sky); }
+        .kpi-chip.k1 { border-color: var(--blue); box-shadow: inset 0 4px 12px rgba(59, 130, 246, 0.15); }
+        .kpi-chip.k2 { border-color: var(--amber); box-shadow: inset 0 4px 12px rgba(245, 158, 11, 0.15); }
+        .kpi-chip.k3 { border-color: var(--orange); box-shadow: inset 0 4px 12px rgba(249, 115, 22, 0.15); }
+        .kpi-chip.k4 { border-color: var(--green); box-shadow: inset 0 4px 12px rgba(34, 197, 94, 0.15); }
+        .kpi-chip.k5 { border-color: var(--purple); box-shadow: inset 0 4px 12px rgba(168, 85, 247, 0.15); }
+        .kpi-chip.k6 { border-color: var(--sky); box-shadow: inset 0 4px 12px rgba(56, 189, 248, 0.15); }
         .kpi-chip .lbl {
-            font-size: 8.5px;
+            font-size: 9px;
             font-weight: 800;
             color: var(--gray);
             text-transform: uppercase;
-            letter-spacing: .3px;
+            letter-spacing: .4px;
             white-space: nowrap;
         }
         .kpi-chip .val {
-            font-size: 17px;
+            font-size: 20px;
             font-weight: 900;
             color: #fff;
-            margin-left: 4px;
+            margin-left: 6px;
         }
 
         /* ── 3. Three SAP Analyst Pods ── */
@@ -372,25 +373,27 @@
         }
         .active-pod-truck .big-plate {
             font-family: 'Courier Prime', monospace;
-            font-size: 26px;
+            font-size: 30px;
             font-weight: 700;
             color: var(--lime);
-            letter-spacing: 2px;
+            letter-spacing: 2.5px;
             line-height: 1.1;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            text-shadow: 0 0 16px rgba(132, 204, 22, 0.4);
         }
         .active-pod-truck .q-door {
-            font-size: 11.5px;
+            font-size: 13px;
             font-weight: 800;
             color: var(--sky);
+            letter-spacing: 0.5px;
         }
         .active-pod-truck .meta-row {
             display: flex;
             justify-content: space-between;
-            font-size: 10px;
-            margin-top: 1px;
+            font-size: 10.5px;
+            margin-top: 2px;
         }
         .active-pod-truck .meta-row .k { color: var(--dim); }
         .active-pod-truck .meta-row .v { font-weight: 700; color: #e2e8f0; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -407,26 +410,34 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            gap: 3px;
+            gap: 4px;
         }
-        .pod-standby .icon { font-size: 22px; opacity: 0.5; }
-        .pod-standby .title { font-size: 11px; font-weight: 900; color: #94a3b8; letter-spacing: 1px; }
-        .pod-standby .sub { font-size: 9px; color: #475569; }
+        .pod-standby .icon { font-size: 24px; opacity: 0.6; }
+        .pod-standby .title { font-size: 11.5px; font-weight: 900; color: #94a3b8; letter-spacing: 1px; }
+        .pod-standby .sub { font-size: 9.5px; color: #64748b; }
 
         /* 5-Segment LED Bar */
         .led-pipeline {
             display: flex;
-            gap: 3px;
-            margin-top: 4px;
+            gap: 4px;
+            margin-top: 6px;
         }
         .led-step {
             flex: 1;
-            height: 6px;
-            border-radius: 3px;
+            height: 8px;
+            border-radius: 4px;
             background: #152232;
+            transition: all 0.3s ease;
         }
-        .led-step.done { background: var(--green); }
-        .led-step.active { background: var(--orange); animation: pulseDot 1s infinite; }
+        .led-step.done { 
+            background: var(--green); 
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); 
+        }
+        .led-step.active { 
+            background: var(--orange); 
+            box-shadow: 0 0 12px rgba(249, 115, 22, 0.8); 
+            animation: pulseDot 1s infinite; 
+        }
         .led-step.pending { background: #152232; }
 
         /* Station's Queued Next */
@@ -1107,6 +1118,44 @@
             .ticker-badge { padding: 0 8px; font-size: 9px; }
             .ticker-item { font-size: 10px; }
         }
+
+        /* ── LARGE OUTDOOR TV DISPLAY (> 1800px / 4K / Commercial Screens) ── */
+        @media (min-width: 1800px) {
+            .hdr { height: 60px; min-height: 60px; padding: 0 24px; }
+            .hdr-logo { width: 44px; height: 44px; }
+            .hdr-title h1 { font-size: 19px; }
+            .hdr-live span { font-size: 11px; }
+            .hdr-right .time { font-size: 28px; }
+            .hdr-right .date { font-size: 11px; }
+            .board-nav-btn { font-size: 12px; padding: 6px 14px; }
+
+            .kpi-strip { height: 52px; min-height: 52px; padding: 6px 18px; gap: 10px; }
+            .kpi-chip { padding: 4px 16px; border-top-width: 4px; }
+            .kpi-chip .lbl { font-size: 10.5px; }
+            .kpi-chip .val { font-size: 25px; }
+
+            .station-title { font-size: 15px; }
+            .station-tag { font-size: 12.5px; padding: 3px 10px; }
+            .pod-status { font-size: 11px; padding: 3px 10px; }
+            .active-pod-truck .big-plate { font-size: 38px; letter-spacing: 3px; }
+            .active-pod-truck .q-door { font-size: 16px; }
+            .active-pod-truck .meta-row { font-size: 12.5px; }
+            .led-step { height: 11px; }
+            .pod-q-item { font-size: 12px; }
+
+            .th-bar { padding: 8px 16px; }
+            .th-bar h3 { font-size: 13px; }
+            .th-bar .cnt { font-size: 11px; }
+            table.qtab { font-size: 13.5px; }
+            table.qtab th { font-size: 11px; padding: 8px 10px; }
+            table.qtab td { padding: 7px 10px; }
+            .stb { font-size: 10.5px; padding: 3px 8px; }
+
+            :root { --ticker-h: 46px; }
+            .tv-ticker { height: 46px; min-height: 46px; }
+            .ticker-badge { font-size: 12px; padding: 0 16px; }
+            .ticker-item { font-size: 13.5px; }
+        }
     </style>
 </head>
 <body>
@@ -1128,6 +1177,7 @@
         </div>
         <div class="hdr-right">
             <a href="/display" class="board-nav-btn" title="Switch to Live Truck Dispatch Queue Board">📺 TRUCK QUEUE ↗</a>
+            <button class="board-nav-btn tv-btn-fs" onclick="toggleSapTvFullscreen()" title="Toggle Fullscreen TV Mode" type="button">⛶ FULLSCREEN</button>
             <div class="hdr-clock-group">
                 <div class="time" id="tvClock">--:--:--</div>
                 <div class="date" id="tvDate">--------</div>
@@ -1714,6 +1764,18 @@
                 if (btnCards) btnCards.classList.remove('active');
                 if (swipeHint && window.innerWidth <= 767) swipeHint.style.display = 'inline-flex';
                 try { localStorage.setItem('mhc_sap_view_mode', 'table'); } catch(e) {}
+            }
+        }
+
+        function toggleSapTvFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('[SAP TV Fullscreen] Request error:', err);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
             }
         }
 
