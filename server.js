@@ -109,7 +109,7 @@ function requirePermission(permission) {
             if (!allowedRoles.includes(req.user.role)) {
                 return res.status(403).json({
                     success: false,
-                    error: `Access Denied: ang role mong "${req.user.role}" ay walang pahintulot sa action na ito.`
+                    error: `Access Denied: Your role "${req.user.role}" does not have permission to perform this action.`
                 });
             }
             next();
