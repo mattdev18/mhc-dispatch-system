@@ -2305,6 +2305,12 @@ function openQuickDepartModal(truckId) {
     const truckIdInput = document.getElementById('quickDepartTruckId');
     if (truckIdInput) truckIdInput.value = selectedTruckForQuickDepart.id;
 
+    const reasonSelect = document.getElementById('quickDepartReason');
+    if (reasonSelect) reasonSelect.selectedIndex = 0;
+
+    const customReasonInput = document.getElementById('quickDepartCustomReason');
+    if (customReasonInput) customReasonInput.value = '';
+
     const summaryEl = document.getElementById('quickDepartTruckSummary');
     if (summaryEl) {
         const ts = selectedTruckForQuickDepart.arrival_timestamp || selectedTruckForQuickDepart.created_at;
@@ -2336,13 +2342,35 @@ function closeQuickDepartModal() {
     selectedTruckForQuickDepart = null;
 }
 
+function onQuickDepartReasonChange() {
+    const sel = document.getElementById('quickDepartReason');
+    const customInput = document.getElementById('quickDepartCustomReason');
+    if (sel && customInput && sel.value.startsWith('Other')) {
+        customInput.focus();
+    }
+}
+
 async function executeQuickDepart() {
     const truckIdInput = document.getElementById('quickDepartTruckId');
     const truckId = truckIdInput ? truckIdInput.value : null;
     const reasonSelect = document.getElementById('quickDepartReason');
-    const reason = reasonSelect ? reasonSelect.value : '';
+    const customReasonInput = document.getElementById('quickDepartCustomReason');
+    const selectedReason = reasonSelect ? reasonSelect.value.trim() : '';
+    const customReason = customReasonInput ? customReasonInput.value.trim() : '';
 
     if (!truckId) return;
+
+    let finalReason = selectedReason;
+    if (selectedReason.startsWith('Other') || !selectedReason) {
+        if (!customReason) {
+            alert('Please enter your specific audit reason.');
+            if (customReasonInput) customReasonInput.focus();
+            return;
+        }
+        finalReason = customReason;
+    } else if (customReason) {
+        finalReason = `${selectedReason} — Notes: ${customReason}`;
+    }
 
     const btn = document.getElementById('btnConfirmQuickDepart');
     if (btn) {
@@ -2358,7 +2386,7 @@ async function executeQuickDepart() {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
             },
-            body: JSON.stringify({ reason: reason })
+            body: JSON.stringify({ reason: finalReason })
         });
 
         const data = await res.json();

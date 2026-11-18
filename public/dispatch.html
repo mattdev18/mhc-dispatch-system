@@ -753,9 +753,9 @@
                         This remark will be permanently logged and displayed in the downloadable Excel / CSV dispatch report.
                     </small>
                 </label>
-                <select id="quickDepartReason" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box; margin-bottom: 16px; background: white; font-weight: 600; color: #0f172a;">
+                <select id="quickDepartReason" onchange="onQuickDepartReasonChange()" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; background: white; font-weight: 600; color: #0f172a;">
                     <option value="Procedural Non-Compliance: Warehouse Recorder failed to follow step-by-step dispatch workflow" selected>
-                        ⭐ Procedural Non-Compliance: Warehouse Recorder failed to follow step-by-step dispatch workflow
+                        Procedural Non-Compliance: Warehouse Recorder failed to follow step-by-step dispatch workflow
                     </option>
                     <option value="Gate Reconciled: Physical departure confirmed via Gate Security exit logbook">
                         Gate Reconciled: Physical departure confirmed via Gate Security exit logbook
@@ -766,7 +766,18 @@
                     <option value="Pull-Out / Re-routed: Vehicle exited plant premises without loading">
                         Pull-Out / Re-routed: Vehicle exited plant premises without loading
                     </option>
+                    <option value="Other / Custom Reason (Specify below)">
+                        Other / Custom Reason (Specify below)
+                    </option>
                 </select>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">
+                        Specify Reason / Additional Remarks
+                        <small style="font-size: 11px; color: #64748b; font-weight: normal; margin-left: 4px;">(Type reason or additional audit notes)</small>
+                    </label>
+                    <textarea id="quickDepartCustomReason" rows="2" placeholder="Type reason or custom audit remarks here..." style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box; font-family: inherit; resize: vertical; color: #0f172a;"></textarea>
+                </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
                     <button type="button" class="btn btn-secondary" onclick="closeQuickDepartModal()">Cancel</button>
