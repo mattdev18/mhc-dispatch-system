@@ -372,4 +372,4 @@ document.addEventListener('click', () => {
 
 // Initial Load & Heartbeat
 fetchQueueData();
-setInterval(fetchQueueData, 10000); // Poll every 10s as backup
+setInterval(fetchQueueData, 60000); // 60s fallback (Socket.IO pushes live real-time updates instantly)

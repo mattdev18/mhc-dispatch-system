@@ -1888,7 +1888,7 @@
         } catch(e) {}
 
         fetchSapQueue();
-        setInterval(fetchSapQueue, 10000); // 10s auto-refresh fallback
+        setInterval(fetchSapQueue, 60000); // 60s fallback (Socket.IO pushes live real-time updates instantly)
 
         window.addEventListener('resize', () => {
             const table = document.querySelector('.qtab');
