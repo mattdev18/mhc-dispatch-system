@@ -7,7 +7,7 @@ let todayTrucks = [];
 let todayStats = {};
 let activeDoors = {};
 let selectedTruckForModal = null;
-let currentScope = '7days';
+let currentScope = 'today_only';
 
 function setQueueScope(scope) {
     currentScope = scope;
