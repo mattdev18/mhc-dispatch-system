@@ -558,11 +558,7 @@
 
                 if (!data.success) {
                     loginAlert.style.display = 'block';
-                    if (res.status === 401 || (data.error && data.error.toLowerCase().includes('invalid'))) {
-                        loginAlert.textContent = 'Wrong username or password. Please try again.';
-                    } else {
-                        loginAlert.textContent = data.error || 'Wrong username or password. Please try again.';
-                    }
+                    loginAlert.textContent = data.error || 'Wrong username or password. Please try again.';
 
                     // Reset Button State
                     loginBtn.disabled = false;
@@ -591,6 +587,19 @@
                 btnIcon.className = '';
                 btnIcon.innerHTML = DEFAULT_BTN_ICON_HTML;
                 btnText.textContent = 'Sign In to Dispatch Station';
+            }
+        });
+
+        // Security Deterrent: Disable Right-Click and DevTools Shortcuts (F12, Ctrl+Shift+I/J/C, Ctrl+U)
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('keydown', (e) => {
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+                (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+            ) {
+                e.preventDefault();
+                return false;
             }
         });
     </script>
