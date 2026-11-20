@@ -1,0 +1,10 @@
+name = "mhc-dispatch-system"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[vars]
+RENDER_ORIGIN = "https://mhc-dispatch-system.onrender.com"
