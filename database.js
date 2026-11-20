@@ -181,11 +181,11 @@ async function initDB() {
     // Sync 5 staff users from environment variables.
     // Passwords come ONLY from Render environment variables (no defaults in code).
     const staffUsers = [
-        { username: 'admin',       env: 'MHC_ADMIN',       name: 'Plant Administrator', role: 'admin',      fallback: 'adminMHC@2026!' },
+        { username: 'admin',       env: 'MHC_ADMIN',       name: 'Plant Administrator', role: 'admin',      fallback: 'admiralsMHC@2026' },
         { username: 'dispatcher1', env: 'MHC_DISPATCHER1', name: 'Lead Dispatcher',     role: 'dispatcher', fallback: 'dispatch1MHC@2026!' },
-        { username: 'dispatcher2', env: 'MHC_DISPATCHER2', name: 'Shift Dispatcher',    role: 'dispatcher', fallback: 'dispatch2MHC@2026!' },
-        { username: 'guard',       env: 'MHC_GUARD',       name: 'Gate Security Guard', role: 'guard',      fallback: 'guardMHC@2026!' },
-        { username: 'warehouse',   env: 'MHC_WAREHOUSE',   name: 'Dock Supervisor',     role: 'warehouse',  fallback: 'dockMHC@2026!' }
+        { username: 'dispatcher2', env: 'MHC_DISPATCHER2', name: 'Shift Dispatcher',    role: 'dispatcher', fallback: 'Dispatch02MHC@2026!!' },
+        { username: 'guard',       env: 'MHC_GUARD',       name: 'Gate Security Guard', role: 'guard',      fallback: 'guardMHC@2026' },
+        { username: 'warehouse',   env: 'MHC_WAREHOUSE',   name: 'Dock Supervisor',     role: 'warehouse',  fallback: 'WH_MHC@2026+' }
     ];
 
     // Special case: seed or update sapanalyst with default password if env var is missing
