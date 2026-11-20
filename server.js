@@ -25,16 +25,59 @@ const sessions = new Map();
 app.use(cors());
 app.use(express.json());
 
-// Disable aggressive browser caching on all operational screens and APIs so updates reflect immediately
+// Disable aggressive browser caching and enforce bank-grade security headers
 app.use((req, res, next) => {
     res.set({
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         'Pragma': 'no-cache',
         'Expires': '0',
-        'Surrogate-Control': 'no-store'
+        'Surrogate-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'X-XSS-Protection': '1; mode=block',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
     });
     next();
 });
+
+// -------------------------------------------------------------
+// BANK-GRADE RATE LIMITING & BRUTE-FORCE SHIELD
+// -------------------------------------------------------------
+const failedLoginAttempts = new Map(); // key -> { count, lockedUntil }
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+function getClientIp(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+}
+
+function checkBruteForceLock(key) {
+    const record = failedLoginAttempts.get(key);
+    if (!record) return { isLocked: false };
+    if (record.lockedUntil && Date.now() < record.lockedUntil) {
+        const remainingMinutes = Math.ceil((record.lockedUntil - Date.now()) / 60000);
+        return { isLocked: true, remainingMinutes };
+    }
+    if (record.lockedUntil && Date.now() >= record.lockedUntil) {
+        failedLoginAttempts.delete(key);
+        return { isLocked: false };
+    }
+    return { isLocked: false };
+}
+
+function recordFailedLogin(key) {
+    const record = failedLoginAttempts.get(key) || { count: 0, lockedUntil: null };
+    record.count += 1;
+    if (record.count >= MAX_FAILED_ATTEMPTS) {
+        record.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+    }
+    failedLoginAttempts.set(key, record);
+    return record;
+}
+
+function clearLoginAttempts(key) {
+    failedLoginAttempts.delete(key);
+}
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -122,23 +165,50 @@ function requirePermission(permission) {
 // AUTHENTICATION APIS
 // -------------------------------------------------------------
 
-// Login
+// Login with Anti-Brute-Force & Rate-Limiting Protection
 app.post('/api/auth/login', async (req, res) => {
     try {
+        const ip = getClientIp(req);
         const { username, password } = req.body;
         if (!username || !password) {
             return res.status(400).json({ success: false, error: 'Please enter both username and password.' });
         }
 
+        const cleanUser = username.trim().toLowerCase();
+        const lockoutKey = `${ip}:${cleanUser}`;
+
+        // 1. Check if IP or username is currently locked out
+        const lockStatus = checkBruteForceLock(lockoutKey);
+        if (lockStatus.isLocked) {
+            return res.status(429).json({
+                success: false,
+                error: `Security Lockout: Too many failed login attempts. Please try again in ${lockStatus.remainingMinutes} minute(s).`
+            });
+        }
+
         const hashed = hashPassword(password);
         const user = await get(
-            `SELECT id, username, name, role FROM users WHERE LOWER(username) = LOWER(?) AND password = ?`,
-            [username.trim(), hashed]
+            `SELECT id, username, name, role FROM users WHERE LOWER(username) = ? AND password = ?`,
+            [cleanUser, hashed]
         );
 
         if (!user) {
-            return res.status(401).json({ success: false, error: 'Incorrect username or password.' });
+            const updatedRecord = recordFailedLogin(lockoutKey);
+            const attemptsLeft = Math.max(0, MAX_FAILED_ATTEMPTS - updatedRecord.count);
+            if (updatedRecord.lockedUntil) {
+                return res.status(429).json({
+                    success: false,
+                    error: `Security Alert: 5 failed attempts reached. Terminal locked for 15 minutes.`
+                });
+            }
+            return res.status(401).json({
+                success: false,
+                error: `Incorrect username or password. (${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining before security lockout)`
+            });
         }
+
+        // 2. Successful Login: Clear failed attempt record
+        clearLoginAttempts(lockoutKey);
 
         const token = crypto.randomBytes(32).toString('hex');
         sessions.set(token, user);
