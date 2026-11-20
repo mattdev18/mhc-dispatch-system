@@ -507,7 +507,29 @@ function renderTable() {
             }
         }
 
-        // Admin-Only Quick Depart button (Strictly visible only for trucks waiting over 12 hours)
+        // Admin Force Depart (override all checks)
+function forceDepartTruck(id) {
+    if (!confirm('ADMIN OVERRIDE: Force depart this truck regardless of document status?')) return;
+    const reason = prompt('Enter audit reason for force departure (optional):');
+    fetch('/api/trucks/' + encodeURIComponent(id) + '/force-depart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + getAuthToken()
+        },
+        body: JSON.stringify({ reason: reason || '' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            loadTodayData();
+        } else {
+            alert('Force depart failed: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(err => alert('Network error: ' + err.message));
+}
+
         if (role === 'admin' && isStaleOver12Hours) {
             actionButtons += '<button type="button" class="btn btn-admin-quick-depart" onclick="openQuickDepartModal(' + truck.id + ')" title="Plant Admin Only: Clear stale truck waiting over 12 hours that physically left earlier"><span>⚡ Quick Depart</span></button>';
         }

@@ -75,7 +75,8 @@ const PERMISSIONS = {
     'users:manage':     ['admin'],
     'queue:reset':      ['admin'],
     'trucks:priority':  ['admin'],
-    'trucks:quick_depart': ['admin']
+    'trucks:quick_depart': ['admin'],
+    'trucks:force_depart': ['admin']
 };
 
 // Aling page/screen ang puwedeng buksan ng bawat role
