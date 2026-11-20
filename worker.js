@@ -4,7 +4,7 @@ export default {
 
     // Forward API and WebSocket / Socket.IO requests to the Render backend
     if (url.pathname.startsWith('/api') || url.pathname.startsWith('/socket.io')) {
-      const renderOrigin = env.RENDER_ORIGIN || 'https://mhc-dispatch-system.onrender.com';
+      const renderOrigin = env.RENDER_ORIGIN || 'https://mhc-dispatch-system.fly.dev';
       const targetUrl = new URL(request.url);
       const targetBase = new URL(renderOrigin);
       targetUrl.protocol = targetBase.protocol;
