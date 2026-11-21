@@ -50,8 +50,21 @@
     }
 
     fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
-        .then(function (res) { return res.ok ? res.json() : Promise.reject(new Error('not logged in')); })
+        .then(function (res) {
+            if (res.status === 401) {
+                location.replace('/login');
+                return null;
+            }
+            if (!res.ok) {
+                // Temporary server glitch or cold start; do not logout
+                document.documentElement.style.visibility = '';
+                return null;
+            }
+            return res.json();
+        })
         .then(function (data) {
+            if (!data || !data.screens) return;
+
             // Role not allowed on this page -> redirect to home
             if (!data.screens.includes(screen)) {
                 alert('Your role does not have access to this page.');
@@ -78,7 +91,8 @@
                 document.documentElement.style.visibility = '';
             });
         })
-        .catch(function () {
-            location.replace('/login');
+        .catch(function (err) {
+            console.warn('RBAC Auth verification network error:', err);
+            document.documentElement.style.visibility = '';
         });
 })();

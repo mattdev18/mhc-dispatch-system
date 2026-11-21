@@ -173,6 +173,19 @@ async function initDB() {
         )
     `);
 
+    // Sessions Table (Persistent Database-Backed User Sessions)
+    await client.execute(`
+        CREATE TABLE IF NOT EXISTS user_sessions (
+            token TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_active DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     // Seed Plant Name
     await client.execute(`
         INSERT OR IGNORE INTO settings (key, value) VALUES ('plant_name', 'MAY HARVEST CORPORATION')
@@ -236,4 +249,23 @@ async function initDB() {
     console.log('--------------------------------------------------');
 }
 
-module.exports = { run, get, all, initDB, hashPassword };
+async function saveSession(token, user) {
+    if (!token || !user) return;
+    await run(
+        `INSERT OR REPLACE INTO user_sessions (token, user_id, username, name, role, last_active) VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+        [token, user.id, user.username, user.name, user.role]
+    );
+}
+
+async function getSession(token) {
+    if (!token) return null;
+    const row = await get(`SELECT user_id as id, username, name, role FROM user_sessions WHERE token = ?`, [token]);
+    return row || null;
+}
+
+async function deleteSession(token) {
+    if (!token) return;
+    await run(`DELETE FROM user_sessions WHERE token = ?`, [token]);
+}
+
+module.exports = { run, get, all, initDB, hashPassword, saveSession, getSession, deleteSession };

@@ -7,7 +7,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
-const { run, get, all, initDB, hashPassword } = require('./database');
+const { run, get, all, initDB, hashPassword, saveSession, getSession, deleteSession } = require('./database');
 
 const app = express();
 const server = http.createServer(app);
@@ -81,19 +81,32 @@ function clearLoginAttempts(key) {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Authentication Middleware for Protected Actions
-function requireAuth(req, res, next) {
+// Authentication Middleware for Protected Actions (Persistent Database & Memory Cache)
+async function requireAuth(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader ? authHeader.replace('Bearer ', '').trim() : req.headers['x-auth-token'];
 
-    if (!token || !sessions.has(token)) {
+    if (!token) {
         return res.status(401).json({
             success: false,
             error: 'Access Denied: Please log in with an authorized staff account.'
         });
     }
 
-    req.user = sessions.get(token);
+    let user = sessions.get(token);
+    if (!user) {
+        user = await getSession(token);
+        if (user) sessions.set(token, user);
+    }
+
+    if (!user) {
+        return res.status(401).json({
+            success: false,
+            error: 'Access Denied: Session expired. Please log in again.'
+        });
+    }
+
+    req.user = user;
     next();
 }
 
@@ -212,6 +225,7 @@ app.post('/api/auth/login', async (req, res) => {
 
         const token = crypto.randomBytes(32).toString('hex');
         sessions.set(token, user);
+        await saveSession(token, user);
 
         res.json({
             success: true,
@@ -231,22 +245,34 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Verify Current Session
-app.get('/api/auth/me', (req, res) => {
+app.get('/api/auth/me', async (req, res) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader ? authHeader.replace('Bearer ', '').trim() : req.headers['x-auth-token'];
 
-    if (token && sessions.has(token)) {
-        const u = sessions.get(token);
+    if (!token) {
+        return res.status(401).json({ success: false, error: 'Not logged in' });
+    }
+
+    let u = sessions.get(token);
+    if (!u) {
+        u = await getSession(token);
+        if (u) sessions.set(token, u);
+    }
+
+    if (u) {
         return res.json({ success: true, user: u, screens: screensFor(u.role), home: HOME_PAGE[u.role] || '/login' });
     }
     res.status(401).json({ success: false, error: 'Not logged in' });
 });
 
 // Logout
-app.post('/api/auth/logout', (req, res) => {
+app.post('/api/auth/logout', async (req, res) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader ? authHeader.replace('Bearer ', '').trim() : req.headers['x-auth-token'];
-    if (token) sessions.delete(token);
+    if (token) {
+        sessions.delete(token);
+        await deleteSession(token);
+    }
     res.json({ success: true, message: 'Logged out successfully' });
 });
 
