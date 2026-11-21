@@ -1284,7 +1284,7 @@ async function executeSapTransferWarehouse() {
 // ---- Core API caller for SAP flow ----
 async function callSapFlow(id, fields) {
     try {
-        const token = localStorage.getItem('mhc_token');
+        const token = (typeof getAuthToken === 'function') ? getAuthToken() : (localStorage.getItem('mhc_auth_token') || sessionStorage.getItem('mhc_auth_token'));
         const res = await fetch(`/api/trucks/${id}/sap-flow`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -1371,7 +1371,7 @@ async function executeSaveRecorder() {
     closeRecorderModal();
 
     try {
-        const token = localStorage.getItem('mhc_token');
+        const token = (typeof getAuthToken === 'function') ? getAuthToken() : (localStorage.getItem('mhc_auth_token') || sessionStorage.getItem('mhc_auth_token'));
         const res = await fetch(`/api/trucks/${id}/warehouse-recorder`, {
             method: 'POST',
             headers: {
