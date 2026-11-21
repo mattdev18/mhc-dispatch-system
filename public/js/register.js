@@ -47,9 +47,15 @@ form.addEventListener('submit', async (e) => {
     submitBtn.textContent = 'Registering Truck...';
 
     try {
+        const token = (typeof getAuthToken === 'function') ? getAuthToken() : (localStorage.getItem('mhc_auth_token') || sessionStorage.getItem('mhc_auth_token'));
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+
         const res = await fetch('/api/trucks/register', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify(payload)
         });
 

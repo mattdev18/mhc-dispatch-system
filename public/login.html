@@ -577,7 +577,7 @@
                 }
 
                 const params = new URLSearchParams(window.location.search);
-                const returnUrl = params.get('returnUrl') || '/dispatch';
+                const returnUrl = params.get('returnUrl') || data.home || (data.user && data.user.role === 'guard' ? '/' : '/dispatch');
                 window.location.href = returnUrl;
 
             } catch (err) {
