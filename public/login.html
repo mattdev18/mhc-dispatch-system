@@ -477,12 +477,29 @@
 
     <script src="/js/auth.js"></script>
     <script>
-        // Redirect if already authenticated
-        if (typeof getAuthToken === 'function' && getAuthToken()) {
-            const params = new URLSearchParams(window.location.search);
-            const returnUrl = params.get('returnUrl') || '/dispatch';
-            window.location.href = returnUrl;
-        }
+        // Check existing auth token if valid before redirecting
+        (async function checkExistingAuth() {
+            const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success) {
+                        const params = new URLSearchParams(window.location.search);
+                        const returnUrl = params.get('returnUrl') || data.home || (data.user && data.user.role === 'guard' ? '/' : '/dispatch');
+                        window.location.href = returnUrl;
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            // If token is invalid or expired, clear it cleanly to avoid infinite redirect loop
+            if (typeof clearAuthSession === 'function') clearAuthSession();
+        })();
 
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');

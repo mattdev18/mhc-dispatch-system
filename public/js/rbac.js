@@ -35,6 +35,24 @@
         return null;
     }
 
+    function clearAllAuthTokens() {
+        try {
+            localStorage.removeItem('mhc_auth_token');
+            localStorage.removeItem('mhc_auth_user');
+            sessionStorage.removeItem('mhc_auth_token');
+            sessionStorage.removeItem('mhc_auth_user');
+            for (const store of [localStorage, sessionStorage]) {
+                const toRemove = [];
+                for (let i = 0; i < store.length; i++) {
+                    const k = store.key(i);
+                    const v = store.getItem(k);
+                    if (v && /^[a-f0-9]{64}$/.test(v)) toRemove.push(k);
+                }
+                toRemove.forEach(function (k) { store.removeItem(k); });
+            }
+        } catch (e) {}
+    }
+
     function whenDomReady(fn) {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', fn);
@@ -52,6 +70,7 @@
     fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
         .then(function (res) {
             if (res.status === 401) {
+                clearAllAuthTokens();
                 location.replace('/login');
                 return null;
             }
