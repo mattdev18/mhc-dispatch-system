@@ -390,9 +390,10 @@ async function getAvailableDoor() {
 // API: Get trucks (Defaults to past 7 days + all currently active trucks)
 async function handleGetTrucks(req, res) {
     try {
-        const today = getTodayString();
-        const scope = req.query.scope || '7days';
-        const days = parseInt(req.query.days) || 7;
+        const actualToday = getActualDateString();
+        const cycleToday = getTodayString(12);
+        const scope = req.query.scope || 'today_only';
+        const days = parseInt(req.query.days) || 1;
         const startDate = getDateDaysAgo(days - 1);
 
         const cycleCutoff = getCurrentCycleCutoffIso();
@@ -405,7 +406,20 @@ async function handleGetTrucks(req, res) {
         let query = '';
         let params = [];
 
-        if (scope === 'sap_tv' || scope === 'current_cycle') {
+        if (scope === 'today_only' || days === 1) {
+            // "Today" Operational Cycle:
+            // ALL trucks starting from Queue 1 of the current cycle (from last reset or 12:00 PM cutoff),
+            // INCLUDING Departed trucks, Completed trucks, and any active trucks!
+            query = `
+                SELECT * FROM trucks 
+                WHERE (arrival_timestamp >= ? OR created_at >= ?)
+                   OR date = ?
+                   OR date = ?
+                   OR status IN ('Waiting', 'Called', 'Loading', 'Completed')
+                ORDER BY id ASC
+            `;
+            params = [effectiveCutoff, effectiveCutoff, actualToday, cycleToday];
+        } else if (scope === 'sap_tv' || scope === 'current_cycle') {
             // Live SAP Board:
             // 1. ALL active trucks in plant (Waiting, Called, Loading, Completed)
             // 2. Departed trucks ONLY starting from Queue 1 of the current day/cycle (arrival_timestamp >= effectiveCutoff)
@@ -413,14 +427,10 @@ async function handleGetTrucks(req, res) {
                 SELECT * FROM trucks 
                 WHERE status IN ('Waiting', 'Called', 'Loading', 'Completed') 
                    OR (status = 'Departed' AND arrival_timestamp >= ?)
-                   OR (status = 'Departed' AND date = ? AND (arrival_timestamp IS NULL OR arrival_timestamp >= ?))
+                   OR (status = 'Departed' AND (date = ? OR date = ?) AND (arrival_timestamp IS NULL OR arrival_timestamp >= ?))
                 ORDER BY id ASC
             `;
-            params = [effectiveCutoff, today, effectiveCutoff];
-        } else if (scope === 'today_only' || days === 1) {
-            // Today's trucks PLUS any active or Completed (pending Depart Plant) trucks from any date
-            query = `SELECT * FROM trucks WHERE date = ? OR status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
-            params = [today];
+            params = [effectiveCutoff, actualToday, cycleToday, effectiveCutoff];
         } else if (scope === 'active_only') {
             // Active trucks + Completed (pending Depart Plant)
             query = `SELECT * FROM trucks WHERE status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
@@ -432,7 +442,7 @@ async function handleGetTrucks(req, res) {
         }
 
         const trucks = await all(query, params);
-        res.json({ success: true, date: today, startDate, scope, days, effectiveCutoff, count: trucks.length, trucks });
+        res.json({ success: true, date: actualToday, startDate, scope, days, effectiveCutoff, count: trucks.length, trucks });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
@@ -441,11 +451,19 @@ async function handleGetTrucks(req, res) {
 app.get('/api/trucks/today', handleGetTrucks);
 app.get('/api/trucks', handleGetTrucks);
 
-// API: Get stats (Active counts across all active trucks + 7-day stats)
+// API: Get stats (Active counts across all active trucks + Today & 7-day stats)
 app.get('/api/stats/today', async (req, res) => {
     try {
-        const today = getTodayString();
+        const actualToday = getActualDateString();
+        const cycleToday = getTodayString(12);
         const weekStartDate = getDateDaysAgo(6);
+
+        const cycleCutoff = getCurrentCycleCutoffIso();
+        const resetCfg = await get(`SELECT value FROM settings WHERE key = 'last_queue_reset'`);
+        let effectiveCutoff = cycleCutoff;
+        if (resetCfg && resetCfg.value && resetCfg.value > cycleCutoff) {
+            effectiveCutoff = resetCfg.value;
+        }
 
         // 1. Active trucks currently in plant (regardless of arrival date)
         const activeRows = await all(
@@ -467,10 +485,12 @@ app.get('/api/stats/today', async (req, res) => {
             if (stats[r.status] !== undefined) stats[r.status] = r.count;
         });
 
-        // 2. Today's completed and totals
+        // 2. Today / Current Cycle totals (from Queue 1 of this cycle up to the reset)
         const todayRows = await all(
-            `SELECT status, count(*) as count FROM trucks WHERE date = ? GROUP BY status`,
-            [today]
+            `SELECT status, count(*) as count FROM trucks 
+             WHERE (arrival_timestamp >= ? OR created_at >= ? OR date = ? OR date = ?) 
+             GROUP BY status`,
+            [effectiveCutoff, effectiveCutoff, actualToday, cycleToday]
         );
         todayRows.forEach(r => {
             if (r.status === 'Completed') stats.Completed = r.count;

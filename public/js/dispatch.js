@@ -9,6 +9,16 @@ let activeDoors = {};
 let selectedTruckForModal = null;
 let currentScope = 'today_only';
 
+function getFinishedActionBadge(status) {
+    if (status === 'Departed') {
+        return `<span class="badge" style="background:#f0fdf4;color:#166534;border:1.5px solid #86efac;font-weight:800;font-size:11px;padding:4px 8px;border-radius:6px;">🏁 Plant Departed</span>`;
+    }
+    if (status === 'Cancelled') {
+        return `<span class="badge" style="background:#fef2f2;color:#991b1b;border:1.5px solid #fca5a5;font-weight:800;font-size:11px;padding:4px 8px;border-radius:6px;">❌ Cancelled</span>`;
+    }
+    return `<span style="color:#94a3b8;font-size:12px;">Finished</span>`;
+}
+
 // Robust truck finder that handles string IDs (from PostgreSQL/Supabase) and number IDs seamlessly
 function getTruckFromCache(id) {
     if (id === null || id === undefined) return null;
@@ -399,7 +409,7 @@ function renderTable() {
                     </div>
                 `;
             } else {
-                actionButtons = `<span style="color:#94a3b8;font-size:12px;">Finished</span>`;
+                actionButtons = getFinishedActionBadge(truck.status);
             }
 
         // ── SAP ANALYST: only SAP flow on Completed/Loading trucks ────────
@@ -430,7 +440,7 @@ function renderTable() {
                 // Admin = Dispatcher buttons + All SAP buttons combined
                 actionButtons = buildAdminCompletedButtons(truck);
             } else {
-                actionButtons = `<span style="color:#94a3b8;font-size:12px;">Finished</span>`;
+                actionButtons = getFinishedActionBadge(truck.status);
             }
 
         // ── FALLBACK (unknown role) ───────────────────────────────────────
@@ -452,7 +462,7 @@ function renderTable() {
             } else if (truck.status === 'Completed') {
                 actionButtons = `<button class="btn btn-secondary" style="font-size: 11px; padding: 6px 10px;" onclick="departTruck(${truck.id})">🚛 Depart Plant</button>`;
             } else {
-                actionButtons = `<span style="color:#94a3b8;font-size:12px;">Finished</span>`;
+                actionButtons = getFinishedActionBadge(truck.status);
             }
         }
 
@@ -567,6 +577,7 @@ function forceDepartTruck(id) {
                 <td>${escapeHtml(truck.destination)}</td>
                 <td>
                     <div>${escapeHtml(truck.arrival_time)}</div>
+                    ${truck.departed_time ? `<div style="font-size: 10.5px; font-weight: 700; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 1px 5px; margin-top: 3px; display: inline-block;">🏁 Departed: ${escapeHtml(truck.departed_time)}</div>` : ''}
                     ${elapsedBadge}
                     ${departReadyBadge}
                 </td>
