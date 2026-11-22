@@ -1,11 +1,31 @@
 process.env.TZ = 'Asia/Manila';
 const crypto = require('crypto');
 const { createClient } = require('@libsql/client');
+const { Pool } = require('pg');
 
+let pgPool = null;
 let dbClient = null;
 
 function hashPassword(pwd) {
     return crypto.createHash('sha256').update(String(pwd)).digest('hex');
+}
+
+function getDatabaseType() {
+    if (process.env.DATABASE_URL || process.env.SUPABASE_DB_URL) return 'postgres';
+    if (process.env.TURSO_DB_URL && process.env.TURSO_DB_TOKEN) return 'turso';
+    return 'sqlite';
+}
+
+function getPgPool() {
+    if (!pgPool) {
+        const connStr = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+        pgPool = new Pool({
+            connectionString: connStr,
+            ssl: { rejectUnauthorized: false }
+        });
+        console.log('[DB] Connected to Supabase PostgreSQL Cloud Database');
+    }
+    return pgPool;
 }
 
 function getClient() {
@@ -28,8 +48,31 @@ function getClient() {
     return dbClient;
 }
 
+function convertSqlToPg(sql) {
+    let idx = 1;
+    let converted = sql.replace(/\?/g, () => `$${idx++}`);
+    converted = converted.replace(/datetime\('now'\)/gi, 'NOW()');
+    converted = converted.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+settings\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/gi, 'INSERT INTO settings ($1) VALUES ($2) ON CONFLICT (key) DO NOTHING');
+    converted = converted.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+settings\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/gi, 'INSERT INTO settings ($1) VALUES ($2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value');
+    converted = converted.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+user_sessions\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/gi, 'INSERT INTO user_sessions ($1) VALUES ($2) ON CONFLICT (token) DO UPDATE SET last_active = NOW()');
+    return converted;
+}
+
 // Execute a write query (INSERT, UPDATE, DELETE, CREATE)
 async function run(sql, params = []) {
+    if (getDatabaseType() === 'postgres') {
+        const pool = getPgPool();
+        let pgSql = convertSqlToPg(sql);
+        if (/INSERT\s+INTO\s+trucks/i.test(pgSql) && !/RETURNING/i.test(pgSql)) {
+            pgSql += ' RETURNING id';
+        }
+        const result = await pool.query(pgSql, params);
+        return {
+            lastID: result.rows && result.rows.length > 0 && result.rows[0].id ? Number(result.rows[0].id) : (result.rowCount ?? 0),
+            changes: result.rowCount ?? 0
+        };
+    }
+
     const client = getClient();
     const result = await client.execute({ sql, args: params });
     return {
@@ -40,6 +83,16 @@ async function run(sql, params = []) {
 
 // Execute and return ONE row
 async function get(sql, params = []) {
+    if (getDatabaseType() === 'postgres') {
+        const pool = getPgPool();
+        const pgSql = convertSqlToPg(sql);
+        const result = await pool.query(pgSql, params);
+        if (result.rows && result.rows.length > 0) {
+            return result.rows[0];
+        }
+        return null;
+    }
+
     const client = getClient();
     const result = await client.execute({ sql, args: params });
     if (result.rows && result.rows.length > 0) {
@@ -50,6 +103,13 @@ async function get(sql, params = []) {
 
 // Execute and return ALL rows
 async function all(sql, params = []) {
+    if (getDatabaseType() === 'postgres') {
+        const pool = getPgPool();
+        const pgSql = convertSqlToPg(sql);
+        const result = await pool.query(pgSql, params);
+        return result.rows || [];
+    }
+
     const client = getClient();
     const result = await client.execute({ sql, args: params });
     if (!result.rows) return [];
@@ -69,6 +129,26 @@ function rowToObject(row, columns) {
 
 // Initialize schema and seed staff users
 async function initDB() {
+    if (getDatabaseType() === 'postgres') {
+        const pool = getPgPool();
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS public.user_sessions (
+                token TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                name TEXT NOT NULL,
+                role TEXT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                last_active TIMESTAMPTZ DEFAULT NOW()
+            )
+        `);
+        console.log('--------------------------------------------------');
+        console.log('Database initialized successfully.');
+        console.log('Mode: Supabase PostgreSQL (Cloud)');
+        console.log('--------------------------------------------------');
+        return;
+    }
+
     const client = getClient();
 
     // Trucks Table
