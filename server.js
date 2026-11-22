@@ -139,8 +139,8 @@ const PERMISSIONS = {
     'trucks:cancel':    ['admin', 'dispatcher'],
     // SAP OTC flow & Warehouse runner flow — dispatcher, sapanalyst, warehouse, and admin
     'trucks:sap_flow':  ['admin', 'sapanalyst', 'dispatcher', 'warehouse'],
-    // Reports & Downloadable Logs (Admin, Dispatcher, SAP Analyst, Warehouse)
-    'reports:view':     ['admin', 'dispatcher', 'sapanalyst', 'warehouse'],
+    // Reports & Downloadable Logs (Admin, SAP Analyst, Warehouse only — strictly no Dispatcher)
+    'reports:view':     ['admin', 'sapanalyst', 'warehouse'],
     // Admin only
     'users:manage':     ['admin'],
     'queue:reset':      ['admin'],
@@ -154,7 +154,7 @@ const SCREEN_ACCESS = {
     register: ['admin', 'guard'],                                           // index.html — Gate Registration
     dispatch: ['admin', 'dispatcher', 'warehouse', 'sapanalyst'],           // dispatch.html
     display:  ['admin', 'dispatcher', 'warehouse', 'sapanalyst', 'guard'], // display.html — Live TV Queue (public)
-    reports:  ['admin', 'dispatcher', 'sapanalyst', 'warehouse'],           // reports.html — Reports & Logs (Download)
+    reports:  ['admin', 'sapanalyst', 'warehouse'],                         // reports.html — Reports & Logs (Admin, SAP, WH only)
     'sap-tv': ['admin', 'sapanalyst', 'dispatcher', 'warehouse', 'guard']           // sap-tv.html — Live TV SAP Documentation
 };
 
