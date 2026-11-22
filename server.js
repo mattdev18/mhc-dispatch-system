@@ -423,6 +423,11 @@ async function handleGetTrucks(req, res) {
                 ORDER BY id ASC
             `;
             params = [effectiveCutoff, effectiveCutoff, actualToday, cycleToday];
+        } else if (scope === '3days') {
+            // Strictly Past 3 Days:
+            const past3DaysStart = getDateDaysAgo(2); // today, yesterday, 2 days ago = 3 days
+            query = `SELECT * FROM trucks WHERE date >= ? OR status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
+            params = [past3DaysStart];
         } else if (scope === 'sap_tv' || scope === 'current_cycle') {
             // Live SAP Board:
             // 1. ALL active trucks in plant (Waiting, Called, Loading, Completed)
@@ -436,8 +441,8 @@ async function handleGetTrucks(req, res) {
             `;
             params = [effectiveCutoff, actualToday, cycleToday, effectiveCutoff];
         } else {
-            // Default 7 days (1 week) PLUS any active or Completed (pending Depart Plant) trucks
-            const numDays = parseInt(req.query.days) || 7;
+            // Past 3 days (or custom req.query.days)
+            const numDays = parseInt(req.query.days) || 3;
             const pastStartDate = getDateDaysAgo(numDays - 1);
             query = `SELECT * FROM trucks WHERE date >= ? OR status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
             params = [pastStartDate];

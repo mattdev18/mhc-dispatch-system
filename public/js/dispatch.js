@@ -27,13 +27,13 @@ function getTruckFromCache(id) {
 
 function setQueueScope(scope) {
     currentScope = scope;
-    ['btnScope7Days', 'btnScopeToday', 'btnScopeActive'].forEach(id => {
+    ['btnScope3Days', 'btnScope7Days', 'btnScopeToday', 'btnScopeActive'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.className = 'btn btn-outline';
     });
 
-    if (scope === '7days') {
-        const b = document.getElementById('btnScope7Days');
+    if (scope === '3days' || scope === '7days') {
+        const b = document.getElementById('btnScope3Days') || document.getElementById('btnScope7Days');
         if (b) b.className = 'btn btn-primary';
     } else if (scope === 'today_only') {
         const b = document.getElementById('btnScopeToday');
