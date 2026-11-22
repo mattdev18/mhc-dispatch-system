@@ -49,12 +49,19 @@ function getClient() {
 }
 
 function convertSqlToPg(sql) {
+    let converted = sql;
+    // Replace SQLite-specific INSERT OR REPLACE / IGNORE
+    if (/INSERT\s+OR\s+REPLACE\s+INTO\s+user_sessions/i.test(converted)) {
+        converted = 'INSERT INTO user_sessions (token, user_id, username, name, role, last_active) VALUES (?, ?, ?, ?, ?, NOW()) ON CONFLICT (token) DO UPDATE SET last_active = NOW()';
+    } else if (/INSERT\s+OR\s+REPLACE\s+INTO\s+settings/i.test(converted)) {
+        converted = 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value';
+    } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+settings/i.test(converted)) {
+        converted = 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING';
+    }
+
     let idx = 1;
-    let converted = sql.replace(/\?/g, () => `$${idx++}`);
+    converted = converted.replace(/\?/g, () => `$${idx++}`);
     converted = converted.replace(/datetime\('now'\)/gi, 'NOW()');
-    converted = converted.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+settings\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/gi, 'INSERT INTO settings ($1) VALUES ($2) ON CONFLICT (key) DO NOTHING');
-    converted = converted.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+settings\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/gi, 'INSERT INTO settings ($1) VALUES ($2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value');
-    converted = converted.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+user_sessions\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/gi, 'INSERT INTO user_sessions ($1) VALUES ($2) ON CONFLICT (token) DO UPDATE SET last_active = NOW()');
     return converted;
 }
 
