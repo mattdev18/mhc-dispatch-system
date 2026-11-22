@@ -7,4 +7,4 @@ directory = "./public"
 binding = "ASSETS"
 
 [vars]
-RENDER_ORIGIN = "https://mhc-dispatch-system.fly.dev"
+RENDER_ORIGIN = "https://mhc-dispatch-system-oh4w.onrender.com"

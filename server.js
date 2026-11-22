@@ -28,16 +28,23 @@ app.use(express.json());
 
 // Disable aggressive browser caching and enforce bank-grade security headers
 app.use((req, res, next) => {
+    // Security headers for all requests
     res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'SAMEORIGIN',
         'X-XSS-Protection': '1; mode=block',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
     });
+
+    // Only API endpoints should bypass caching; static files will use browser cache
+    if (req.path.startsWith('/api')) {
+        res.set({
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Surrogate-Control': 'no-store'
+        });
+    }
     next();
 });
 
