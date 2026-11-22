@@ -2,6 +2,7 @@
 process.env.TZ = 'Asia/Manila';
 
 const express = require('express');
+const compression = require('compression');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -79,7 +80,13 @@ function clearLoginAttempts(key) {
     failedLoginAttempts.delete(key);
 }
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(compression());
+
+// Static Files with aggressive 7-day browser caching & ETag (prevents bandwidth re-downloads)
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: '7d',
+    etag: true
+}));
 
 // Authentication Middleware for Protected Actions (Persistent Database & Memory Cache)
 async function requireAuth(req, res, next) {
