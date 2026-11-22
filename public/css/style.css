@@ -545,11 +545,13 @@ tr:hover {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.7);
-    z-index: 200;
+    background: rgba(15, 23, 42, 0.75);
+    z-index: 99999 !important;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .modal.show {
@@ -562,7 +564,11 @@ tr:hover {
     padding: 24px;
     width: 100%;
     max-width: 500px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 100000 !important;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 /* Responsive adjustments */
@@ -571,15 +577,186 @@ tr:hover {
 }
 
 @media (max-width: 768px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .doors-grid { grid-template-columns: 1fr; }
-    .brand-text h1 { font-size: 16px; }
-    .brand-text h2 { font-size: 12px; }
-    .header-right { flex-direction: column; align-items: flex-end; }
-    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .sap-actions-wrap { flex-direction: column; gap: 4px; }
-    .sap-btn { width: 100% !important; }
-    .modal-content { margin: 10px; max-width: calc(100vw - 20px) !important; }
+    .container {
+        padding: 8px 10px !important;
+    }
+
+    header {
+        padding: 8px 12px !important;
+        gap: 6px !important;
+    }
+
+    .brand-area {
+        gap: 8px !important;
+    }
+
+    .logo-container {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 2px !important;
+        border-radius: 6px !important;
+    }
+
+    .brand-text h1 {
+        font-size: 13.5px !important;
+        line-height: 1.15 !important;
+    }
+
+    .brand-text h2 {
+        font-size: 11px !important;
+        margin: 1px 0 !important;
+    }
+
+    .brand-text small {
+        display: none !important;
+    }
+
+    .header-right {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 5px !important;
+        width: auto !important;
+    }
+
+    #authUserBox {
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+        gap: 5px !important;
+        border-radius: 6px !important;
+    }
+
+    #authUserBox button {
+        padding: 2px 6px !important;
+        font-size: 10px !important;
+    }
+
+    .conn-status {
+        padding: 3px 6px !important;
+        font-size: 10px !important;
+    }
+
+    .conn-dot {
+        width: 6px !important;
+        height: 6px !important;
+    }
+
+    #btnHeaderNotifBell {
+        padding: 3px 6px !important;
+        font-size: 10.5px !important;
+    }
+
+    #clock {
+        font-size: 11px !important;
+    }
+
+    /* Compact scrollable Navbar on mobile */
+    .navbar {
+        padding: 5px 8px !important;
+        gap: 6px !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+
+    .navbar::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .nav-link {
+        padding: 5px 10px !important;
+        font-size: 11.5px !important;
+        border-radius: 6px !important;
+        gap: 5px !important;
+    }
+
+    /* Grids & Cards */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .stat-card {
+        padding: 8px 10px !important;
+    }
+
+    .stat-card h3 {
+        font-size: 9.5px !important;
+    }
+
+    .stat-number {
+        font-size: 18px !important;
+    }
+
+    .doors-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .door-card {
+        padding: 10px !important;
+    }
+
+    .door-header {
+        font-size: 12px !important;
+    }
+
+    .door-status-badge {
+        font-size: 9.5px !important;
+        padding: 2px 6px !important;
+    }
+
+    /* Table & Actions */
+    .table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .action-bar-top {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+
+    .filter-group {
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+    }
+
+    .filter-group .btn {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+    }
+
+    .sap-actions-wrap {
+        flex-direction: column !important;
+        gap: 4px !important;
+    }
+
+    .sap-btn {
+        width: 100% !important;
+    }
+
+    /* Modal responsiveness */
+    .modal {
+        padding: 10px !important;
+    }
+
+    .modal-content {
+        margin: auto !important;
+        padding: 16px !important;
+        max-width: 95vw !important;
+        max-height: 85vh !important;
+        overflow-y: auto !important;
+        border-radius: 12px !important;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 /* SAP OTC Action Buttons */
