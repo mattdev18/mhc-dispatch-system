@@ -406,7 +406,11 @@ async function handleGetTrucks(req, res) {
         let query = '';
         let params = [];
 
-        if (scope === 'today_only' || days === 1) {
+        if (scope === 'active_only') {
+            // Strictly active trucks only currently in plant — NEVER include Departed or Cancelled
+            query = `SELECT * FROM trucks WHERE status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
+            params = [];
+        } else if (scope === 'today_only' || req.query.days === '1' || (!req.query.scope && !req.query.days)) {
             // "Today" Operational Cycle:
             // ALL trucks starting from Queue 1 of the current cycle (from last reset or 12:00 PM cutoff),
             // INCLUDING Departed trucks, Completed trucks, and any active trucks!
@@ -431,14 +435,12 @@ async function handleGetTrucks(req, res) {
                 ORDER BY id ASC
             `;
             params = [effectiveCutoff, actualToday, cycleToday, effectiveCutoff];
-        } else if (scope === 'active_only') {
-            // Active trucks + Completed (pending Depart Plant)
-            query = `SELECT * FROM trucks WHERE status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
-            params = [];
         } else {
             // Default 7 days (1 week) PLUS any active or Completed (pending Depart Plant) trucks
+            const numDays = parseInt(req.query.days) || 7;
+            const pastStartDate = getDateDaysAgo(numDays - 1);
             query = `SELECT * FROM trucks WHERE date >= ? OR status IN ('Waiting', 'Called', 'Loading', 'Completed') ORDER BY id ASC`;
-            params = [startDate];
+            params = [pastStartDate];
         }
 
         const trucks = await all(query, params);

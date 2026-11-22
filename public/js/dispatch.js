@@ -309,6 +309,11 @@ function renderTable() {
 
     let list = todayTrucks;
 
+    // When viewing "Active Only", strictly exclude Departed and Cancelled trucks
+    if (currentScope === 'active_only') {
+        list = list.filter(t => ['Waiting', 'Called', 'Loading', 'Completed'].includes(t.status));
+    }
+
     if (search) {
         list = list.filter(t =>
             (t.queue || '').toLowerCase().includes(search) ||
