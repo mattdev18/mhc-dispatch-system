@@ -11,54 +11,57 @@
 </head>
 <body>
 
-    <!-- Header -->
-    <header>
-        <div class="brand-area">
-            <div class="logo-container">
-                <img src="/images/mhc-logo.png" alt="May Harvest Corporation Logo" class="mhc-logo">
-            </div>
-            <div class="brand-text">
-                <h1>MAY HARVEST CORPORATION</h1>
-                <h2>DISPATCHER COMMAND CENTER</h2>
-                <small>Dock Door Assignment &amp; Plant Logistics Flow</small>
-            </div>
-        </div>
-        <div class="header-right">
-            <div class="conn-status">
-                <span class="conn-dot" id="connDot"></span>
-                <span id="connText">Connecting...</span>
-            </div>
-
-            <!-- Real-Time Runner Notification Bell (Warehouse & Dispatch) -->
-            <div class="notif-bell-wrap" id="headerNotifBellWrap" style="position: relative; display: inline-block;">
-                <button type="button" class="btn btn-outline" id="btnHeaderNotifBell" onclick="toggleHeaderNotifDropdown()" style="position: relative; padding: 6px 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                    <span>🔔</span>
-                    <span style="font-weight: 700; font-size: 12px;">Documents</span>
-                    <span id="notifBadgeCounter" style="display: none; background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center; border: 1.5px solid #0f172a;">0</span>
-                </button>
-                <div id="headerNotifDropdown" style="display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 360px; background: #0f172a; border: 1.5px solid #334155; border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.65); z-index: 99999; overflow: hidden;">
-                    <div style="padding: 10px 14px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
-                        <strong style="font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px;">Pending Document Pickups</strong>
-                        <button type="button" onclick="dismissAllNotifs()" style="background: none; border: none; color: #38bdf8; font-size: 11px; font-weight: 700; cursor: pointer;">Clear / Mark Read</button>
-                    </div>
-                    <div id="headerNotifList" style="max-height: 280px; overflow-y: auto; padding: 6px 0;">
-                        <div style="padding: 16px; text-align: center; color: #64748b; font-size: 12px;">No pending pickups</div>
-                    </div>
+    <!-- Sticky Top Header & Navigation -->
+    <div style="position: sticky; top: 0; z-index: 1000;">
+        <!-- Header -->
+        <header>
+            <div class="brand-area">
+                <div class="logo-container">
+                    <img src="/images/mhc-logo.png" alt="May Harvest Corporation Logo" class="mhc-logo">
+                </div>
+                <div class="brand-text">
+                    <h1>MAY HARVEST CORPORATION</h1>
+                    <h2>DISPATCHER COMMAND CENTER</h2>
+                    <small>Dock Door Assignment &amp; Plant Logistics Flow</small>
                 </div>
             </div>
+            <div class="header-right">
+                <div class="conn-status">
+                    <span class="conn-dot" id="connDot"></span>
+                    <span id="connText">Connecting...</span>
+                </div>
 
-            <div id="clock">--:--:--</div>
-        </div>
-    </header>
+                <!-- Real-Time Runner Notification Bell (Warehouse & Dispatch) -->
+                <div class="notif-bell-wrap" id="headerNotifBellWrap" style="position: relative; display: inline-block;">
+                    <button type="button" class="btn btn-outline" id="btnHeaderNotifBell" onclick="toggleHeaderNotifDropdown()" style="position: relative; padding: 6px 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <span>🔔</span>
+                        <span style="font-weight: 700; font-size: 12px;">Documents</span>
+                        <span id="notifBadgeCounter" style="display: none; background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center; border: 1.5px solid #0f172a;">0</span>
+                    </button>
+                    <div id="headerNotifDropdown" style="display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 360px; background: #0f172a; border: 1.5px solid #334155; border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.65); z-index: 99999; overflow: hidden;">
+                        <div style="padding: 10px 14px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px;">Pending Document Pickups</strong>
+                            <button type="button" onclick="dismissAllNotifs()" style="background: none; border: none; color: #38bdf8; font-size: 11px; font-weight: 700; cursor: pointer;">Clear / Mark Read</button>
+                        </div>
+                        <div id="headerNotifList" style="max-height: 280px; overflow-y: auto; padding: 6px 0;">
+                            <div style="padding: 16px; text-align: center; color: #64748b; font-size: 12px;">No pending pickups</div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Navigation -->
-    <nav class="navbar">
-        <a href="/" class="nav-link" data-screen="register">🚛 Gate Registration</a>
-        <a href="/dispatch" class="nav-link active" data-screen="dispatch">📋 Dispatcher Station</a>
-        <a href="/display" class="nav-link" target="_blank" data-screen="display">📺 Live TV Queue Board ↗</a>
-        <a href="/reports" class="nav-link" data-screen="reports">📊 Reports &amp; Logs</a>
-        <a href="/sap-tv" class="nav-link" target="_blank" data-screen="sap-tv">🗂️ Live TV (SAP Documentation) ↗</a>
-    </nav>
+                <div id="clock">--:--:--</div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navbar">
+            <a href="/" class="nav-link" data-screen="register">🚛 Gate Registration</a>
+            <a href="/dispatch" class="nav-link active" data-screen="dispatch">📋 Dispatcher Station</a>
+            <a href="/display" class="nav-link" target="_blank" data-screen="display">📺 Live TV Queue Board ↗</a>
+            <a href="/reports" class="nav-link" data-screen="reports">📊 Reports &amp; Logs</a>
+            <a href="/sap-tv" class="nav-link" target="_blank" data-screen="sap-tv">🗂️ Live TV (SAP Documentation) ↗</a>
+        </nav>
+    </div>
 
     <div class="container">
 

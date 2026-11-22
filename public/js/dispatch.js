@@ -9,6 +9,12 @@ let activeDoors = {};
 let selectedTruckForModal = null;
 let currentScope = 'today_only';
 
+// Robust truck finder that handles string IDs (from PostgreSQL/Supabase) and number IDs seamlessly
+function getTruckFromCache(id) {
+    if (id === null || id === undefined) return null;
+    return todayTrucks.find(t => String(t.id) === String(id) || Number(t.id) === Number(id)) || null;
+}
+
 function setQueueScope(scope) {
     currentScope = scope;
     ['btnScope7Days', 'btnScopeToday', 'btnScopeActive'].forEach(id => {
@@ -252,7 +258,7 @@ function renderDoors(activeTruckList) {
             const statusBadgeClass = isCalled ? 'badge-called' : 'badge-loading';
 
             // Find full truck object
-            const fullTruck = todayTrucks.find(t => t.id === truck.id) || truck;
+            const fullTruck = getTruckFromCache(truck.id) || truck;
 
             const recorderTag = fullTruck.warehouse_recorder
                 ? `<div style="margin-top: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; color: #334155;">👷 Recorder: <span style="color: #1d4ed8;">${escapeHtml(fullTruck.warehouse_recorder)}</span></div>`
@@ -620,7 +626,7 @@ async function recallTruck(id) {
 
 // Manual Door Selection Modal
 function openDoorModal(truckId) {
-    selectedTruckForModal = todayTrucks.find(t => t.id === truckId);
+    selectedTruckForModal = getTruckFromCache(truckId);
     if (!selectedTruckForModal) return;
 
     document.getElementById('modalTruckInfo').innerHTML = `
@@ -686,7 +692,7 @@ let pendingCancelTruck = null;
 
 // Start Loading Modal Confirmation
 function startLoading(id) {
-    const truck = todayTrucks.find(t => t.id === id);
+    const truck = getTruckFromCache(id);
     if (!truck) return;
 
     // Strict validation: Require Warehouse Recorder before starting loading
@@ -747,7 +753,7 @@ async function completeLoading(id) {
 
 // Depart Plant Caution Modal
 function departTruck(id) {
-    const truck = todayTrucks.find(t => t.id === id);
+    const truck = getTruckFromCache(id);
     if (!truck) return;
 
     const user = currentUser || getAuthUser();
@@ -799,7 +805,7 @@ async function executeDepartTruck() {
 
 // Two-Step Cancellation Modal Flow
 function cancelTruck(id) {
-    const truck = todayTrucks.find(t => t.id === id);
+    const truck = getTruckFromCache(id);
     if (!truck) return;
     pendingCancelTruck = truck;
 
@@ -1037,10 +1043,7 @@ function buildAdminCompletedButtons(truck) {
 }
 
 // --- Shared helper: get truck from cache ---
-function getTruckFromCache(id) {
-    const numId = Number(id);
-    return todayTrucks.find(t => t.id === numId || t.id === id) || null;
-}
+// Uses top-level getTruckFromCache(id)
 
 function truckLabel(truck) {
     return truck ? `${escapeHtml(truck.queue)} – ${escapeHtml(truck.truck_number)} – ${escapeHtml(truck.driver_name)}` : '';
@@ -1313,7 +1316,7 @@ function getCurrentTimeString() {
 let pendingRecorderTruckId = null;
 
 function openRecorderModal(id) {
-    const truck = todayTrucks.find(t => t.id === id);
+    const truck = getTruckFromCache(id);
     if (!truck) return;
 
     // SAP Analyst cannot assign or edit Warehouse Recorder
@@ -2027,7 +2030,7 @@ if (typeof socket !== 'undefined') {
 let selectedTruckForPriority = null;
 
 function openEditPriorityModal(truckId) {
-    selectedTruckForPriority = todayTrucks.find(t => t.id === truckId);
+    selectedTruckForPriority = getTruckFromCache(truckId);
     if (!selectedTruckForPriority) return;
 
     const truckIdInput = document.getElementById('editPriorityTruckId');
@@ -2314,7 +2317,7 @@ setInterval(() => {
 let selectedTruckForQuickDepart = null;
 
 function openQuickDepartModal(truckId) {
-    selectedTruckForQuickDepart = todayTrucks.find(t => t.id === truckId);
+    selectedTruckForQuickDepart = getTruckFromCache(truckId);
     if (!selectedTruckForQuickDepart) return;
 
     const ts = selectedTruckForQuickDepart.arrival_timestamp || selectedTruckForQuickDepart.created_at;

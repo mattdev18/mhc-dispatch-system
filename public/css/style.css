@@ -31,9 +31,7 @@ header {
     gap: 15px;
     flex-wrap: wrap;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    position: relative;
     border-bottom: 2px solid #22c55e;
 }
 
@@ -121,38 +119,42 @@ header {
 
 /* Navigation */
 .navbar {
-    background: rgba(255, 255, 255, 0.98);
-    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(9, 42, 26, 0.98));
+    border-bottom: 2px solid #16a34a;
     display: flex;
     gap: 8px;
-    padding: 10px 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 8px 24px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
     overflow-x: auto;
 }
 
 .nav-link {
     text-decoration: none;
-    color: #475569;
-    padding: 9px 18px;
+    color: #e2e8f0;
+    padding: 7px 15px;
     border-radius: 8px;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 13.5px;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s;
-    background: #f1f5f9;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    white-space: nowrap;
 }
 
 .nav-link:hover {
-    background: #dcfce7;
-    color: #166534;
+    background: rgba(34, 197, 94, 0.25);
+    color: #86efac;
+    border-color: #22c55e;
 }
 
 .nav-link.active {
     background: #15803d;
     color: white;
-    box-shadow: 0 2px 6px rgba(21, 128, 61, 0.3);
+    border-color: #4ade80;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);
 }
 
 /* Layout */

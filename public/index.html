@@ -12,34 +12,37 @@
 <body>
 
     <!-- Header -->
-    <header>
-        <div class="brand-area">
-            <div class="logo-container">
-                <img src="/images/mhc-logo.png" alt="May Harvest Corporation Logo" class="mhc-logo">
+    <!-- Sticky Top Header & Navigation -->
+    <div style="position: sticky; top: 0; z-index: 1000;">
+        <header>
+            <div class="brand-area">
+                <div class="logo-container">
+                    <img src="/images/mhc-logo.png" alt="May Harvest Corporation Logo" class="mhc-logo">
+                </div>
+                <div class="brand-text">
+                    <h1>MAY HARVEST CORPORATION</h1>
+                    <h2>TRUCK DISPATCH QUEUING SYSTEM</h2>
+                    <small>Gate Entrance &amp; Registration Kiosk</small>
+                </div>
             </div>
-            <div class="brand-text">
-                <h1>MAY HARVEST CORPORATION</h1>
-                <h2>TRUCK DISPATCH QUEUING SYSTEM</h2>
-                <small>Gate Entrance &amp; Registration Kiosk</small>
+            <div class="header-right">
+                <div class="conn-status">
+                    <span class="conn-dot" id="connDot"></span>
+                    <span id="connText">Connecting...</span>
+                </div>
+                <div id="clock">--:--:--</div>
             </div>
-        </div>
-        <div class="header-right">
-            <div class="conn-status">
-                <span class="conn-dot" id="connDot"></span>
-                <span id="connText">Connecting...</span>
-            </div>
-            <div id="clock">--:--:--</div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Navigation -->
-    <nav class="navbar">
-        <a href="/" class="nav-link active" data-screen="register">🚛 Gate Registration</a>
-        <a href="/dispatch" class="nav-link" data-screen="dispatch">📋 Dispatcher Station</a>
-        <a href="/display" class="nav-link" target="_blank" data-screen="display">📺 Live TV Queue Board ↗</a>
-        <a href="/reports" class="nav-link" data-screen="reports">📊 Reports &amp; Logs</a>
-        <a href="/sap-tv" class="nav-link" target="_blank" data-screen="sap-tv">🗂️ Live TV (SAP Documentation) ↗</a>
-    </nav>
+        <!-- Navigation -->
+        <nav class="navbar">
+            <a href="/" class="nav-link active" data-screen="register">🚛 Gate Registration</a>
+            <a href="/dispatch" class="nav-link" data-screen="dispatch">📋 Dispatcher Station</a>
+            <a href="/display" class="nav-link" target="_blank" data-screen="display">📺 Live TV Queue Board ↗</a>
+            <a href="/reports" class="nav-link" data-screen="reports">📊 Reports &amp; Logs</a>
+            <a href="/sap-tv" class="nav-link" target="_blank" data-screen="sap-tv">🗂️ Live TV (SAP Documentation) ↗</a>
+        </nav>
+    </div>
 
     <!-- Main Container -->
     <div class="container">

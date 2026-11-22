@@ -1,7 +1,10 @@
 process.env.TZ = 'Asia/Manila';
 const crypto = require('crypto');
 const { createClient } = require('@libsql/client');
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+
+// Ensure PostgreSQL BIGINT (int8, OID 20) is parsed as a JavaScript Number (matches SQLite behavior)
+types.setTypeParser(20, val => (val === null ? null : parseInt(val, 10)));
 
 let pgPool = null;
 let dbClient = null;
