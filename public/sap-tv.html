@@ -853,8 +853,11 @@
             display: flex;
             gap: 36px;
             white-space: nowrap;
-            animation: tickerScroll 30s linear infinite;
+            animation: tickerScroll 90s linear infinite;
             will-change: transform;
+        }
+        .ticker-content:hover {
+            animation-play-state: paused;
         }
         @keyframes tickerScroll {
             0% { transform: translateX(0%); }
@@ -1853,6 +1856,7 @@
             });
 
             if (pendingTasks.length === 0) {
+                tickerEl.style.animationDuration = '35s';
                 tickerEl.innerHTML = `
                     <span class="ticker-item"><strong style="color:var(--lime);">✅ All documents are up to date. No pending SAP tasks at this time.</strong></span>
                 `;
@@ -1867,6 +1871,11 @@
             `).join('');
 
             tickerEl.innerHTML = itemsHtml + itemsHtml;
+
+            // Comfortable human-readable scroll speed:
+            // ~8 seconds per unique item, minimum 60 seconds duration
+            const durationSec = Math.max(60, pendingTasks.length * 8);
+            tickerEl.style.animationDuration = durationSec + 's';
         }
 
         socket.on('connect', fetchSapQueue);
