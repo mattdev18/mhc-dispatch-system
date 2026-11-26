@@ -1646,6 +1646,9 @@ function isDispatcherScreen() {
 
 function show1HourOverdueDepartToast(truck) {
     if (!truck) return;
+    // When alarm is turned off (Muted), disable the 1-Hour Departure Reminder popup for Admin only
+    if (isCurrentUserAdmin() && isAlarmMuted) return;
+
     const banner = document.getElementById('dispatcherOverdueDepartBanner');
     const msg = document.getElementById('dispatcherOverdueDepartMessage');
     const actionBtn = document.getElementById('dispatcherOverdueDepartActionBtn');
@@ -1700,6 +1703,12 @@ function dismissOverdueDepartToast() {
 
 function check1HourOverdueDepartures() {
     if (!isDispatcherScreen()) return;
+
+    // When alarm is turned off (Muted), dismiss and suppress the 1-Hour Departure Reminder popup for Admin only
+    if (isCurrentUserAdmin() && isAlarmMuted) {
+        dismissOverdueDepartToast();
+        return;
+    }
 
     const now = Date.now();
     const ONE_HOUR_MS = 60 * 60 * 1000; // 60 minutes
@@ -2143,7 +2152,10 @@ async function executeSavePriority() {
 
 function isCurrentUserAdmin() {
     const user = window.currentUser || getAuthUser();
-    return user && user.role === 'admin';
+    if (!user) return false;
+    const role = String(user.role || '').toLowerCase().trim();
+    const uname = String(user.username || '').toLowerCase().trim();
+    return role === 'admin' || uname === 'admin';
 }
 
 function canToggleAlarm() {
@@ -2184,6 +2196,9 @@ function updateAlarmToggleButton() {
         : 'SAP Analyst: Toggle Sound Alarm';
 
     if (isAlarmMuted) {
+        if (isCurrentUserAdmin()) {
+            dismissOverdueDepartToast();
+        }
         icon.textContent = '🔇';
         text.textContent = 'Alarm: Muted';
         btn.style.color = '#ef4444';
@@ -2207,8 +2222,15 @@ function toggleSoundAlarm() {
     isAlarmMuted = !isAlarmMuted;
     localStorage.setItem('mhc_sound_alarm_muted', isAlarmMuted ? 'true' : 'false');
     updateAlarmToggleButton();
-    if (!isAlarmMuted) {
+    if (isAlarmMuted) {
+        if (isCurrentUserAdmin()) {
+            dismissOverdueDepartToast();
+        }
+    } else {
         playStaccatoAlarm();
+        if (isCurrentUserAdmin()) {
+            check1HourOverdueDepartures();
+        }
     }
 }
 
