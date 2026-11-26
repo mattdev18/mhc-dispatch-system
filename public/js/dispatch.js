@@ -2262,6 +2262,8 @@ function checkAndTriggerAlarmSound() {
 let lastDepartAlarmPlayTime = 0;
 
 function playDepartReadyAlarm() {
+    // If user is Admin/SAP Analyst and has muted alarms, respect mute
+    if (canToggleAlarm() && isAlarmMuted) return;
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
