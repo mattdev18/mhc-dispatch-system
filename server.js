@@ -89,10 +89,17 @@ function clearLoginAttempts(key) {
 
 app.use(compression());
 
-// Static Files with aggressive 7-day browser caching & ETag (prevents bandwidth re-downloads)
+// Static Files with zero cache for dynamic JS/HTML scripts to ensure instant updates
 app.use(express.static(path.join(__dirname, 'public'), {
-    maxAge: '7d',
-    etag: true
+    maxAge: 0,
+    etag: false,
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js') || filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
+    }
 }));
 
 // Authentication Middleware for Protected Actions (Persistent Database & Memory Cache)

@@ -1862,6 +1862,7 @@ function dismissRunnerToast() {
 
 // 🔔 Soft Document Chime: 3-tone ascending chime (C5-E5-G5: 523Hz, 659Hz, 784Hz)
 function playSoftDocumentChime() {
+    if (typeof isAudioMuted === 'function' && isAudioMuted()) return;
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
@@ -2011,6 +2012,7 @@ setInterval(checkPendingRunnerReminders, 15 * 1000);
 setInterval(check1HourOverdueDepartures, 15 * 1000);
 
 function playNotificationBeep() {
+    if (typeof isAudioMuted === 'function' && isAudioMuted()) return;
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
@@ -2156,7 +2158,24 @@ function isCurrentUserAdmin() {
 
 function canToggleAlarm() {
     const user = window.currentUser || getAuthUser();
-    return user && (user.role === 'admin' || user.role === 'sapanalyst');
+    if (!user) return false;
+    const role = String(user.role || '').toLowerCase().trim();
+    const uname = String(user.username || '').toLowerCase().trim();
+    return role === 'admin' || uname === 'admin' || role === 'sapanalyst' || uname === 'sapanalyst';
+}
+
+function isAudioMuted() {
+    const user = window.currentUser || getAuthUser();
+    if (user) {
+        const role = String(user.role || '').toLowerCase().trim();
+        const uname = String(user.username || '').toLowerCase().trim();
+        // Mandatory for dedicated dispatchers (unless admin)
+        if ((role === 'dispatcher' || uname.includes('dispatcher')) && role !== 'admin' && uname !== 'admin') {
+            return false;
+        }
+    }
+    const val = localStorage.getItem('mhc_sound_alarm_muted');
+    return val === 'true' || isAlarmMuted === true;
 }
 
 let isAlarmMuted = localStorage.getItem('mhc_sound_alarm_muted') === 'true';
@@ -2172,7 +2191,6 @@ function updateAlarmToggleButton() {
 
     if (!canMute) {
         // Dispatcher 1 & Dispatcher 2: ALARM CANNOT BE TURNED OFF (MANDATORY)
-        isAlarmMuted = false;
         icon.textContent = '🔔';
         text.textContent = 'Alarm: Active (Mandatory)';
         btn.style.color = '#15803d';
@@ -2184,12 +2202,15 @@ function updateAlarmToggleButton() {
         return;
     }
 
+    // Always re-sync isAlarmMuted from localStorage
+    isAlarmMuted = localStorage.getItem('mhc_sound_alarm_muted') === 'true';
+
     // Admin & SAP Analyst: Can toggle mute
     btn.style.cursor = 'pointer';
     btn.style.pointerEvents = 'auto';
     btn.title = isCurrentUserAdmin()
-        ? 'Admin: Toggle Stale Truck Overdue Sound Alarm'
-        : 'SAP Analyst: Toggle Sound Alarm';
+        ? 'Admin: Click to Mute / Unmute Overdue Sound Alarm'
+        : 'SAP Analyst: Click to Mute / Unmute Overdue Sound Alarm';
 
     if (isAlarmMuted) {
         icon.textContent = '🔇';
@@ -2212,7 +2233,7 @@ function toggleSoundAlarm() {
         return;
     }
 
-    isAlarmMuted = !isAlarmMuted;
+    isAlarmMuted = !(localStorage.getItem('mhc_sound_alarm_muted') === 'true');
     localStorage.setItem('mhc_sound_alarm_muted', isAlarmMuted ? 'true' : 'false');
     updateAlarmToggleButton();
     if (!isAlarmMuted) {
@@ -2222,12 +2243,7 @@ function toggleSoundAlarm() {
 
 // ⚡ Sound 2: High-Pitch Staccato Pulses (8 rapid beeps at 950Hz)
 function playStaccatoAlarm() {
-    // Dispatchers can NEVER mute the alarm; Admin and SAP Analyst can mute
-    if (!canToggleAlarm()) {
-        isAlarmMuted = false;
-    } else if (isAlarmMuted) {
-        return;
-    }
+    if (isAudioMuted()) return;
 
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -2257,6 +2273,7 @@ function playStaccatoAlarm() {
 }
 
 function checkAndTriggerAlarmSound() {
+    if (isAudioMuted()) return;
     const now = Date.now();
     // Sound alarm once every 3 minutes if critical overdue trucks are present
     if (!isAlarmMuted && (now - lastAlarmPlayTime > 3 * 60 * 1000)) {
@@ -2270,8 +2287,7 @@ function checkAndTriggerAlarmSound() {
 let lastDepartAlarmPlayTime = 0;
 
 function playDepartReadyAlarm() {
-    // If user is Admin/SAP Analyst and has muted alarms, respect mute
-    if (canToggleAlarm() && isAlarmMuted) return;
+    if (isAudioMuted()) return;
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
@@ -2301,8 +2317,7 @@ function playDepartReadyAlarm() {
 }
 
 function checkAndTriggerDepartAlarm() {
-    // If user is Admin/SAP Analyst and has muted alarms, respect mute
-    if (canToggleAlarm() && isAlarmMuted) return;
+    if (isAudioMuted()) return;
     const now = Date.now();
     // Fire once every 3 minutes if depart-ready trucks exist
     if (now - lastDepartAlarmPlayTime > 3 * 60 * 1000) {
