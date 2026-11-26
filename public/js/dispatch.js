@@ -1640,14 +1640,16 @@ function isDispatcherScreen() {
         return role === 'dispatcher' || 
                role.includes('dispatcher') || 
                uname.includes('dispatcher') ||
-               role === 'admin';
+               role === 'admin' ||
+               uname === 'admin' ||
+               role === 'warehouse' ||
+               role.includes('warehouse') ||
+               uname.includes('warehouse');
     }
 }
 
 function show1HourOverdueDepartToast(truck) {
     if (!truck) return;
-    // When alarm is turned off (Muted), disable the 1-Hour Departure Reminder popup for Admin only
-    if (isCurrentUserAdmin() && isAlarmMuted) return;
 
     const banner = document.getElementById('dispatcherOverdueDepartBanner');
     const msg = document.getElementById('dispatcherOverdueDepartMessage');
@@ -1703,12 +1705,6 @@ function dismissOverdueDepartToast() {
 
 function check1HourOverdueDepartures() {
     if (!isDispatcherScreen()) return;
-
-    // When alarm is turned off (Muted), dismiss and suppress the 1-Hour Departure Reminder popup for Admin only
-    if (isCurrentUserAdmin() && isAlarmMuted) {
-        dismissOverdueDepartToast();
-        return;
-    }
 
     const now = Date.now();
     const ONE_HOUR_MS = 60 * 60 * 1000; // 60 minutes
@@ -2196,9 +2192,6 @@ function updateAlarmToggleButton() {
         : 'SAP Analyst: Toggle Sound Alarm';
 
     if (isAlarmMuted) {
-        if (isCurrentUserAdmin()) {
-            dismissOverdueDepartToast();
-        }
         icon.textContent = '🔇';
         text.textContent = 'Alarm: Muted';
         btn.style.color = '#ef4444';
@@ -2222,15 +2215,8 @@ function toggleSoundAlarm() {
     isAlarmMuted = !isAlarmMuted;
     localStorage.setItem('mhc_sound_alarm_muted', isAlarmMuted ? 'true' : 'false');
     updateAlarmToggleButton();
-    if (isAlarmMuted) {
-        if (isCurrentUserAdmin()) {
-            dismissOverdueDepartToast();
-        }
-    } else {
+    if (!isAlarmMuted) {
         playStaccatoAlarm();
-        if (isCurrentUserAdmin()) {
-            check1HourOverdueDepartures();
-        }
     }
 }
 
