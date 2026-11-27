@@ -938,7 +938,7 @@ loadTodayData();
 
 const SAP_ANALYSTS = [
     'Louell Santos', 'Marlo Romasanta', 'Aron Detiquiz', 'Julius San Jose',
-    'Grant Gener', 'Gerwin Cristobal', 'Erick Gulinao', 'Hernan Santos'
+    'Grant Gener', 'Gerwin Cristobal', 'Erick Gulinao', 'Roi Santos'
 ];
 
 // Build SAP action buttons for a completed/loading truck (sapanalyst role)
