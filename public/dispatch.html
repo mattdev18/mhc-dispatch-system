@@ -25,14 +25,8 @@
 
 <div class="flying-santa-track">
   <div class="flying-caravan">
-    <svg viewBox="0 -35 780 155" class="flying-caravan-svg" style="overflow: visible;">
+    <svg viewBox="0 -35 800 155" class="flying-caravan-svg" style="overflow: visible;">
       <defs>
-        <linearGradient id="reindeerGold" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#fff2a3" />
-          <stop offset="40%" stop-color="#f59e0b" />
-          <stop offset="100%" stop-color="#b45309" />
-        </linearGradient>
-
         <clipPath id="deluxeFaceClipCaravan">
           <path d="
             M 68 92
@@ -76,99 +70,760 @@
       </defs>
 
       <!-- GOLDEN MAGIC REINS -->
-      <path d="M 140 76 Q 260 82 400 78 Q 550 74 680 68" stroke="#fde047" stroke-width="1.8" fill="none" opacity="0.85" stroke-dasharray="4,2"/>
-      <path d="M 140 80 Q 260 86 400 82 Q 550 78 680 72" stroke="#fde047" stroke-width="1.5" fill="none" opacity="0.7" stroke-dasharray="4,2"/>
+      <path d="M 140 76 Q 260 78 400 74 Q 550 70 700 62" stroke="#fde047" stroke-width="1.8" fill="none" opacity="0.85" stroke-dasharray="4,2"/>
+      <path d="M 140 80 Q 260 82 400 78 Q 550 74 700 66" stroke="#fde047" stroke-width="1.5" fill="none" opacity="0.7" stroke-dasharray="4,2"/>
 
-      <!-- 4 REINDEER GALLOPING -->
+      <!-- 4 REFINED CARTOON REINDEER (ANIMATED RUNNING LEGS) -->
       
-  <g transform="translate(660, 46) scale(0.65)">
-    <g class="reindeer-leaper">
-      <path d="M 68 22 Q 78 5 88 12 Q 82 20 72 25" stroke="#f59e0b" stroke-width="3" fill="none"/>
-      <path d="M 74 15 Q 84 8 82 18" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
-      <path d="M 68 38 C 72 25 82 22 88 28 C 92 34 85 45 78 45 Z" fill="url(#reindeerGold)"/>
-      <path d="M 65 24 Q 58 20 62 26" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
-      
-    <circle cx="91" cy="30" r="5" class="rudolph-nose" fill="#ef4444"/>
-    <circle cx="90" cy="29" r="1.8" fill="#ffffff"/>
-  
-      <path d="M 20 55 C 25 35 45 35 65 38 C 75 40 85 45 80 55 C 75 62 60 65 45 68 C 30 70 15 65 20 55 Z" fill="url(#reindeerGold)"/>
-      <path d="M 18 56 Q 10 52 14 62 Z" fill="#d97706"/>
-      <g class="reindeer-front-legs">
-        <path d="M 65 56 Q 80 72 98 80" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-        <path d="M 60 58 Q 74 74 88 86" stroke="#d97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <g transform="translate(660, 24) scale(0.68)">
+    <defs>
+      <linearGradient id="tanCoat_r4" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fbbf24"/>
+        <stop offset="45%" stop-color="#f59e0b"/>
+        <stop offset="85%" stop-color="#d97706"/>
+        <stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+
+      <linearGradient id="tanShaded_r4" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#d97706"/>
+        <stop offset="60%" stop-color="#b45309"/>
+        <stop offset="100%" stop-color="#78350f"/>
+      </linearGradient>
+
+      <linearGradient id="creamBib_r4" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fefce8"/>
+        <stop offset="60%" stop-color="#fef08a"/>
+        <stop offset="100%" stop-color="#fde047"/>
+      </linearGradient>
+
+      <linearGradient id="antlerSlender_r4" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#92400e"/>
+        <stop offset="60%" stop-color="#78350f"/>
+        <stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+
+      <radialGradient id="goldBell_r4" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="30%" stop-color="#fef08a"/>
+        <stop offset="70%" stop-color="#eab308"/>
+        <stop offset="100%" stop-color="#854d0e"/>
+      </radialGradient>
+    </defs>
+
+    <g class="reindeer-bound">
+      <!-- 1. FAR HIND LEG (Background) -->
+      <g class="leg-back-far" style="transform-origin: 32px 50px;">
+        <path d="
+          M 34 46
+          C 24 52, 17 62, 12 73
+          L 8 75 L 8 82 L 18 83 L 18 76
+          C 22 66, 29 57, 36 50
+          Z
+        " fill="url(#tanShaded_r4)"/>
+        <polygon points="8,76 18,77 17,83 7,82" fill="#292524"/>
       </g>
-      <g class="reindeer-hind-legs">
-        <path d="M 28 65 Q 12 80 4 94" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-        <path d="M 36 65 Q 24 82 16 92" stroke="#d97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+      <!-- 2. FAR FRONT LEG (Background) -->
+      <g class="leg-front-far" style="transform-origin: 64px 47px;">
+        <path d="
+          M 60 44
+          C 66 54, 74 63, 83 70
+          L 83 74 L 92 78 L 95 72 L 87 67
+          C 80 60, 72 52, 68 46
+          Z
+        " fill="url(#tanShaded_r4)"/>
+        <polygon points="84,72 93,76 91,80 82,76" fill="#292524"/>
+      </g>
+
+      <!-- 3. UPTURNED FLUFFY TAIL -->
+      <path d="M 21 47 C 14 43, 10 38, 13 34 C 17 36, 20 40, 24 45 Z" fill="url(#tanCoat_r4)"/>
+      <path d="M 15 41 C 12 39, 11 36, 13 34 C 15 36, 17 39, 18 41 Z" fill="#fefce8"/>
+
+      <!-- 4. MAIN TORSO & CREAM UNDERBELLY -->
+      <path d="
+        M 22 48
+        C 22 40, 32 36, 48 38
+        C 58 39, 68 44, 70 52
+        C 68 62, 54 65, 40 64
+        C 28 63, 20 58, 22 48 Z
+      " fill="url(#tanCoat_r4)"/>
+      
+      <path d="
+        M 34 62
+        C 44 63, 56 62, 66 56
+        C 68 52, 66 48, 60 46
+        C 50 54, 40 58, 34 62 Z
+      " fill="url(#creamBib_r4)" opacity="0.95"/>
+
+      <path d="M 24 46 C 24 54, 30 60, 38 62 C 32 60, 28 54, 28 46 Z" fill="#b45309" opacity="0.25"/>
+
+      <!-- 5. NEAR HIND LEG (Foreground) -->
+      <g class="leg-back-near" style="transform-origin: 29px 49px;">
+        <path d="
+          M 31 46
+          C 20 52, 13 62, 8 73
+          L 4 75 L 4 83 L 15 84 L 15 76
+          C 19 65, 26 56, 33 49
+          Z
+        " fill="url(#tanCoat_r4)"/>
+        <polygon points="4,76 15,77 14,83 3,82" fill="#1c1917"/>
+      </g>
+
+      <!-- 6. NEAR FRONT LEG (Foreground) -->
+      <g class="leg-front-near" style="transform-origin: 62px 46px;">
+        <path d="
+          M 58 44
+          C 65 54, 73 63, 82 70
+          L 82 74 L 91 78 L 94 72 L 86 67
+          C 78 60, 71 52, 66 46
+          Z
+        " fill="url(#tanCoat_r4)"/>
+        <polygon points="83,72 92,76 90,80 81,76" fill="#1c1917"/>
+      </g>
+
+      <!-- 7. NECK & CREAM BIB -->
+      <path d="
+        M 56 44
+        C 60 36, 65 27, 72 25
+        C 76 29, 74 42, 68 52
+        Z
+      " fill="url(#tanCoat_r4)"/>
+      <path d="
+        M 62 43
+        C 65 35, 68 31, 72 29
+        C 74 35, 70 45, 66 49 Z
+      " fill="url(#creamBib_r4)"/>
+
+      <!-- 8. RED COLLAR WITH 4 GOLDEN BELLS -->
+      <path d="M 60 46 Q 66 41 72 36" stroke="#dc2626" stroke-width="4.2" stroke-linecap="round" fill="none" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.35))"/>
+      <path d="M 61 45.2 Q 66 41 71.5 37" stroke="#ef4444" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      
+      <g filter="drop-shadow(0 1px 2px rgba(0,0,0,0.45))">
+        <circle cx="60.5" cy="46" r="2.7" fill="url(#goldBell_r4)"/>
+        <line x1="59.5" y1="46" x2="61.5" y2="46" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="64.5" cy="43" r="2.9" fill="url(#goldBell_r4)"/>
+        <line x1="63.5" y1="43" x2="65.5" y2="43" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="68.5" cy="40" r="2.9" fill="url(#goldBell_r4)"/>
+        <line x1="67.5" y1="40" x2="69.5" y2="40" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="72.5" cy="36" r="2.7" fill="url(#goldBell_r4)"/>
+        <line x1="71.5" y1="36" x2="73.5" y2="36" stroke="#854d0e" stroke-width="0.5"/>
+      </g>
+
+      <!-- 9. SLENDER DELICATE ANTLERS -->
+      <g filter="drop-shadow(0 1px 1.5px rgba(0,0,0,0.25))">
+        <path d="M 68 18 Q 66 8 71 4 Q 72 6 70 14" stroke="url(#antlerSlender_r4)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <path d="M 68 12 Q 63 9 65 7" stroke="url(#antlerSlender_r4)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <path d="M 69 9 Q 72 7 73 8" stroke="url(#antlerSlender_r4)" stroke-width="1.0" stroke-linecap="round" fill="none"/>
+
+        <path d="M 73 19 Q 74 9 79 5 Q 81 7 78 15" stroke="url(#antlerSlender_r4)" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        <path d="M 74.5 14 Q 80 11 81 9" stroke="url(#antlerSlender_r4)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        <path d="M 76 10 Q 73 7 75 6" stroke="url(#antlerSlender_r4)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+      </g>
+
+      <!-- 10. CUTE CARTOON HEAD & FACE -->
+      <g>
+        <path d="
+          M 67 25
+          C 69 17, 77 17, 81 21
+          C 88 25, 91 32, 91 36.5
+          C 91 40.5, 84 45, 78 43
+          C 72 41, 66 33, 67 25 Z
+        " fill="url(#tanCoat_r4)"/>
+
+        <path d="
+          M 82 31
+          C 86 33, 91 35, 91 36.5
+          C 91 39.5, 85 43, 79 42
+          C 78 39, 79 34, 82 31 Z
+        " fill="url(#creamBib_r4)"/>
+
+        <path d="M 84 39.5 Q 87 40.5 89 38.5" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+        
+    <circle cx="91" cy="36.5" r="5" fill="#ef4444" class="rudolph-glow" filter="drop-shadow(0 0 6px #ef4444) drop-shadow(0 0 12px #ff4757)"/>
+    <circle cx="89.5" cy="35" r="1.8" fill="#ffffff" opacity="0.9"/>
+  
+
+        <g>
+          <ellipse cx="80" cy="27" rx="4.2" ry="5.2" fill="#ffffff"/>
+          <ellipse cx="80.6" cy="27" rx="3.3" ry="4.3" fill="#854d0e"/>
+          <ellipse cx="81.2" cy="27" rx="2.3" ry="3.3" fill="#1c1917"/>
+          <circle cx="79.6" cy="25.2" r="1.5" fill="#ffffff"/>
+          <circle cx="82" cy="29" r="0.7" fill="#ffffff"/>
+          <path d="M 77 21 Q 80 19 83 21" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        </g>
+
+        <ellipse cx="78" cy="34" rx="4" ry="2.4" fill="#fb7185" opacity="0.6" filter="blur(0.5px)"/>
+
+        <path d="M 68 21 C 61 17, 59 13, 62 11 C 65 11, 69 15, 71 19 Z" fill="url(#tanCoat_r4)"/>
+        <path d="M 67 19 C 63 16, 61 13, 63 12 C 65 12, 68 15, 69 18 Z" fill="#fda4af"/>
       </g>
     </g>
   </g>
   
       
-  <g transform="translate(510, 48) scale(0.65)">
-    <g class="reindeer-leaper">
-      <path d="M 68 22 Q 78 5 88 12 Q 82 20 72 25" stroke="#f59e0b" stroke-width="3" fill="none"/>
-      <path d="M 74 15 Q 84 8 82 18" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
-      <path d="M 68 38 C 72 25 82 22 88 28 C 92 34 85 45 78 45 Z" fill="url(#reindeerGold)"/>
-      <path d="M 65 24 Q 58 20 62 26" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
-      
-      <path d="M 20 55 C 25 35 45 35 65 38 C 75 40 85 45 80 55 C 75 62 60 65 45 68 C 30 70 15 65 20 55 Z" fill="url(#reindeerGold)"/>
-      <path d="M 18 56 Q 10 52 14 62 Z" fill="#d97706"/>
-      <g class="reindeer-front-legs">
-        <path d="M 65 56 Q 80 72 98 80" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-        <path d="M 60 58 Q 74 74 88 86" stroke="#d97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <g transform="translate(515, 26) scale(0.68)">
+    <defs>
+      <linearGradient id="tanCoat_r3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fbbf24"/>
+        <stop offset="45%" stop-color="#f59e0b"/>
+        <stop offset="85%" stop-color="#d97706"/>
+        <stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+
+      <linearGradient id="tanShaded_r3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#d97706"/>
+        <stop offset="60%" stop-color="#b45309"/>
+        <stop offset="100%" stop-color="#78350f"/>
+      </linearGradient>
+
+      <linearGradient id="creamBib_r3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fefce8"/>
+        <stop offset="60%" stop-color="#fef08a"/>
+        <stop offset="100%" stop-color="#fde047"/>
+      </linearGradient>
+
+      <linearGradient id="antlerSlender_r3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#92400e"/>
+        <stop offset="60%" stop-color="#78350f"/>
+        <stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+
+      <radialGradient id="goldBell_r3" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="30%" stop-color="#fef08a"/>
+        <stop offset="70%" stop-color="#eab308"/>
+        <stop offset="100%" stop-color="#854d0e"/>
+      </radialGradient>
+    </defs>
+
+    <g class="reindeer-bound">
+      <!-- 1. FAR HIND LEG (Background) -->
+      <g class="leg-back-far" style="transform-origin: 32px 50px;">
+        <path d="
+          M 34 46
+          C 24 52, 17 62, 12 73
+          L 8 75 L 8 82 L 18 83 L 18 76
+          C 22 66, 29 57, 36 50
+          Z
+        " fill="url(#tanShaded_r3)"/>
+        <polygon points="8,76 18,77 17,83 7,82" fill="#292524"/>
       </g>
-      <g class="reindeer-hind-legs">
-        <path d="M 28 65 Q 12 80 4 94" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-        <path d="M 36 65 Q 24 82 16 92" stroke="#d97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+      <!-- 2. FAR FRONT LEG (Background) -->
+      <g class="leg-front-far" style="transform-origin: 64px 47px;">
+        <path d="
+          M 60 44
+          C 66 54, 74 63, 83 70
+          L 83 74 L 92 78 L 95 72 L 87 67
+          C 80 60, 72 52, 68 46
+          Z
+        " fill="url(#tanShaded_r3)"/>
+        <polygon points="84,72 93,76 91,80 82,76" fill="#292524"/>
+      </g>
+
+      <!-- 3. UPTURNED FLUFFY TAIL -->
+      <path d="M 21 47 C 14 43, 10 38, 13 34 C 17 36, 20 40, 24 45 Z" fill="url(#tanCoat_r3)"/>
+      <path d="M 15 41 C 12 39, 11 36, 13 34 C 15 36, 17 39, 18 41 Z" fill="#fefce8"/>
+
+      <!-- 4. MAIN TORSO & CREAM UNDERBELLY -->
+      <path d="
+        M 22 48
+        C 22 40, 32 36, 48 38
+        C 58 39, 68 44, 70 52
+        C 68 62, 54 65, 40 64
+        C 28 63, 20 58, 22 48 Z
+      " fill="url(#tanCoat_r3)"/>
+      
+      <path d="
+        M 34 62
+        C 44 63, 56 62, 66 56
+        C 68 52, 66 48, 60 46
+        C 50 54, 40 58, 34 62 Z
+      " fill="url(#creamBib_r3)" opacity="0.95"/>
+
+      <path d="M 24 46 C 24 54, 30 60, 38 62 C 32 60, 28 54, 28 46 Z" fill="#b45309" opacity="0.25"/>
+
+      <!-- 5. NEAR HIND LEG (Foreground) -->
+      <g class="leg-back-near" style="transform-origin: 29px 49px;">
+        <path d="
+          M 31 46
+          C 20 52, 13 62, 8 73
+          L 4 75 L 4 83 L 15 84 L 15 76
+          C 19 65, 26 56, 33 49
+          Z
+        " fill="url(#tanCoat_r3)"/>
+        <polygon points="4,76 15,77 14,83 3,82" fill="#1c1917"/>
+      </g>
+
+      <!-- 6. NEAR FRONT LEG (Foreground) -->
+      <g class="leg-front-near" style="transform-origin: 62px 46px;">
+        <path d="
+          M 58 44
+          C 65 54, 73 63, 82 70
+          L 82 74 L 91 78 L 94 72 L 86 67
+          C 78 60, 71 52, 66 46
+          Z
+        " fill="url(#tanCoat_r3)"/>
+        <polygon points="83,72 92,76 90,80 81,76" fill="#1c1917"/>
+      </g>
+
+      <!-- 7. NECK & CREAM BIB -->
+      <path d="
+        M 56 44
+        C 60 36, 65 27, 72 25
+        C 76 29, 74 42, 68 52
+        Z
+      " fill="url(#tanCoat_r3)"/>
+      <path d="
+        M 62 43
+        C 65 35, 68 31, 72 29
+        C 74 35, 70 45, 66 49 Z
+      " fill="url(#creamBib_r3)"/>
+
+      <!-- 8. RED COLLAR WITH 4 GOLDEN BELLS -->
+      <path d="M 60 46 Q 66 41 72 36" stroke="#dc2626" stroke-width="4.2" stroke-linecap="round" fill="none" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.35))"/>
+      <path d="M 61 45.2 Q 66 41 71.5 37" stroke="#ef4444" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      
+      <g filter="drop-shadow(0 1px 2px rgba(0,0,0,0.45))">
+        <circle cx="60.5" cy="46" r="2.7" fill="url(#goldBell_r3)"/>
+        <line x1="59.5" y1="46" x2="61.5" y2="46" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="64.5" cy="43" r="2.9" fill="url(#goldBell_r3)"/>
+        <line x1="63.5" y1="43" x2="65.5" y2="43" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="68.5" cy="40" r="2.9" fill="url(#goldBell_r3)"/>
+        <line x1="67.5" y1="40" x2="69.5" y2="40" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="72.5" cy="36" r="2.7" fill="url(#goldBell_r3)"/>
+        <line x1="71.5" y1="36" x2="73.5" y2="36" stroke="#854d0e" stroke-width="0.5"/>
+      </g>
+
+      <!-- 9. SLENDER DELICATE ANTLERS -->
+      <g filter="drop-shadow(0 1px 1.5px rgba(0,0,0,0.25))">
+        <path d="M 68 18 Q 66 8 71 4 Q 72 6 70 14" stroke="url(#antlerSlender_r3)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <path d="M 68 12 Q 63 9 65 7" stroke="url(#antlerSlender_r3)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <path d="M 69 9 Q 72 7 73 8" stroke="url(#antlerSlender_r3)" stroke-width="1.0" stroke-linecap="round" fill="none"/>
+
+        <path d="M 73 19 Q 74 9 79 5 Q 81 7 78 15" stroke="url(#antlerSlender_r3)" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        <path d="M 74.5 14 Q 80 11 81 9" stroke="url(#antlerSlender_r3)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        <path d="M 76 10 Q 73 7 75 6" stroke="url(#antlerSlender_r3)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+      </g>
+
+      <!-- 10. CUTE CARTOON HEAD & FACE -->
+      <g>
+        <path d="
+          M 67 25
+          C 69 17, 77 17, 81 21
+          C 88 25, 91 32, 91 36.5
+          C 91 40.5, 84 45, 78 43
+          C 72 41, 66 33, 67 25 Z
+        " fill="url(#tanCoat_r3)"/>
+
+        <path d="
+          M 82 31
+          C 86 33, 91 35, 91 36.5
+          C 91 39.5, 85 43, 79 42
+          C 78 39, 79 34, 82 31 Z
+        " fill="url(#creamBib_r3)"/>
+
+        <path d="M 84 39.5 Q 87 40.5 89 38.5" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+        
+    <ellipse cx="91" cy="36.5" rx="2.2" ry="1.8" fill="#451a03"/>
+    <circle cx="90.5" cy="35.8" r="0.7" fill="#ffffff" opacity="0.8"/>
+  
+
+        <g>
+          <ellipse cx="80" cy="27" rx="4.2" ry="5.2" fill="#ffffff"/>
+          <ellipse cx="80.6" cy="27" rx="3.3" ry="4.3" fill="#854d0e"/>
+          <ellipse cx="81.2" cy="27" rx="2.3" ry="3.3" fill="#1c1917"/>
+          <circle cx="79.6" cy="25.2" r="1.5" fill="#ffffff"/>
+          <circle cx="82" cy="29" r="0.7" fill="#ffffff"/>
+          <path d="M 77 21 Q 80 19 83 21" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        </g>
+
+        <ellipse cx="78" cy="34" rx="4" ry="2.4" fill="#fb7185" opacity="0.6" filter="blur(0.5px)"/>
+
+        <path d="M 68 21 C 61 17, 59 13, 62 11 C 65 11, 69 15, 71 19 Z" fill="url(#tanCoat_r3)"/>
+        <path d="M 67 19 C 63 16, 61 13, 63 12 C 65 12, 68 15, 69 18 Z" fill="#fda4af"/>
       </g>
     </g>
   </g>
   
       
-  <g transform="translate(360, 50) scale(0.65)">
-    <g class="reindeer-leaper">
-      <path d="M 68 22 Q 78 5 88 12 Q 82 20 72 25" stroke="#f59e0b" stroke-width="3" fill="none"/>
-      <path d="M 74 15 Q 84 8 82 18" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
-      <path d="M 68 38 C 72 25 82 22 88 28 C 92 34 85 45 78 45 Z" fill="url(#reindeerGold)"/>
-      <path d="M 65 24 Q 58 20 62 26" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
-      
-      <path d="M 20 55 C 25 35 45 35 65 38 C 75 40 85 45 80 55 C 75 62 60 65 45 68 C 30 70 15 65 20 55 Z" fill="url(#reindeerGold)"/>
-      <path d="M 18 56 Q 10 52 14 62 Z" fill="#d97706"/>
-      <g class="reindeer-front-legs">
-        <path d="M 65 56 Q 80 72 98 80" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-        <path d="M 60 58 Q 74 74 88 86" stroke="#d97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <g transform="translate(370, 28) scale(0.68)">
+    <defs>
+      <linearGradient id="tanCoat_r2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fbbf24"/>
+        <stop offset="45%" stop-color="#f59e0b"/>
+        <stop offset="85%" stop-color="#d97706"/>
+        <stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+
+      <linearGradient id="tanShaded_r2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#d97706"/>
+        <stop offset="60%" stop-color="#b45309"/>
+        <stop offset="100%" stop-color="#78350f"/>
+      </linearGradient>
+
+      <linearGradient id="creamBib_r2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fefce8"/>
+        <stop offset="60%" stop-color="#fef08a"/>
+        <stop offset="100%" stop-color="#fde047"/>
+      </linearGradient>
+
+      <linearGradient id="antlerSlender_r2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#92400e"/>
+        <stop offset="60%" stop-color="#78350f"/>
+        <stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+
+      <radialGradient id="goldBell_r2" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="30%" stop-color="#fef08a"/>
+        <stop offset="70%" stop-color="#eab308"/>
+        <stop offset="100%" stop-color="#854d0e"/>
+      </radialGradient>
+    </defs>
+
+    <g class="reindeer-bound">
+      <!-- 1. FAR HIND LEG (Background) -->
+      <g class="leg-back-far" style="transform-origin: 32px 50px;">
+        <path d="
+          M 34 46
+          C 24 52, 17 62, 12 73
+          L 8 75 L 8 82 L 18 83 L 18 76
+          C 22 66, 29 57, 36 50
+          Z
+        " fill="url(#tanShaded_r2)"/>
+        <polygon points="8,76 18,77 17,83 7,82" fill="#292524"/>
       </g>
-      <g class="reindeer-hind-legs">
-        <path d="M 28 65 Q 12 80 4 94" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-        <path d="M 36 65 Q 24 82 16 92" stroke="#d97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+      <!-- 2. FAR FRONT LEG (Background) -->
+      <g class="leg-front-far" style="transform-origin: 64px 47px;">
+        <path d="
+          M 60 44
+          C 66 54, 74 63, 83 70
+          L 83 74 L 92 78 L 95 72 L 87 67
+          C 80 60, 72 52, 68 46
+          Z
+        " fill="url(#tanShaded_r2)"/>
+        <polygon points="84,72 93,76 91,80 82,76" fill="#292524"/>
+      </g>
+
+      <!-- 3. UPTURNED FLUFFY TAIL -->
+      <path d="M 21 47 C 14 43, 10 38, 13 34 C 17 36, 20 40, 24 45 Z" fill="url(#tanCoat_r2)"/>
+      <path d="M 15 41 C 12 39, 11 36, 13 34 C 15 36, 17 39, 18 41 Z" fill="#fefce8"/>
+
+      <!-- 4. MAIN TORSO & CREAM UNDERBELLY -->
+      <path d="
+        M 22 48
+        C 22 40, 32 36, 48 38
+        C 58 39, 68 44, 70 52
+        C 68 62, 54 65, 40 64
+        C 28 63, 20 58, 22 48 Z
+      " fill="url(#tanCoat_r2)"/>
+      
+      <path d="
+        M 34 62
+        C 44 63, 56 62, 66 56
+        C 68 52, 66 48, 60 46
+        C 50 54, 40 58, 34 62 Z
+      " fill="url(#creamBib_r2)" opacity="0.95"/>
+
+      <path d="M 24 46 C 24 54, 30 60, 38 62 C 32 60, 28 54, 28 46 Z" fill="#b45309" opacity="0.25"/>
+
+      <!-- 5. NEAR HIND LEG (Foreground) -->
+      <g class="leg-back-near" style="transform-origin: 29px 49px;">
+        <path d="
+          M 31 46
+          C 20 52, 13 62, 8 73
+          L 4 75 L 4 83 L 15 84 L 15 76
+          C 19 65, 26 56, 33 49
+          Z
+        " fill="url(#tanCoat_r2)"/>
+        <polygon points="4,76 15,77 14,83 3,82" fill="#1c1917"/>
+      </g>
+
+      <!-- 6. NEAR FRONT LEG (Foreground) -->
+      <g class="leg-front-near" style="transform-origin: 62px 46px;">
+        <path d="
+          M 58 44
+          C 65 54, 73 63, 82 70
+          L 82 74 L 91 78 L 94 72 L 86 67
+          C 78 60, 71 52, 66 46
+          Z
+        " fill="url(#tanCoat_r2)"/>
+        <polygon points="83,72 92,76 90,80 81,76" fill="#1c1917"/>
+      </g>
+
+      <!-- 7. NECK & CREAM BIB -->
+      <path d="
+        M 56 44
+        C 60 36, 65 27, 72 25
+        C 76 29, 74 42, 68 52
+        Z
+      " fill="url(#tanCoat_r2)"/>
+      <path d="
+        M 62 43
+        C 65 35, 68 31, 72 29
+        C 74 35, 70 45, 66 49 Z
+      " fill="url(#creamBib_r2)"/>
+
+      <!-- 8. RED COLLAR WITH 4 GOLDEN BELLS -->
+      <path d="M 60 46 Q 66 41 72 36" stroke="#dc2626" stroke-width="4.2" stroke-linecap="round" fill="none" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.35))"/>
+      <path d="M 61 45.2 Q 66 41 71.5 37" stroke="#ef4444" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      
+      <g filter="drop-shadow(0 1px 2px rgba(0,0,0,0.45))">
+        <circle cx="60.5" cy="46" r="2.7" fill="url(#goldBell_r2)"/>
+        <line x1="59.5" y1="46" x2="61.5" y2="46" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="64.5" cy="43" r="2.9" fill="url(#goldBell_r2)"/>
+        <line x1="63.5" y1="43" x2="65.5" y2="43" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="68.5" cy="40" r="2.9" fill="url(#goldBell_r2)"/>
+        <line x1="67.5" y1="40" x2="69.5" y2="40" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="72.5" cy="36" r="2.7" fill="url(#goldBell_r2)"/>
+        <line x1="71.5" y1="36" x2="73.5" y2="36" stroke="#854d0e" stroke-width="0.5"/>
+      </g>
+
+      <!-- 9. SLENDER DELICATE ANTLERS -->
+      <g filter="drop-shadow(0 1px 1.5px rgba(0,0,0,0.25))">
+        <path d="M 68 18 Q 66 8 71 4 Q 72 6 70 14" stroke="url(#antlerSlender_r2)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <path d="M 68 12 Q 63 9 65 7" stroke="url(#antlerSlender_r2)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <path d="M 69 9 Q 72 7 73 8" stroke="url(#antlerSlender_r2)" stroke-width="1.0" stroke-linecap="round" fill="none"/>
+
+        <path d="M 73 19 Q 74 9 79 5 Q 81 7 78 15" stroke="url(#antlerSlender_r2)" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        <path d="M 74.5 14 Q 80 11 81 9" stroke="url(#antlerSlender_r2)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        <path d="M 76 10 Q 73 7 75 6" stroke="url(#antlerSlender_r2)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+      </g>
+
+      <!-- 10. CUTE CARTOON HEAD & FACE -->
+      <g>
+        <path d="
+          M 67 25
+          C 69 17, 77 17, 81 21
+          C 88 25, 91 32, 91 36.5
+          C 91 40.5, 84 45, 78 43
+          C 72 41, 66 33, 67 25 Z
+        " fill="url(#tanCoat_r2)"/>
+
+        <path d="
+          M 82 31
+          C 86 33, 91 35, 91 36.5
+          C 91 39.5, 85 43, 79 42
+          C 78 39, 79 34, 82 31 Z
+        " fill="url(#creamBib_r2)"/>
+
+        <path d="M 84 39.5 Q 87 40.5 89 38.5" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+        
+    <ellipse cx="91" cy="36.5" rx="2.2" ry="1.8" fill="#451a03"/>
+    <circle cx="90.5" cy="35.8" r="0.7" fill="#ffffff" opacity="0.8"/>
+  
+
+        <g>
+          <ellipse cx="80" cy="27" rx="4.2" ry="5.2" fill="#ffffff"/>
+          <ellipse cx="80.6" cy="27" rx="3.3" ry="4.3" fill="#854d0e"/>
+          <ellipse cx="81.2" cy="27" rx="2.3" ry="3.3" fill="#1c1917"/>
+          <circle cx="79.6" cy="25.2" r="1.5" fill="#ffffff"/>
+          <circle cx="82" cy="29" r="0.7" fill="#ffffff"/>
+          <path d="M 77 21 Q 80 19 83 21" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        </g>
+
+        <ellipse cx="78" cy="34" rx="4" ry="2.4" fill="#fb7185" opacity="0.6" filter="blur(0.5px)"/>
+
+        <path d="M 68 21 C 61 17, 59 13, 62 11 C 65 11, 69 15, 71 19 Z" fill="url(#tanCoat_r2)"/>
+        <path d="M 67 19 C 63 16, 61 13, 63 12 C 65 12, 68 15, 69 18 Z" fill="#fda4af"/>
       </g>
     </g>
   </g>
   
       
-  <g transform="translate(210, 52) scale(0.65)">
-    <g class="reindeer-leaper">
-      <path d="M 68 22 Q 78 5 88 12 Q 82 20 72 25" stroke="#f59e0b" stroke-width="3" fill="none"/>
-      <path d="M 74 15 Q 84 8 82 18" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
-      <path d="M 68 38 C 72 25 82 22 88 28 C 92 34 85 45 78 45 Z" fill="url(#reindeerGold)"/>
-      <path d="M 65 24 Q 58 20 62 26" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
-      
-      <path d="M 20 55 C 25 35 45 35 65 38 C 75 40 85 45 80 55 C 75 62 60 65 45 68 C 30 70 15 65 20 55 Z" fill="url(#reindeerGold)"/>
-      <path d="M 18 56 Q 10 52 14 62 Z" fill="#d97706"/>
-      <g class="reindeer-front-legs">
-        <path d="M 65 56 Q 80 72 98 80" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-        <path d="M 60 58 Q 74 74 88 86" stroke="#d97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <g transform="translate(225, 30) scale(0.68)">
+    <defs>
+      <linearGradient id="tanCoat_r1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fbbf24"/>
+        <stop offset="45%" stop-color="#f59e0b"/>
+        <stop offset="85%" stop-color="#d97706"/>
+        <stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+
+      <linearGradient id="tanShaded_r1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#d97706"/>
+        <stop offset="60%" stop-color="#b45309"/>
+        <stop offset="100%" stop-color="#78350f"/>
+      </linearGradient>
+
+      <linearGradient id="creamBib_r1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fefce8"/>
+        <stop offset="60%" stop-color="#fef08a"/>
+        <stop offset="100%" stop-color="#fde047"/>
+      </linearGradient>
+
+      <linearGradient id="antlerSlender_r1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#92400e"/>
+        <stop offset="60%" stop-color="#78350f"/>
+        <stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+
+      <radialGradient id="goldBell_r1" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="30%" stop-color="#fef08a"/>
+        <stop offset="70%" stop-color="#eab308"/>
+        <stop offset="100%" stop-color="#854d0e"/>
+      </radialGradient>
+    </defs>
+
+    <g class="reindeer-bound">
+      <!-- 1. FAR HIND LEG (Background) -->
+      <g class="leg-back-far" style="transform-origin: 32px 50px;">
+        <path d="
+          M 34 46
+          C 24 52, 17 62, 12 73
+          L 8 75 L 8 82 L 18 83 L 18 76
+          C 22 66, 29 57, 36 50
+          Z
+        " fill="url(#tanShaded_r1)"/>
+        <polygon points="8,76 18,77 17,83 7,82" fill="#292524"/>
       </g>
-      <g class="reindeer-hind-legs">
-        <path d="M 28 65 Q 12 80 4 94" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-        <path d="M 36 65 Q 24 82 16 92" stroke="#d97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+      <!-- 2. FAR FRONT LEG (Background) -->
+      <g class="leg-front-far" style="transform-origin: 64px 47px;">
+        <path d="
+          M 60 44
+          C 66 54, 74 63, 83 70
+          L 83 74 L 92 78 L 95 72 L 87 67
+          C 80 60, 72 52, 68 46
+          Z
+        " fill="url(#tanShaded_r1)"/>
+        <polygon points="84,72 93,76 91,80 82,76" fill="#292524"/>
+      </g>
+
+      <!-- 3. UPTURNED FLUFFY TAIL -->
+      <path d="M 21 47 C 14 43, 10 38, 13 34 C 17 36, 20 40, 24 45 Z" fill="url(#tanCoat_r1)"/>
+      <path d="M 15 41 C 12 39, 11 36, 13 34 C 15 36, 17 39, 18 41 Z" fill="#fefce8"/>
+
+      <!-- 4. MAIN TORSO & CREAM UNDERBELLY -->
+      <path d="
+        M 22 48
+        C 22 40, 32 36, 48 38
+        C 58 39, 68 44, 70 52
+        C 68 62, 54 65, 40 64
+        C 28 63, 20 58, 22 48 Z
+      " fill="url(#tanCoat_r1)"/>
+      
+      <path d="
+        M 34 62
+        C 44 63, 56 62, 66 56
+        C 68 52, 66 48, 60 46
+        C 50 54, 40 58, 34 62 Z
+      " fill="url(#creamBib_r1)" opacity="0.95"/>
+
+      <path d="M 24 46 C 24 54, 30 60, 38 62 C 32 60, 28 54, 28 46 Z" fill="#b45309" opacity="0.25"/>
+
+      <!-- 5. NEAR HIND LEG (Foreground) -->
+      <g class="leg-back-near" style="transform-origin: 29px 49px;">
+        <path d="
+          M 31 46
+          C 20 52, 13 62, 8 73
+          L 4 75 L 4 83 L 15 84 L 15 76
+          C 19 65, 26 56, 33 49
+          Z
+        " fill="url(#tanCoat_r1)"/>
+        <polygon points="4,76 15,77 14,83 3,82" fill="#1c1917"/>
+      </g>
+
+      <!-- 6. NEAR FRONT LEG (Foreground) -->
+      <g class="leg-front-near" style="transform-origin: 62px 46px;">
+        <path d="
+          M 58 44
+          C 65 54, 73 63, 82 70
+          L 82 74 L 91 78 L 94 72 L 86 67
+          C 78 60, 71 52, 66 46
+          Z
+        " fill="url(#tanCoat_r1)"/>
+        <polygon points="83,72 92,76 90,80 81,76" fill="#1c1917"/>
+      </g>
+
+      <!-- 7. NECK & CREAM BIB -->
+      <path d="
+        M 56 44
+        C 60 36, 65 27, 72 25
+        C 76 29, 74 42, 68 52
+        Z
+      " fill="url(#tanCoat_r1)"/>
+      <path d="
+        M 62 43
+        C 65 35, 68 31, 72 29
+        C 74 35, 70 45, 66 49 Z
+      " fill="url(#creamBib_r1)"/>
+
+      <!-- 8. RED COLLAR WITH 4 GOLDEN BELLS -->
+      <path d="M 60 46 Q 66 41 72 36" stroke="#dc2626" stroke-width="4.2" stroke-linecap="round" fill="none" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.35))"/>
+      <path d="M 61 45.2 Q 66 41 71.5 37" stroke="#ef4444" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      
+      <g filter="drop-shadow(0 1px 2px rgba(0,0,0,0.45))">
+        <circle cx="60.5" cy="46" r="2.7" fill="url(#goldBell_r1)"/>
+        <line x1="59.5" y1="46" x2="61.5" y2="46" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="64.5" cy="43" r="2.9" fill="url(#goldBell_r1)"/>
+        <line x1="63.5" y1="43" x2="65.5" y2="43" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="68.5" cy="40" r="2.9" fill="url(#goldBell_r1)"/>
+        <line x1="67.5" y1="40" x2="69.5" y2="40" stroke="#854d0e" stroke-width="0.5"/>
+        <circle cx="72.5" cy="36" r="2.7" fill="url(#goldBell_r1)"/>
+        <line x1="71.5" y1="36" x2="73.5" y2="36" stroke="#854d0e" stroke-width="0.5"/>
+      </g>
+
+      <!-- 9. SLENDER DELICATE ANTLERS -->
+      <g filter="drop-shadow(0 1px 1.5px rgba(0,0,0,0.25))">
+        <path d="M 68 18 Q 66 8 71 4 Q 72 6 70 14" stroke="url(#antlerSlender_r1)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <path d="M 68 12 Q 63 9 65 7" stroke="url(#antlerSlender_r1)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <path d="M 69 9 Q 72 7 73 8" stroke="url(#antlerSlender_r1)" stroke-width="1.0" stroke-linecap="round" fill="none"/>
+
+        <path d="M 73 19 Q 74 9 79 5 Q 81 7 78 15" stroke="url(#antlerSlender_r1)" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        <path d="M 74.5 14 Q 80 11 81 9" stroke="url(#antlerSlender_r1)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        <path d="M 76 10 Q 73 7 75 6" stroke="url(#antlerSlender_r1)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+      </g>
+
+      <!-- 10. CUTE CARTOON HEAD & FACE -->
+      <g>
+        <path d="
+          M 67 25
+          C 69 17, 77 17, 81 21
+          C 88 25, 91 32, 91 36.5
+          C 91 40.5, 84 45, 78 43
+          C 72 41, 66 33, 67 25 Z
+        " fill="url(#tanCoat_r1)"/>
+
+        <path d="
+          M 82 31
+          C 86 33, 91 35, 91 36.5
+          C 91 39.5, 85 43, 79 42
+          C 78 39, 79 34, 82 31 Z
+        " fill="url(#creamBib_r1)"/>
+
+        <path d="M 84 39.5 Q 87 40.5 89 38.5" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+        
+    <ellipse cx="91" cy="36.5" rx="2.2" ry="1.8" fill="#451a03"/>
+    <circle cx="90.5" cy="35.8" r="0.7" fill="#ffffff" opacity="0.8"/>
+  
+
+        <g>
+          <ellipse cx="80" cy="27" rx="4.2" ry="5.2" fill="#ffffff"/>
+          <ellipse cx="80.6" cy="27" rx="3.3" ry="4.3" fill="#854d0e"/>
+          <ellipse cx="81.2" cy="27" rx="2.3" ry="3.3" fill="#1c1917"/>
+          <circle cx="79.6" cy="25.2" r="1.5" fill="#ffffff"/>
+          <circle cx="82" cy="29" r="0.7" fill="#ffffff"/>
+          <path d="M 77 21 Q 80 19 83 21" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        </g>
+
+        <ellipse cx="78" cy="34" rx="4" ry="2.4" fill="#fb7185" opacity="0.6" filter="blur(0.5px)"/>
+
+        <path d="M 68 21 C 61 17, 59 13, 62 11 C 65 11, 69 15, 71 19 Z" fill="url(#tanCoat_r1)"/>
+        <path d="M 67 19 C 63 16, 61 13, 63 12 C 65 12, 68 15, 69 18 Z" fill="#fda4af"/>
       </g>
     </g>
   </g>
   
 
-      <!-- DELUXE SLEIGH CARAVAN -->
+      <!-- DELUXE SLEIGH CARAVAN (MATTHEW SANTA, FINGER HEART, GIANT SACK WITH ALAK) -->
       <g transform="translate(6, 12) scale(0.46)">
         <g class="sleigh-rocker">
 

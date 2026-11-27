@@ -1,5 +1,6 @@
 /* =========================================================
    MAY HARVEST CORPORATION - GRAND CHRISTMAS 2026 THEME
+   With Cartoon Reindeer & Articulated Running Legs
    100% Pure Client GPU CSS/SVG (0% Load on Render / Supabase)
 ========================================================= */
 
@@ -25,16 +26,16 @@
    ======================================================== */
 .flying-santa-track {
   position: fixed;
-  top: 6px;
+  top: 18px;
   left: 0;
   width: 100%;
-  height: 115px;
+  height: 125px;
   pointer-events: none;
   z-index: 1005;
   overflow: visible;
 }
 .flying-caravan {
-  width: 720px;
+  width: 760px;
   height: 120px;
   position: absolute;
   animation: flyAcross 18s linear infinite;
@@ -47,7 +48,7 @@
 }
 @keyframes flyAcross {
   0% {
-    transform: translateX(-720px) translateY(8px) scale(0.95);
+    transform: translateX(-760px) translateY(8px) scale(0.95);
     opacity: 0;
   }
   5% {
@@ -66,45 +67,61 @@
   }
 }
 
-/* 1. REINDEER WHOLE BODY LEAP */
-.reindeer-leaper {
-  animation: leapBound 0.4s ease-in-out infinite alternate;
+/* ========================================================
+   CARTOON REINDEER ARTICULATED GALLOPING LEGS
+   ======================================================== */
+.reindeer-bound {
+  animation: boundHop 0.42s ease-in-out infinite alternate;
 }
-@keyframes leapBound {
+@keyframes boundHop {
   0% { transform: translateY(0px) rotate(0deg); }
-  100% { transform: translateY(-5px) rotate(-3deg); }
+  100% { transform: translateY(-6px) rotate(-3.5deg); }
 }
 
-/* 2. REINDEER FRONT LEGS SWING (GALLOP) */
-.reindeer-front-legs {
-  transform-origin: 65px 56px;
-  animation: gallopFront 0.38s ease-in-out infinite alternate;
+/* FRONT LEGS RUNNING CYCLE (Antiphase) */
+.leg-front-near {
+  animation: gallopFrontNear 0.42s ease-in-out infinite alternate;
 }
-@keyframes gallopFront {
-  0% { transform: rotate(-22deg); }
+@keyframes gallopFrontNear {
+  0% { transform: rotate(-24deg); }
   100% { transform: rotate(20deg); }
 }
 
-/* 3. REINDEER HIND LEGS KICK (GALLOP) */
-.reindeer-hind-legs {
-  transform-origin: 25px 65px;
-  animation: gallopHind 0.38s ease-in-out infinite alternate;
+.leg-front-far {
+  animation: gallopFrontFar 0.42s ease-in-out infinite alternate;
 }
-@keyframes gallopHind {
-  0% { transform: rotate(22deg); }
+@keyframes gallopFrontFar {
+  0% { transform: rotate(18deg); }
+  100% { transform: rotate(-22deg); }
+}
+
+/* HIND LEGS RUNNING CYCLE (Antiphase) */
+.leg-back-near {
+  animation: gallopBackNear 0.42s ease-in-out infinite alternate;
+}
+@keyframes gallopBackNear {
+  0% { transform: rotate(24deg); }
   100% { transform: rotate(-18deg); }
 }
 
-/* 4. RUDOLPH GLOWING RED NOSE */
-.rudolph-nose {
-  animation: nosePulse 0.5s ease-in-out infinite alternate;
+.leg-back-far {
+  animation: gallopBackFar 0.42s ease-in-out infinite alternate;
 }
-@keyframes nosePulse {
-  0% { filter: drop-shadow(0 0 3px #ff0000); opacity: 0.8; }
-  100% { filter: drop-shadow(0 0 10px #ff0000) drop-shadow(0 0 18px #ff4d4d); opacity: 1; }
+@keyframes gallopBackFar {
+  0% { transform: rotate(-18deg); }
+  100% { transform: rotate(22deg); }
 }
 
-/* 5. SANTA FINGER HEART ARM (🫰) & PULSING MINI HEART */
+/* RUDOLPH GLOWING RED NOSE */
+.rudolph-glow {
+  animation: rPulse 0.4s ease-in-out infinite alternate;
+}
+@keyframes rPulse {
+  0% { opacity: 0.8; filter: drop-shadow(0 0 4px #ef4444); }
+  100% { opacity: 1; filter: drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 18px #ff4757); }
+}
+
+/* SANTA FINGER HEART ARM (🫰) & PULSING MINI HEART */
 .santa-heart-arm {
   transform-origin: 22px 76px;
   animation: heartArmBob 1.2s ease-in-out infinite alternate;
@@ -122,7 +139,7 @@
   100% { transform: scale(0.95); filter: drop-shadow(0 0 7px #ef4444) drop-shadow(0 0 12px #ff4757); }
 }
 
-/* 6. SLEIGH ROCKING / BOBBING */
+/* SLEIGH ROCKING */
 .sleigh-rocker {
   animation: sleighRock 1.1s ease-in-out infinite alternate;
 }
@@ -131,7 +148,7 @@
   100% { transform: translateY(-4px) rotate(1.5deg); }
 }
 
-/* 7. MAGIC SPARKLES */
+/* MAGIC SPARKLES */
 .sparkle-dot {
   animation: sparkle 0.5s ease-in-out infinite alternate;
 }
@@ -189,13 +206,13 @@
   100% { opacity: 1; filter: brightness(1.3); }
 }
 
-/* Ensure logo container handles Santa Hat cleanly */
 .logo-container {
   position: relative !important;
   overflow: visible !important;
 }
 
 header {
+  padding-top: 36px !important;
   border-bottom: 2.5px solid #f59e0b !important;
   position: relative;
   overflow: visible !important;
